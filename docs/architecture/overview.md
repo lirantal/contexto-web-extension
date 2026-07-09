@@ -1,0 +1,21 @@
+# Architecture Overview
+
+Contexto is a WXT React extension with four user-facing surfaces:
+
+- `entrypoints/content.ts`: content script for `x.com` and `twitter.com`. It injects a Shadow DOM profile panel and sends messages to the background service worker.
+- `entrypoints/background.ts`: message/API boundary for content scripts. It owns profile upsert, metadata updates, notes, tags, folders, settings, and search-history writes.
+- `entrypoints/popup`: compact quick-search UI for creating X search URLs.
+- `entrypoints/options`: full dashboard for account search, metadata editing, filtering, backup, and restore.
+
+The extension keeps domain logic in `src/`:
+
+- `src/shared`: shared types, settings, message contracts, and platform adapters.
+- `src/data`: Dexie database schema and repository functions.
+- `src/ui`: React components shared by extension pages and content-script UI.
+
+## Design Principles
+
+- Keep X-specific behavior behind an adapter so LinkedIn/Reddit can become peers later.
+- Keep content scripts thin. They observe the host page and call the background service worker rather than writing CRM data directly.
+- Keep local data exportable. IndexedDB is durable for an installed extension profile, but JSON backup is the recovery path if the extension/profile is removed.
+- Prefer browser-native capabilities and WXT conventions over custom extension plumbing.
