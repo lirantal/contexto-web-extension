@@ -15,14 +15,23 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "dexie": "^4.4.4",
+    "dexie-react-hooks": "^4.4.0",
+    "lucide-react": "^1.23.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@wxt-dev/module-react": "^1.1.5",
+    "jsdom": "^29.1.1",
     "typescript": "^5.9.3",
+    "vitest": "^4.1.10",
     "wxt": "^0.20.27"
   }
 }
