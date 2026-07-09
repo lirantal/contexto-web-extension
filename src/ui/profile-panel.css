@@ -1,0 +1,157 @@
+:host {
+  all: initial;
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.contexto-panel {
+  position: fixed;
+  z-index: 2147483647;
+  right: 18px;
+  top: 86px;
+  width: 320px;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 14px;
+  border: 1px solid #d8ddd8;
+  border-radius: 8px;
+  background: #fbfcfb;
+  box-shadow: 0 18px 60px rgba(42, 47, 43, 0.18);
+  color: #222822;
+  font-size: 13px;
+}
+
+.contexto-panel.collapsed {
+  width: auto;
+  padding: 8px 12px;
+  font-weight: 700;
+}
+
+.contexto-panel header,
+.contexto-panel section,
+.inline-form,
+.panel-search-actions,
+.search-grid,
+.chip-row {
+  display: flex;
+  gap: 8px;
+}
+
+.contexto-panel header {
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e4e7e1;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.contexto-panel header strong {
+  font-size: 16px;
+}
+
+.contexto-panel p {
+  margin: 3px 0 0;
+  color: #667066;
+}
+
+.contexto-panel section {
+  flex-direction: column;
+  padding: 10px 0;
+  border-bottom: 1px solid #ecefeb;
+}
+
+.contexto-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #495149;
+  font-weight: 650;
+}
+
+.contexto-panel input,
+.contexto-panel textarea,
+.contexto-panel button {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 7px;
+  border: 1px solid #cfd7cf;
+  font: inherit;
+}
+
+.contexto-panel input,
+.contexto-panel textarea {
+  padding: 8px 9px;
+  background: #ffffff;
+  color: #222822;
+}
+
+.contexto-panel button,
+.file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 7px 10px;
+  background: #eef2ee;
+  color: #243024;
+  cursor: pointer;
+}
+
+.contexto-panel .primary-action {
+  border-color: #0e766f;
+  background: #0f7f76;
+  color: white;
+}
+
+.contexto-panel .icon-button {
+  width: 34px;
+}
+
+.inline-form {
+  flex-direction: row;
+}
+
+.inline-form button {
+  width: 42px;
+  flex: 0 0 42px;
+}
+
+.chip-row {
+  flex-flow: row wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8f3f1;
+  color: #0c5e59;
+  font-weight: 700;
+}
+
+.folder-chip {
+  background: #fff1d4;
+  color: #7a5200;
+}
+
+.latest-note {
+  padding: 8px;
+  border-left: 3px solid #0f7f76;
+  background: #f2f6f4;
+}
+
+.search-grid {
+  flex-direction: column;
+}
+
+.panel-search-actions {
+  flex-direction: column;
+}
+
+.error-line {
+  color: #a3343a;
+}
