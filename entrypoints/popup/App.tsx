@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { ExternalLink, Search, Settings, Users, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { browser } from 'wxt/browser';
+import { ExternalLink, Search, Settings, Users } from 'lucide-react';
+import { listTargetAccountSuggestions } from '@/src/data/repositories';
 import { buildXSearchQuery, buildXSearchUrl, canRunXSearch, normalizeXHandle } from '@/src/shared/platforms/x';
 import {
   defaultPopupSearchState,
   defaultSettings,
   popupSearchStateItem,
+  recordTargetHandleSearch,
   settingsItem,
+  targetHandleHistoryItem,
 } from '@/src/shared/settings';
 import type {
   ContextoSettings,
@@ -13,7 +17,14 @@ import type {
   SearchDirection,
   XSearchFilters,
 } from '@/src/shared/types';
+import {
+  buildTargetHandleSuggestions,
+  type TargetAccountSuggestion,
+  type TargetHandleHistoryEntry,
+} from '@/src/shared/target-handle-suggestions';
+import { TargetHandleCombobox } from '@/src/ui/TargetHandleCombobox';
 import './App.css';
+import './TargetHandleCombobox.css';
 
 const actions: Array<{ direction: SearchDirection; label: string }> = [
   { direction: 'me-to-them', label: 'Posts by me' },
@@ -25,6 +36,8 @@ const actions: Array<{ direction: SearchDirection; label: string }> = [
 function App() {
   const [settings, setSettings] = useState<ContextoSettings>(defaultSettings);
   const [searchState, setSearchState] = useState<PopupSearchState>(defaultPopupSearchState);
+  const [accountSuggestions, setAccountSuggestions] = useState<TargetAccountSuggestion[]>([]);
+  const [targetHistory, setTargetHistory] = useState<TargetHandleHistoryEntry[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -39,6 +52,32 @@ function App() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    void Promise.allSettled([
+      listTargetAccountSuggestions(),
+      targetHandleHistoryItem.getValue(),
+    ]).then(([accountResult, historyResult]) => {
+      if (!active) return;
+      if (accountResult.status === 'fulfilled') {
+        setAccountSuggestions(accountResult.value);
+      }
+      if (historyResult.status === 'fulfilled') {
+        setTargetHistory(historyResult.value);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const targetSuggestions = useMemo(
+    () => buildTargetHandleSuggestions(accountSuggestions, targetHistory, searchState.targetHandle),
+    [accountSuggestions, targetHistory, searchState.targetHandle],
+  );
 
   async function openDashboard() {
     await browser.runtime.openOptionsPage();
@@ -71,11 +110,24 @@ function App() {
     const filters = filtersFor(direction);
     if (!canRunXSearch(filters)) return;
 
-    await Promise.all([
-      settingsItem.setValue(settings),
-      popupSearchStateItem.setValue(searchState),
-    ]);
-    await browser.tabs.create({ url: buildXSearchUrl(filters) });
+    try {
+      await Promise.all([
+        settingsItem.setValue(settings),
+        popupSearchStateItem.setValue(searchState),
+      ]);
+      await browser.tabs.create({ url: buildXSearchUrl(filters) });
+    } catch {
+      return;
+    }
+
+    if (!filters.targetHandle) return;
+
+    try {
+      const nextHistory = await recordTargetHandleSearch(filters.targetHandle);
+      setTargetHistory(nextHistory);
+    } catch {
+      // The search has already launched; history persistence is best-effort.
+    }
   }
 
   return (
@@ -101,24 +153,11 @@ function App() {
         </label>
         <label>
           Other person's X handle <span className="optional-label">Optional</span>
-          <div className="input-with-clear">
-            <input
-              aria-label="Other person's X handle"
-              value={searchState.targetHandle}
-              onChange={(event) => updateSearchField('targetHandle', event.target.value)}
-              placeholder="@their_handle"
-            />
-            {searchState.targetHandle && (
-              <button
-                type="button"
-                className="clear-input"
-                aria-label="Clear other person's X handle"
-                onClick={() => updateSearchField('targetHandle', '')}
-              >
-                <X size={14} aria-hidden="true" />
-              </button>
-            )}
-          </div>
+          <TargetHandleCombobox
+            value={searchState.targetHandle}
+            suggestions={targetSuggestions}
+            onChange={(value) => updateSearchField('targetHandle', value)}
+          />
           <small>Narrows the first two actions; required by the last two.</small>
         </label>
         <label>

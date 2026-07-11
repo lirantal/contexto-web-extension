@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   setSettings: vi.fn(),
   getSearchState: vi.fn(),
   setSearchState: vi.fn(),
+  getHistory: vi.fn(),
+  recordTarget: vi.fn(),
 }));
 
 vi.mock('@/src/shared/settings', () => ({
@@ -16,6 +18,8 @@ vi.mock('@/src/shared/settings', () => ({
   defaultPopupSearchState: { targetHandle: '', keyword: '', since: '', until: '' },
   settingsItem: { getValue: mocks.getSettings, setValue: mocks.setSettings },
   popupSearchStateItem: { getValue: mocks.getSearchState, setValue: mocks.setSearchState },
+  targetHandleHistoryItem: { getValue: mocks.getHistory },
+  recordTargetHandleSearch: mocks.recordTarget,
 }));
 
 describe('popup search form', () => {
@@ -29,6 +33,8 @@ describe('popup search form', () => {
     });
     mocks.setSettings.mockResolvedValue(undefined);
     mocks.setSearchState.mockResolvedValue(undefined);
+    mocks.getHistory.mockResolvedValue([]);
+    mocks.recordTarget.mockResolvedValue([]);
   });
 
   it('restores every search field when the popup opens again', async () => {

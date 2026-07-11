@@ -9,6 +9,7 @@ import {
   Search,
   Settings,
   Tag,
+  Trash2,
   Upload,
   UserPlus,
 } from 'lucide-react';
@@ -25,7 +26,7 @@ import {
   updateAccount,
 } from '@/src/data/repositories';
 import { buildXSearchQuery, buildXSearchUrl, labelSearchDirection, normalizeXHandle } from '@/src/shared/platforms/x';
-import { defaultSettings, settingsItem } from '@/src/shared/settings';
+import { clearTargetHandleHistory, defaultSettings, settingsItem } from '@/src/shared/settings';
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
 import { getAdjacentAccountId } from './account-navigation';
 
@@ -139,6 +140,15 @@ export function Dashboard() {
     setStatus('Backup imported');
   }
 
+  async function clearTargetHistory() {
+    try {
+      await clearTargetHandleHistory();
+      setStatus('Target handle history cleared');
+    } catch {
+      setStatus('Could not clear target handle history');
+    }
+  }
+
   return (
     <main className="contexto-app">
       <aside className="sidebar">
@@ -197,6 +207,9 @@ export function Dashboard() {
             onChange={(event) => saveSettings({ ...settings, myXHandle: event.target.value })}
             placeholder="@your_handle"
           />
+          <button className="clear-history-action" onClick={clearTargetHistory}>
+            <Trash2 size={16} aria-hidden="true" /> Clear target handle history
+          </button>
           <div className="backup-actions">
             <button onClick={downloadBackup}><Download size={16} aria-hidden="true" /> Export</button>
             <label className="file-button">

@@ -393,3 +393,7 @@ textarea {
   font-size: 12px;
   font-weight: 700;
 }
+
+.clear-history-action {
+  width: 100%;
+}
