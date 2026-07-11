@@ -21,13 +21,15 @@ describe('MultiValueField', () => {
 
     expect(input).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getAllByRole('option')).toHaveLength(2);
-    expect(screen.getByRole('option', { name: 'YouTuber' })).toBeVisible();
+    expect(screen.getByRole('option', { name: 'YouTuber' })).toHaveClass('value-option');
     expect(screen.getByRole('option', { name: 'YouTube Creator' })).toBeVisible();
     expect(screen.queryByText(/create/i)).not.toBeInTheDocument();
 
     await user.keyboard('{ArrowDown}');
     expect(input).toHaveAttribute('aria-activedescendant', expect.stringContaining('option-0'));
-    expect(screen.getByRole('option', { name: 'YouTuber' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('option', { name: 'YouTuber' }))
+      .toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('option', { name: 'YouTuber' })).toHaveClass('highlighted');
 
     await user.keyboard('{ArrowDown}');
     expect(input).toHaveAttribute('aria-activedescendant', expect.stringContaining('option-1'));

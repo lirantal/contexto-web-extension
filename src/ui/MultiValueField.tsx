@@ -82,7 +82,8 @@ export function MultiValueField({ label, values, suggestions, onChange, disabled
       {expanded && (
         <div className="value-options" id={listboxId} role="listbox">
           {matches.map((value, index) => (
-            <button type="button" role="option" aria-selected={index === highlighted}
+            <button type="button" className={index === highlighted ? 'value-option highlighted' : 'value-option'}
+              role="option" aria-selected={index === highlighted}
               id={`${listboxId}-option-${index}`} key={value}
               onMouseEnter={() => setHighlighted(index)}
               onMouseDown={(event) => event.preventDefault()}
