@@ -22,21 +22,30 @@ afterEach(async () => {
 });
 
 describe('release bundle verifier', () => {
-  it('rejects classic JSX metadata from any generated chunk', async () => {
+  it('ignores JSX metadata in unrelated extension chunks', async () => {
     const output = await createBundleFixture({
       'popup.js': 'export {}',
       'content.js': 'createElement("div", { __self: this })',
     });
 
-    await expect(verifyPopupBundle(output)).rejects.toThrow('content.js contains classic JSX metadata');
+    await expect(verifyPopupBundle(output)).resolves.toBeUndefined();
   });
 
-  it('rejects development JSX calls from any generated chunk', async () => {
+
+  it('rejects classic JSX metadata from the popup entry', async () => {
     const output = await createBundleFixture({
-      'popup.js': 'export {}',
-      'content.js': 'jsxDEV("div", {}, undefined, false, undefined, this)',
+      'popup.js': 'createElement("div", { __self: this })',
+      'content.js': 'export {}',
     });
 
-    await expect(verifyPopupBundle(output)).rejects.toThrow('content.js contains development JSX output');
+    await expect(verifyPopupBundle(output)).rejects.toThrow('popup.js contains classic JSX metadata');
+  });
+  it('rejects development JSX calls from the popup entry', async () => {
+    const output = await createBundleFixture({
+      'popup.js': 'jsxDEV("div", {}, undefined, false, undefined, this)',
+      'content.js': 'export {}',
+    });
+
+    await expect(verifyPopupBundle(output)).rejects.toThrow('popup.js contains development JSX output');
   });
 });
