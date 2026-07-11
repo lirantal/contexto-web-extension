@@ -1,5 +1,7 @@
 # Inline X Context Design
 
+> **Superseded interaction note (2026-07-11):** The hover-card editor and post-save summary decisions in this historical design are replaced by `2026-07-11-x-editor-and-popup-qa-fixes-design.md`. Hover cards now launch a persistent right-rail/modal editor, and successful saves keep the complete editor visible.
+
 ## Summary
 
 Contexto will move from a fixed profile-page overlay to native-feeling, inline integrations inside X. The first release covers two X surfaces:
