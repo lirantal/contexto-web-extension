@@ -1,0 +1,78 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { ContextoProfileSurface, type ContextoProfileSurfaceProps } from '@/src/ui/ContextoProfileSurface';
+import { AccountDraftStore } from '@/src/x/draft-store';
+
+const profile = {
+  platform: 'x' as const,
+  handle: 'theo',
+  displayName: 'Theo – t3.gg',
+  profileUrl: 'https://x.com/theo',
+  location: 'San Francisco',
+};
+
+function renderSurface(send: ReturnType<typeof vi.fn>) {
+  return render(<ContextoProfileSurface profile={profile} kind="hover-card"
+    send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
+}
+
+describe('ContextoProfileSurface', () => {
+  it('shows the complete prefilled editor without saving an unknown account', async () => {
+    const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
+      ? { ok: true, lookup: true, lookupAccount: undefined }
+      : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
+    renderSurface(send);
+    expect(await screen.findByLabelText('Display name')).toHaveValue('Theo – t3.gg');
+    expect(screen.getByLabelText('X handle')).toHaveValue('@theo');
+    expect(screen.getByLabelText('Position')).toBeVisible();
+    expect(screen.getByLabelText('Profession')).toBeVisible();
+    expect(screen.getByLabelText('Company')).toBeVisible();
+    expect(screen.getByLabelText('Location')).toHaveValue('San Francisco');
+    expect(screen.getByLabelText('How you know them')).toBeVisible();
+    expect(screen.getByLabelText('Tags')).toBeVisible();
+    expect(screen.getByLabelText('Folders')).toBeVisible();
+    expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'contexto:account:saveContext' }));
+  });
+
+  it('saves distinct tag and folder values and renders the priority summary', async () => {
+    const saved = {
+      id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo',
+      displayName: 'Theo Browne', profileUrl: 'https://x.com/theo', position: 'CEO',
+      company: { id: 'company_1', name: 't3dotchat' },
+      tags: [{ id: 'tag_1', name: 'Founder' }], folders: [{ id: 'folder_1', name: 'Friends' }],
+    };
+    const send = vi.fn()
+      .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [] } })
+      .mockResolvedValueOnce({ ok: true, account: saved });
+    renderSurface(send);
+    fireEvent.change(await screen.findByLabelText('Display name'), { target: { value: 'Theo Browne' } });
+    fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'CEO' } });
+    fireEvent.change(screen.getByLabelText('Company'), { target: { value: 't3dotchat' } });
+    fireEvent.change(screen.getByLabelText('Tags'), { target: { value: 'Founder' } });
+    fireEvent.keyDown(screen.getByLabelText('Tags'), { key: 'Enter' });
+    fireEvent.change(screen.getByLabelText('Folders'), { target: { value: 'Friends' } });
+    fireEvent.keyDown(screen.getByLabelText('Folders'), { key: 'Enter' });
+    fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
+    await waitFor(() => expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'contexto:account:saveContext',
+      input: expect.objectContaining({ tagNames: ['Founder'], folderNames: ['Friends'] }),
+    })));
+    expect(await screen.findByText('Theo Browne')).toBeVisible();
+    expect(screen.getByText('CEO at t3dotchat')).toBeVisible();
+    expect(screen.getByText('Founder')).toBeVisible();
+    expect(screen.queryByText('Friends')).not.toBeInTheDocument();
+  });
+
+  it('retains the editor and exposes retry after a failed save', async () => {
+    const send = vi.fn()
+      .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [] } })
+      .mockResolvedValue({ ok: false, error: 'Database unavailable' });
+    renderSurface(send);
+    fireEvent.click(await screen.findByRole('button', { name: 'Save to Contexto' }));
+    expect(await screen.findByText('Database unavailable')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Retry save' })).toBeVisible();
+    expect(screen.getByLabelText('Display name')).toHaveValue('Theo – t3.gg');
+  });
+});
