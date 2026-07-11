@@ -226,7 +226,7 @@ async function syncAccountFolders(accountId: string, names: string[], database: 
   }
 }
 
-function validateAccountContextSave(input: AccountContextSaveInput): void {
+function validateAccountContextSave(input: AccountContextSaveInput): AccountContextSaveInput {
   const parsed = parseXProfileUrl(input.profile.profileUrl);
   if (input.profile.platform !== 'x' || !parsed) throw new Error('Profile must be a valid X profile');
   if (normalizeXHandle(input.profile.handle) !== normalizeXHandle(parsed.handle)) {
@@ -237,10 +237,20 @@ function validateAccountContextSave(input: AccountContextSaveInput): void {
     || !input.folderNames.every((name) => typeof name === 'string')) {
     throw new Error('Tags and folders must be lists of names');
   }
+  return {
+    ...input,
+    profile: { ...input.profile, handle: parsed.handle, profileUrl: parsed.profileUrl },
+    metadata: {
+      ...input.metadata,
+      displayName: input.metadata.displayName?.trim() || input.profile.displayName?.trim() || parsed.handle,
+    },
+    tagNames: input.tagNames.map((name) => name.trim()),
+    folderNames: input.folderNames.map((name) => name.trim()),
+  };
 }
 
 export async function saveAccountContext(input: AccountContextSaveInput, database = db): Promise<AccountSummary> {
-  validateAccountContextSave(input);
+  input = validateAccountContextSave(input);
   return database.transaction(
     'rw',
     [

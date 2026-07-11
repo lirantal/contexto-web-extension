@@ -14,7 +14,7 @@ describe('X surface observer', () => {
     const observer = createXSurfaceObserver({ root: document.body, currentUrl: () => location.href, mount });
     const dialog = document.createElement('div');
     dialog.setAttribute('role', 'dialog');
-    dialog.innerHTML = '<a href="/theo"><img src="https://pbs.twimg.com/profile_images/theo.jpg"><span>Theo</span><span>@theo</span></a>';
+    dialog.innerHTML = '<a href="/theo"><img src="https://pbs.twimg.com/profile_images/theo.jpg"></a><div data-testid="UserName"><span>Theo</span><span>@theo</span></div>';
     document.body.append(dialog);
     await flushMutations();
     expect(mount).toHaveBeenCalledTimes(1);
@@ -49,6 +49,16 @@ describe('X surface observer', () => {
     observer.disconnect();
   });
 
+
+  it('ignores an unrelated dialog that contains both an avatar and profile link', async () => {
+    document.body.innerHTML = '';
+    const mount = vi.fn(() => vi.fn());
+    const observer = createXSurfaceObserver({ root: document.body, currentUrl: () => 'https://x.com/home', mount });
+    document.body.innerHTML = '<div role="dialog"><img src="https://pbs.twimg.com/profile_images/theo.jpg"><a href="/theo"><span>Theo</span><span>@theo</span></a></div>';
+    await flushMutations();
+    expect(mount).not.toHaveBeenCalled();
+    observer.disconnect();
+  });
   it('remounts a reused profile host when SPA identity changes', async () => {
     document.body.innerHTML = '';
     let url = 'https://x.com/firstdev';

@@ -43,7 +43,8 @@ export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
     }
 
     for (const host of options.root.querySelectorAll<HTMLElement>('[data-testid="HoverCard"], [role="dialog"], [role="tooltip"]')) {
-      const hasHoverSignals = host.dataset.testid === 'HoverCard' || Boolean(host.querySelector('img[src*="profile_images"]'));
+      const hasHoverSignals = host.dataset.testid === 'HoverCard'
+        || Boolean(host.querySelector('img[src*="profile_images"]') && host.querySelector('[data-testid="UserName"]'));
       if (!hasHoverSignals) continue;
       mount(host, 'hover-card', extractHoverCardProfile(host));
     }

@@ -142,4 +142,14 @@ describe('Contexto repositories', () => {
     expect(await database.accounts.count()).toBe(0);
     expect(await database.changeLog.count()).toBe(0);
   });
+
+  it('falls back to the captured X display name when an explicit save submits a blank name', async () => {
+    const saved = await saveAccountContext({
+      profile: { platform: 'x', handle: 'exampledev', displayName: 'X Display Name', profileUrl: 'https://x.com/exampledev' },
+      metadata: { displayName: '   ' },
+      tagNames: [],
+      folderNames: [],
+    }, database);
+    expect(saved.displayName).toBe('X Display Name');
+  });
 });
