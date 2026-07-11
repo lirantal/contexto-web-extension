@@ -24,14 +24,19 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
   let app: HTMLDivElement | undefined;
   let reactRoot: Root | undefined;
   let shadow: ShadowRoot | undefined;
+  let editorObserver: MutationObserver | undefined;
   let activeProfile: ProfileSnapshot | undefined;
   let focusTarget: HTMLElement | undefined;
   let placement: 'docked' | 'modal' = 'modal';
+  let needsModalFocus = false;
   let placementTimer: ReturnType<typeof setTimeout> | undefined;
 
   function focusModalControl() {
-    if (placement !== 'modal') return;
-    shadow?.querySelector<HTMLElement>('input, button, [tabindex]:not([tabindex="-1"])')?.focus();
+    if (placement !== 'modal' || !needsModalFocus) return;
+    const target = shadow?.querySelector<HTMLElement>('input, button, [tabindex]:not([tabindex="-1"])');
+    if (!target) return;
+    target.focus();
+    needsModalFocus = false;
   }
 
   function requestClose() {
@@ -71,6 +76,8 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
     app = document.createElement('div');
     shadow.append(style, app);
     shadow.addEventListener('keydown', (event) => handleModalKeydown(event as KeyboardEvent));
+    editorObserver = new MutationObserver(focusModalControl);
+    editorObserver.observe(app, { childList: true, subtree: true });
     host.addEventListener('click', (event) => { if (event.target === host) requestClose(); });
     reactRoot = createRoot(app);
   }
@@ -102,6 +109,7 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
     host.dataset.theme = detectXTheme(target);
     if (placement !== nextPlacement) {
       placement = nextPlacement;
+      needsModalFocus = nextPlacement === 'modal';
       renderEditor();
     }
     focusModalControl();
@@ -114,6 +122,7 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
     ensureHost();
     const rail = root.querySelector<HTMLElement>('[data-testid="sidebarColumn"]');
     placement = rail ? 'docked' : 'modal';
+    needsModalFocus = placement === 'modal';
     (rail ?? root).append(host!);
     host!.dataset.placement = placement;
     host!.dataset.theme = detectXTheme(rail ?? root);
@@ -122,6 +131,9 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
   }
 
   function close() {
+    editorObserver?.disconnect();
+    editorObserver = undefined;
+    needsModalFocus = false;
     reactRoot?.unmount();
     host?.remove();
     reactRoot = undefined;
