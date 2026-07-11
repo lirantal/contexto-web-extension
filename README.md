@@ -6,7 +6,7 @@ The extension is built with [WXT](https://wxt.dev/), React, TypeScript, and Inde
 
 ## Current MVP
 
-- X/Twitter profile-page overlay for capturing and editing relationship metadata.
+- Inline X/Twitter hover-card and full-profile integrations for viewing and explicitly saving relationship metadata without leaving X.
 - Local IndexedDB database for accounts, companies, tags, folders, notes, search history, and backups.
 - Dashboard/options page for offline account search, metadata editing, filtering, import, and export.
 - Popup quick-search builder for X searches with keyword and date filters.

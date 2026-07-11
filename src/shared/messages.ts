@@ -1,4 +1,5 @@
 import type {
+  AccountContextSaveInput,
   AccountFilters,
   AccountSummary,
   AccountUpdateInput,
@@ -13,6 +14,8 @@ import type {
 export type ContextoRequest =
   | { type: 'contexto:account:ensure'; profile: ProfileSnapshot }
   | { type: 'contexto:account:getByHandle'; platform: 'x'; handle: string }
+  | { type: 'contexto:account:lookup'; platform: 'x'; handle: string }
+  | { type: 'contexto:account:saveContext'; input: AccountContextSaveInput }
   | { type: 'contexto:account:update'; accountId: RecordId; patch: AccountUpdateInput }
   | { type: 'contexto:account:list'; filters?: AccountFilters }
   | { type: 'contexto:note:add'; accountId: RecordId; body: string }
@@ -25,6 +28,7 @@ export type ContextoRequest =
 
 export type ContextoResponse =
   | { ok: true; account: AccountSummary }
+  | { ok: true; lookup: true; lookupAccount: AccountSummary | undefined }
   | { ok: true; accounts: AccountSummary[] }
   | { ok: true; lookups: LookupData }
   | { ok: true; settings: ContextoSettings }

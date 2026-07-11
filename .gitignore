@@ -12,6 +12,7 @@ node_modules
 stats.html
 stats-*.json
 .wxt
+.superpowers/
 web-ext.config.ts
 .env*
 

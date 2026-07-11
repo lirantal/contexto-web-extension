@@ -7,12 +7,13 @@ import {
   getLookups,
   listAccountSummaries,
   recordSearch,
+  saveAccountContext,
   updateAccount,
 } from '@/src/data/repositories';
 import { settingsItem } from '@/src/shared/settings';
 import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
 
-async function handleRequest(message: ContextoRequest): Promise<ContextoResponse> {
+export async function handleRequest(message: ContextoRequest): Promise<ContextoResponse> {
   try {
     switch (message.type) {
       case 'contexto:account:ensure':
@@ -21,6 +22,15 @@ async function handleRequest(message: ContextoRequest): Promise<ContextoResponse
         const account = await getAccountByHandle(message.platform, message.handle);
         return account ? { ok: true, account } : { ok: false, error: 'Account not found' };
       }
+      case 'contexto:account:lookup':
+        return {
+          ok: true,
+          lookup: true,
+          lookupAccount: await getAccountByHandle(message.platform, message.handle),
+        };
+      case 'contexto:account:saveContext':
+        return { ok: true, account: await saveAccountContext(message.input) };
+
       case 'contexto:account:update':
         return { ok: true, account: await updateAccount(message.accountId, message.patch) };
       case 'contexto:account:list':
