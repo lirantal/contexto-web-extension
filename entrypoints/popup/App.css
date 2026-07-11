@@ -121,6 +121,34 @@
   position: relative;
 }
 
+.input-with-clear {
+  position: relative;
+}
+
+.input-with-clear input {
+  padding-right: 32px;
+}
+
+.popup-shell .clear-input {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  min-height: 24px;
+  width: 24px;
+  padding: 0;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #667066;
+}
+
+.popup-shell .clear-input:hover,
+.popup-shell .clear-input:focus-visible {
+  background: #e4e8e3;
+  color: #222822;
+}
+
 .search-fields label > small {
   color: #707970;
   font-size: 11px;

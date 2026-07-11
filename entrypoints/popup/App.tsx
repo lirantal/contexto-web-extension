@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, Search, Settings, Users } from 'lucide-react';
+import { ExternalLink, Search, Settings, Users, X } from 'lucide-react';
 import { buildXSearchQuery, buildXSearchUrl, canRunXSearch, normalizeXHandle } from '@/src/shared/platforms/x';
 import {
   defaultPopupSearchState,
@@ -101,12 +101,24 @@ function App() {
         </label>
         <label>
           Other person's X handle <span className="optional-label">Optional</span>
-          <input
-            aria-label="Other person's X handle"
-            value={searchState.targetHandle}
-            onChange={(event) => updateSearchField('targetHandle', event.target.value)}
-            placeholder="@their_handle"
-          />
+          <div className="input-with-clear">
+            <input
+              aria-label="Other person's X handle"
+              value={searchState.targetHandle}
+              onChange={(event) => updateSearchField('targetHandle', event.target.value)}
+              placeholder="@their_handle"
+            />
+            {searchState.targetHandle && (
+              <button
+                type="button"
+                className="clear-input"
+                aria-label="Clear other person's X handle"
+                onClick={() => updateSearchField('targetHandle', '')}
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            )}
+          </div>
           <small>Narrows the first two actions; required by the last two.</small>
         </label>
         <label>

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '@/entrypoints/popup/App';
 
@@ -48,6 +49,23 @@ describe('popup search form', () => {
     await waitFor(() => expect(mocks.setSearchState).toHaveBeenCalledWith({
       targetHandle: '@them',
       keyword: 'typescript',
+      since: '2026-01-01',
+      until: '2026-02-01',
+    }));
+  });
+
+  it('clears and persists the other person’s X handle', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const clearButton = await screen.findByRole('button', { name: "Clear other person's X handle" });
+    await user.click(clearButton);
+
+    expect(screen.getByLabelText(/Other person/)).toHaveValue('');
+    expect(screen.queryByRole('button', { name: "Clear other person's X handle" })).not.toBeInTheDocument();
+    await waitFor(() => expect(mocks.setSearchState).toHaveBeenCalledWith({
+      targetHandle: '',
+      keyword: 'security',
       since: '2026-01-01',
       until: '2026-02-01',
     }));
