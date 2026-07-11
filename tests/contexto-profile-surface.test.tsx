@@ -132,4 +132,14 @@ describe('ContextoProfileSurface', () => {
     expect(screen.getByLabelText('Position')).toHaveValue('CTO');
     expect(screen.getByLabelText('Display name')).toBeVisible();
   });
+
+  it('exposes modal dialog semantics for the fallback editor', async () => {
+    const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
+      ? { ok: true, lookup: true, lookupAccount: undefined }
+      : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
+    render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="modal" send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
+
+    const dialog = await screen.findByRole('dialog', { name: 'Contexto profile editor' });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+  });
 });
