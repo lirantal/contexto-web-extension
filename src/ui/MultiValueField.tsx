@@ -17,11 +17,19 @@ export function MultiValueField({ label, values, suggestions, onChange, disabled
   const matches = suggestions.filter((value) =>
     !normalized.has(value.toLowerCase()) && value.toLowerCase().includes(query.trim().toLowerCase()),
   );
-  const expanded = open && Boolean(query.trim()) && matches.length > 0;
+  const hasQuery = Boolean(query.trim());
+  const expanded = !disabled && open && hasQuery && matches.length > 0;
 
   useEffect(() => {
     setHighlighted(-1);
   }, [suggestions, values]);
+
+  useEffect(() => {
+    if (disabled) {
+      setOpen(false);
+      setHighlighted(-1);
+    }
+  }, [disabled]);
 
   useEffect(() => {
     if (expanded && highlighted >= 0) {
@@ -62,17 +70,20 @@ export function MultiValueField({ label, values, suggestions, onChange, disabled
           setHighlighted(-1);
         }}
         onKeyDown={(event) => {
-          if (event.key === 'ArrowDown' && matches.length) {
+          if (event.key === 'ArrowDown' && hasQuery && matches.length) {
             event.preventDefault();
             setOpen(true);
             setHighlighted((current) => current < matches.length - 1 ? current + 1 : 0);
-          } else if (event.key === 'ArrowUp' && matches.length) {
+          } else if (event.key === 'ArrowUp' && hasQuery && matches.length) {
             event.preventDefault();
             setOpen(true);
             setHighlighted((current) => current > 0 ? current - 1 : matches.length - 1);
-          } else if (event.key === 'Enter') {
+          } else if (event.key === 'Enter' && expanded && highlighted >= 0 && matches[highlighted]) {
             event.preventDefault();
-            add(highlighted >= 0 && matches[highlighted] ? matches[highlighted] : query);
+            add(matches[highlighted]);
+          } else if (event.key === 'Enter' && hasQuery) {
+            event.preventDefault();
+            add(query);
           } else if (event.key === 'Escape' && open) {
             event.preventDefault();
             setOpen(false);
