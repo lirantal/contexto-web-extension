@@ -37,4 +37,16 @@ describe('X surface profile extraction', () => {
     expect(extractHoverCardProfile(document.createElement('div'))).toBeNull();
     expect(extractFullProfile(document.createElement('main'), 'https://x.com/home')).toBeNull();
   });
+
+  it('rejects a full profile when the scoped identity does not match the URL', () => {
+    const root = document.createElement('main');
+    root.innerHTML = '<div data-testid="UserName"><span>Wrong User</span><span>@wrong</span></div>';
+    expect(extractFullProfile(root, 'https://x.com/exampledev')).toBeNull();
+  });
+
+  it('waits for the scoped profile identity instead of reading post handles', () => {
+    const root = document.createElement('main');
+    root.innerHTML = '<article><span>@wrong</span><a href="/wrong">Wrong</a></article>';
+    expect(extractFullProfile(root, 'https://x.com/exampledev')).toBeNull();
+  });
 });

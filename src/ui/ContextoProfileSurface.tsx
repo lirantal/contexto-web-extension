@@ -34,6 +34,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts }: Contexto
   const [lookups, setLookups] = useState<LookupData>(emptyLookups);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [lookupAttempt, setLookupAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,13 +52,17 @@ export function ContextoProfileSurface({ profile, kind, send, drafts }: Contexto
       if (lookupDataResponse.ok && 'lookups' in lookupDataResponse) setLookups(lookupDataResponse.lookups);
       const found = lookupResponse.lookupAccount;
       setAccount(found);
-      if (found) { setDraft(draftFor(profile, found)); setState('summary'); }
+      if (found) {
+        const storedDraft = drafts.get(profile.handle);
+        if (storedDraft) { setDraft(storedDraft); setState('editing'); }
+        else { setDraft(draftFor(profile, found)); setState('summary'); }
+      }
       else { setDraft(drafts.get(profile.handle) ?? draftFor(profile)); setState('editing'); }
     }).catch((caught) => {
       if (!cancelled) { setError(caught instanceof Error ? caught.message : 'Could not load Contexto'); setState('lookup-error'); }
     });
     return () => { cancelled = true; };
-  }, [profile.handle, profile.profileUrl, send, drafts]);
+  }, [profile.handle, profile.profileUrl, send, drafts, lookupAttempt]);
 
   function updateDraft(next: AccountContextDraft) { setDraft(next); drafts.set(profile.handle, next); }
   function updateMetadata(field: keyof AccountContextDraft['metadata'], value: string) {
@@ -65,19 +70,27 @@ export function ContextoProfileSurface({ profile, kind, send, drafts }: Contexto
   }
   async function saveContext() {
     setSaving(true); setError('');
-    const response = await send({ type: 'contexto:account:saveContext', input: { profile, ...draft } });
-    setSaving(false);
-    if (response.ok && 'account' in response && response.account) {
-      drafts.clear(profile.handle); setAccount(response.account); setDraft(draftFor(profile, response.account)); setState('summary'); return;
+    try {
+      const response = await send({ type: 'contexto:account:saveContext', input: { profile, ...draft } });
+      if (response.ok && 'account' in response && response.account) {
+        drafts.clear(profile.handle); setAccount(response.account); setDraft(draftFor(profile, response.account)); setState('summary'); return;
+      }
+      setError(!response.ok ? response.error : 'Contexto did not return the saved account');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not save Contexto metadata');
+    } finally {
+      setSaving(false);
     }
-    setError(!response.ok ? response.error : 'Contexto did not return the saved account');
   }
   function cancelEditing() {
     setDraft(draftFor(profile, account)); drafts.clear(profile.handle); if (account) setState('summary');
   }
 
   if (state === 'loading') return <section className="contexto-surface"><p role="status">Loading Contexto…</p></section>;
-  if (state === 'lookup-error') return <section className="contexto-surface"><p className="contexto-error">{error}</p></section>;
+  if (state === 'lookup-error') return <section className="contexto-surface">
+    <p className="contexto-error" role="alert">{error}</p>
+    <button type="button" onClick={() => setLookupAttempt((attempt) => attempt + 1)}>Retry lookup</button>
+  </section>;
   if (state === 'summary' && account) {
     const role = [account.position, account.company?.name].filter(Boolean).join(' at ');
     return <section className="contexto-surface" data-surface={kind} aria-label="Contexto profile context">

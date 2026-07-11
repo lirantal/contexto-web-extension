@@ -1,5 +1,5 @@
 import { ContextoDatabase, db } from './db';
-import { buildXSearchQuery, normalizeXHandle } from '../shared/platforms/x';
+import { buildXSearchQuery, normalizeXHandle, parseXProfileUrl } from '../shared/platforms/x';
 import type {
   Account,
   AccountFilters,
@@ -226,7 +226,21 @@ async function syncAccountFolders(accountId: string, names: string[], database: 
   }
 }
 
+function validateAccountContextSave(input: AccountContextSaveInput): void {
+  const parsed = parseXProfileUrl(input.profile.profileUrl);
+  if (input.profile.platform !== 'x' || !parsed) throw new Error('Profile must be a valid X profile');
+  if (normalizeXHandle(input.profile.handle) !== normalizeXHandle(parsed.handle)) {
+    throw new Error('Profile handle does not match the X profile URL');
+  }
+  if (!Array.isArray(input.tagNames) || !Array.isArray(input.folderNames)
+    || !input.tagNames.every((name) => typeof name === 'string')
+    || !input.folderNames.every((name) => typeof name === 'string')) {
+    throw new Error('Tags and folders must be lists of names');
+  }
+}
+
 export async function saveAccountContext(input: AccountContextSaveInput, database = db): Promise<AccountSummary> {
+  validateAccountContextSave(input);
   return database.transaction(
     'rw',
     [

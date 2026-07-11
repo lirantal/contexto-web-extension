@@ -131,4 +131,15 @@ describe('Contexto repositories', () => {
     expect(second.tags.map(({ name }) => name)).toEqual(['Founder']);
     expect(second.folders.map(({ name }) => name)).toEqual(['Speakers']);
   });
+
+  it('rejects an explicit save whose X handle and profile URL disagree', async () => {
+    await expect(saveAccountContext({
+      profile: { platform: 'x', handle: 'wrong', displayName: 'Wrong', profileUrl: 'https://x.com/right' },
+      metadata: { displayName: 'Wrong' },
+      tagNames: [],
+      folderNames: [],
+    }, database)).rejects.toThrow('Profile handle does not match the X profile URL');
+    expect(await database.accounts.count()).toBe(0);
+    expect(await database.changeLog.count()).toBe(0);
+  });
 });

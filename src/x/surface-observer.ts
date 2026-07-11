@@ -10,28 +10,41 @@ export interface ObservedXSurface {
 export interface XSurfaceObserverOptions {
   root: HTMLElement;
   currentUrl: () => string;
+  onPageContextChange?: () => void;
   mount: (surface: ObservedXSurface) => () => void;
 }
 
 export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
-  const mounted = new Map<HTMLElement, () => void>();
+  const mounted = new Map<HTMLElement, { identity: string; cleanup: () => void }>();
   let queued = false;
+  let previousUrl = options.currentUrl();
 
   const mount = (host: HTMLElement, kind: XSurfaceKind, profile: ProfileSnapshot | null) => {
-    if (!profile || mounted.has(host)) return;
-    mounted.set(host, options.mount({ kind, host, profile }));
+    if (!profile) return;
+    const identity = `${kind}:${profile.handle.toLowerCase()}:${profile.profileUrl}`;
+    const current = mounted.get(host);
+    if (current?.identity === identity) return;
+    current?.cleanup();
+    mounted.set(host, { identity, cleanup: options.mount({ kind, host, profile }) });
   };
 
   const scan = () => {
     queued = false;
-    for (const [host, cleanup] of mounted) {
+    const currentUrl = options.currentUrl();
+    if (currentUrl !== previousUrl) {
+      previousUrl = currentUrl;
+      options.onPageContextChange?.();
+    }
+    for (const [host, entry] of mounted) {
       if (!host.isConnected) {
-        cleanup();
+        entry.cleanup();
         mounted.delete(host);
       }
     }
 
     for (const host of options.root.querySelectorAll<HTMLElement>('[data-testid="HoverCard"], [role="dialog"], [role="tooltip"]')) {
+      const hasHoverSignals = host.dataset.testid === 'HoverCard' || Boolean(host.querySelector('img[src*="profile_images"]'));
+      if (!hasHoverSignals) continue;
       mount(host, 'hover-card', extractHoverCardProfile(host));
     }
 
@@ -39,7 +52,7 @@ export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
     const userName = profileRoot?.querySelector<HTMLElement>('[data-testid="UserName"]');
     const profileHost = userName?.parentElement ?? profileRoot;
     if (profileRoot && profileHost) {
-      mount(profileHost, 'full-profile', extractFullProfile(profileRoot, options.currentUrl()));
+      mount(profileHost, 'full-profile', extractFullProfile(profileRoot, currentUrl));
     }
   };
 
@@ -56,7 +69,7 @@ export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
   return {
     disconnect() {
       observer.disconnect();
-      for (const cleanup of mounted.values()) cleanup();
+      for (const entry of mounted.values()) entry.cleanup();
       mounted.clear();
     },
   };

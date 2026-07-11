@@ -13,9 +13,12 @@ export interface MountContextoSurfaceOptions {
 }
 
 export function detectXTheme(host: HTMLElement): 'light' | 'dark' {
-  const channels = getComputedStyle(host).backgroundColor.match(/\d+/g)?.map(Number);
-  if (!channels || channels.length < 3) return 'light';
-  return (channels[0] * 299 + channels[1] * 587 + channels[2] * 114) / 1000 < 128 ? 'dark' : 'light';
+  for (let node: HTMLElement | null = host; node; node = node.parentElement) {
+    const channels = getComputedStyle(node).backgroundColor.match(/\d+(?:\.\d+)?/g)?.map(Number);
+    if (!channels || channels.length < 3 || (channels.length > 3 && channels[3] === 0)) continue;
+    return (channels[0] * 299 + channels[1] * 587 + channels[2] * 114) / 1000 < 128 ? 'dark' : 'light';
+  }
+  return 'light';
 }
 
 export function mountContextoSurface({ surface, send, drafts, css, theme }: MountContextoSurfaceOptions): () => void {

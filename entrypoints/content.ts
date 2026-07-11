@@ -14,6 +14,7 @@ export default defineContentScript({
     const observer = createXSurfaceObserver({
       root: document.body,
       currentUrl: () => location.href,
+      onPageContextChange: () => drafts.clearAll(),
       mount: (surface) => mountContextoSurface({
         surface,
         send,

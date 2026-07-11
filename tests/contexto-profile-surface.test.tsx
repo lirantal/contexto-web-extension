@@ -75,4 +75,45 @@ describe('ContextoProfileSurface', () => {
     expect(screen.getByRole('button', { name: 'Retry save' })).toBeVisible();
     expect(screen.getByLabelText('Display name')).toHaveValue('Theo – t3.gg');
   });
+
+  it('recovers when the runtime rejects a save request', async () => {
+    const send = vi.fn()
+      .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [] } })
+      .mockRejectedValueOnce(new Error('Extension unavailable'));
+    renderSurface(send);
+    fireEvent.click(await screen.findByRole('button', { name: 'Save to Contexto' }));
+    expect(await screen.findByText('Extension unavailable')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Retry save' })).toBeEnabled();
+  });
+
+  it('restores an existing-account edit after a transient remount', async () => {
+    const drafts = new AccountDraftStore();
+    const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', tags: [], folders: [] };
+    const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
+      ? { ok: true, lookup: true, lookupAccount: saved }
+      : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
+    const first = render(<ContextoProfileSurface profile={profile} kind="hover-card" send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'CEO' } });
+    first.unmount();
+    render(<ContextoProfileSurface profile={profile} kind="hover-card" send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
+    expect(await screen.findByLabelText('Position')).toHaveValue('CEO');
+  });
+
+  it('retries a failed lookup without discarding the prefilled editor', async () => {
+    let lookupAttempts = 0;
+    const send = vi.fn(async (message) => {
+      if (message.type === 'contexto:account:lookup') {
+        lookupAttempts += 1;
+        if (lookupAttempts === 1) throw new Error('Lookup unavailable');
+        return { ok: true, lookup: true, lookupAccount: undefined };
+      }
+      return { ok: true, lookups: { companies: [], tags: [], folders: [] } };
+    });
+    renderSurface(send);
+    expect(await screen.findByText('Lookup unavailable')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry lookup' }));
+    expect(await screen.findByLabelText('Display name')).toHaveValue('Theo – t3.gg');
+  });
 });

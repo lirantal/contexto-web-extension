@@ -23,10 +23,10 @@ function readDisplayName(surface: HTMLElement, handle: string): string | undefin
   return values.find((value, index) => index !== handleIndex && !value.startsWith('@'));
 }
 
-function snapshot(surface: HTMLElement, profileUrl: string): ProfileSnapshot | null {
+function snapshot(surface: HTMLElement, profileUrl: string, identityHandle?: string): ProfileSnapshot | null {
   const parsed = parseXProfileUrl(profileUrl);
   if (!parsed) return null;
-  const handle = readHandle(surface) ?? parsed.handle;
+  const handle = identityHandle ?? readHandle(surface) ?? parsed.handle;
   return {
     ...parsed,
     handle,
@@ -52,5 +52,9 @@ export function extractHoverCardProfile(surface: HTMLElement): ProfileSnapshot |
 }
 
 export function extractFullProfile(surface: HTMLElement, currentUrl: string): ProfileSnapshot | null {
-  return snapshot(surface, currentUrl);
+  const parsed = parseXProfileUrl(currentUrl);
+  const userName = surface.querySelector<HTMLElement>('[data-testid="UserName"]');
+  const scopedHandle = userName ? readHandle(userName) : undefined;
+  if (!parsed || !scopedHandle || scopedHandle.toLowerCase() !== parsed.handle.toLowerCase()) return null;
+  return snapshot(surface, currentUrl, parsed.handle);
 }

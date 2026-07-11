@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { mountContextoSurface } from '@/src/x/mount-contexto-surface';
+import { detectXTheme, mountContextoSurface } from '@/src/x/mount-contexto-surface';
 import { AccountDraftStore } from '@/src/x/draft-store';
 
 vi.mock('@/src/ui/ContextoProfileSurface', () => ({
@@ -22,5 +22,12 @@ describe('mountContextoSurface', () => {
     expect(mountHost?.getAttribute('data-theme')).toBe('dark');
     cleanup();
     expect(host.querySelector('[data-contexto-surface]')).toBeNull();
+  });
+
+  it('inherits light theme through transparent X containers', () => {
+    const host = document.createElement('div');
+    document.body.style.backgroundColor = 'rgb(255, 255, 255)';
+    document.body.append(host);
+    expect(detectXTheme(host)).toBe('light');
   });
 });
