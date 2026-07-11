@@ -23,6 +23,7 @@ button:focus-visible,input:focus-visible { outline:2px solid var(--ctx-accent); 
 .value-options { display:grid; max-height:140px; overflow:auto; border:1px solid var(--ctx-border); border-radius:9px; }
 .value-options button { border:0; border-radius:0; text-align:left; }
 .contexto-error { margin:0; color:#d92d20; }
+.contexto-success { margin:0; color:#18864b; }
 .contexto-summary h3,.contexto-summary p { margin:0; }
 .form-actions { flex-wrap:wrap; }
 @media (max-width:360px) { .field-row { display:grid; } }
