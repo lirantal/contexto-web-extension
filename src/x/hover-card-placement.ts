@@ -21,6 +21,7 @@ function nearestCommonAncestor(first: HTMLElement, second: HTMLElement, boundary
 function innerCardContainer(host: HTMLElement): HTMLElement {
   const userName = host.querySelector<HTMLElement>('[data-testid="UserName"]');
   if (!userName) return host;
+  if (userName.parentElement === host) return host;
 
   let container = userName;
   while (container.parentElement && container.parentElement !== host) container = container.parentElement;
@@ -28,20 +29,22 @@ function innerCardContainer(host: HTMLElement): HTMLElement {
 }
 
 export function resolveHoverCardInsertion(host: HTMLElement, handle: string): HoverCardInsertion {
-  const anchors = Array.from(host.querySelectorAll<HTMLAnchorElement>('a[href]'));
-  const following = anchors.find((anchor) => anchorPath(anchor)?.endsWith('/following'));
-  const followers = anchors.find((anchor) => /\/(?:followers|verified_followers)$/.test(anchorPath(anchor) ?? ''));
+  const container = innerCardContainer(host);
+  const normalizedHandle = handle.replace(/^@/, '').toLowerCase();
+  const profilePath = `/${normalizedHandle}`;
+  const anchors = Array.from(container.querySelectorAll<HTMLAnchorElement>('a[href]'));
+  const pathFor = (anchor: HTMLAnchorElement) => anchorPath(anchor)?.toLowerCase();
+  const following = anchors.find((anchor) => pathFor(anchor) === `${profilePath}/following`);
+  const followerPaths = new Set([`${profilePath}/followers`, `${profilePath}/verified_followers`]);
+  const followers = anchors.find((anchor) => followerPaths.has(pathFor(anchor) ?? ''));
 
   if (following && followers) {
-    const countsRow = nearestCommonAncestor(following, followers, host);
-    if (countsRow?.parentElement && host.contains(countsRow.parentElement)) {
+    const countsRow = nearestCommonAncestor(following, followers, container);
+    if (countsRow?.parentElement && container.contains(countsRow.parentElement)) {
       return { parent: countsRow.parentElement, before: countsRow.nextSibling };
     }
   }
 
-  const container = innerCardContainer(host);
-  const normalizedHandle = handle.replace(/^@/, '').toLowerCase();
-  const profilePath = `/${normalizedHandle}`;
   const profileCta = Array.from(container.querySelectorAll<HTMLAnchorElement>('a[role="button"][href]'))
     .find((anchor) => anchorPath(anchor)?.toLowerCase() === profilePath);
 
