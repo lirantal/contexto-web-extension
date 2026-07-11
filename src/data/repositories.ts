@@ -5,6 +5,7 @@ import type {
   AccountFilters,
   AccountSummary,
   AccountTag,
+  AccountContextSaveInput,
   AccountUpdateInput,
   BackupEnvelope,
   BackupRecord,
@@ -188,6 +189,7 @@ export async function updateAccount(accountId: string, input: AccountUpdateInput
   if (input.relationshipSource !== undefined) patch.relationshipSource = input.relationshipSource.trim();
   if (input.bioSnapshot !== undefined) patch.bioSnapshot = input.bioSnapshot.trim();
   if (input.companyId !== undefined) patch.companyId = input.companyId;
+  if (input.companyName !== undefined && !input.companyName.trim()) patch.companyId = undefined;
   if (input.companyName?.trim()) {
     const company = await upsertCompanyByName(input.companyName, database);
     patch.companyId = company.id;
@@ -196,6 +198,55 @@ export async function updateAccount(accountId: string, input: AccountUpdateInput
   await database.accounts.update(accountId, patch);
   await recordChange(database, 'account', accountId, 'update');
   return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+}
+
+async function syncAccountTags(accountId: string, names: string[], database: ContextoDatabase): Promise<void> {
+  const uniqueNames = [...new Map(names.map((name) => [normalizeName(name), name.trim()])).values()].filter(Boolean);
+  const tags = await Promise.all(uniqueNames.map((name) => upsertTagByName(name, database)));
+  const selectedIds = new Set(tags.map((tag) => tag.id));
+  const current = await database.accountTags.where('accountId').equals(accountId).toArray();
+  await database.accountTags.bulkDelete(current.filter((join) => !selectedIds.has(join.tagId)).map((join) => join.id));
+  for (const tag of tags) {
+    if (!current.some((join) => join.tagId === tag.id)) {
+      await database.accountTags.add({ id: createId('account_tag'), accountId, tagId: tag.id, createdAt: nowIso() });
+    }
+  }
+}
+
+async function syncAccountFolders(accountId: string, names: string[], database: ContextoDatabase): Promise<void> {
+  const uniqueNames = [...new Map(names.map((name) => [normalizeName(name), name.trim()])).values()].filter(Boolean);
+  const folders = await Promise.all(uniqueNames.map((name) => upsertFolderByName(name, database)));
+  const selectedIds = new Set(folders.map((folder) => folder.id));
+  const current = await database.folderAccounts.where('accountId').equals(accountId).toArray();
+  await database.folderAccounts.bulkDelete(current.filter((join) => !selectedIds.has(join.folderId)).map((join) => join.id));
+  for (const folder of folders) {
+    if (!current.some((join) => join.folderId === folder.id)) {
+      await database.folderAccounts.add({ id: createId('folder_account'), folderId: folder.id, accountId, createdAt: nowIso() });
+    }
+  }
+}
+
+export async function saveAccountContext(input: AccountContextSaveInput, database = db): Promise<AccountSummary> {
+  return database.transaction(
+    'rw',
+    [
+      database.accounts,
+      database.companies,
+      database.tags,
+      database.accountTags,
+      database.folders,
+      database.folderAccounts,
+      database.notes,
+      database.changeLog,
+    ],
+    async () => {
+      const account = await ensureAccountFromProfile(input.profile, database);
+      const updated = await updateAccount(account.id, input.metadata, database);
+      await syncAccountTags(updated.id, input.tagNames, database);
+      await syncAccountFolders(updated.id, input.folderNames, database);
+      return getAccountSummary(updated.id, database) as Promise<AccountSummary>;
+    },
+  );
 }
 
 export async function addNote(accountId: string, body: string, database = db): Promise<AccountSummary> {

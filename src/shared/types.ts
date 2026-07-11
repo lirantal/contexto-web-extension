@@ -157,6 +157,13 @@ export interface AccountUpdateInput {
   bioSnapshot?: string;
 }
 
+export interface AccountContextSaveInput {
+  profile: ProfileSnapshot;
+  metadata: AccountUpdateInput;
+  tagNames: string[];
+  folderNames: string[];
+}
+
 export interface ContextoSettings {
   myXHandle: string;
   lastDashboardView: 'accounts' | 'search' | 'settings';

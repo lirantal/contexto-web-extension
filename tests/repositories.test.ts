@@ -10,6 +10,7 @@ import {
   importBackup,
   listAccountSummaries,
   resetDatabaseForTests,
+  saveAccountContext,
   updateAccount,
 } from '@/src/data/repositories';
 
@@ -74,5 +75,60 @@ describe('Contexto repositories', () => {
     await importBackup(backup, database);
 
     expect(await listAccountSummaries({}, database)).toHaveLength(1);
+  });
+
+  it('keeps a missing-account lookup read-only', async () => {
+    expect(await getAccountByHandle('x', '@unknown', database)).toBeUndefined();
+    expect(await database.accounts.count()).toBe(0);
+    expect(await database.changeLog.count()).toBe(0);
+  });
+
+  it('saves profile metadata, tags, and folders as complete sets', async () => {
+    const first = await saveAccountContext({
+      profile: {
+        platform: 'x',
+        handle: 'ExampleDev',
+        displayName: 'X Display Name',
+        profileUrl: 'https://x.com/exampledev',
+        avatarUrl: 'https://example.com/avatar.png',
+      },
+      metadata: {
+        displayName: 'Saved Name',
+        profession: 'Developer',
+        position: 'CTO',
+        companyName: 'Example Corp',
+        location: 'Berlin',
+        relationshipSource: 'Conference',
+      },
+      tagNames: ['Security', 'Founder'],
+      folderNames: ['Friends', 'Speakers'],
+    }, database);
+
+    expect(first).toMatchObject({ displayName: 'Saved Name', position: 'CTO' });
+    expect(first.tags.map(({ name }) => name).sort()).toEqual(['Founder', 'Security']);
+    expect(first.folders.map(({ name }) => name).sort()).toEqual(['Friends', 'Speakers']);
+
+    const second = await saveAccountContext({
+      profile: {
+        platform: 'x',
+        handle: 'ExampleDev',
+        displayName: 'Changed on X',
+        profileUrl: 'https://x.com/exampledev',
+      },
+      metadata: {
+        displayName: 'Saved Name',
+        profession: 'Developer',
+        position: 'CTO',
+        companyName: 'Example Corp',
+        location: 'Berlin',
+        relationshipSource: 'Conference',
+      },
+      tagNames: ['Founder'],
+      folderNames: ['Speakers'],
+    }, database);
+
+    expect(second.displayName).toBe('Saved Name');
+    expect(second.tags.map(({ name }) => name)).toEqual(['Founder']);
+    expect(second.folders.map(({ name }) => name)).toEqual(['Speakers']);
   });
 });
