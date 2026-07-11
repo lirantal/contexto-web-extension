@@ -3,10 +3,38 @@ import { createXSurfaceObserver } from '@/src/x/surface-observer';
 
 async function flushMutations() {
   await Promise.resolve();
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 110));
 }
 
 describe('X surface observer', () => {
+  it('debounces mutation bursts before scanning X surfaces', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '';
+    const querySelectorAll = vi.spyOn(document.body, 'querySelectorAll');
+    let observer: ReturnType<typeof createXSurfaceObserver> | undefined;
+    try {
+      observer = createXSurfaceObserver({
+        root: document.body,
+        currentUrl: () => 'https://x.com/home',
+        mount: vi.fn(() => vi.fn()),
+      });
+
+      for (let index = 0; index < 50; index += 1) {
+        document.body.append(document.createElement('div'));
+      }
+      await Promise.resolve();
+
+      expect(querySelectorAll).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(99);
+      expect(querySelectorAll).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(querySelectorAll).toHaveBeenCalledTimes(1);
+    } finally {
+      observer?.disconnect();
+      vi.useRealTimers();
+    }
+  });
+
   it('mounts a hover card once and cleans it up when removed', async () => {
     document.body.innerHTML = '';
     const cleanup = vi.fn();

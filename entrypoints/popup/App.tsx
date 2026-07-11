@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ExternalLink, Search, Settings, Users } from 'lucide-react';
 import { buildXSearchQuery, buildXSearchUrl, canRunXSearch, normalizeXHandle } from '@/src/shared/platforms/x';
 import {

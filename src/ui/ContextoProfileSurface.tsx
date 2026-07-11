@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
 import type { AccountSummary, LookupData, ProfileSnapshot } from '@/src/shared/types';
 import type { XSurfaceKind } from '@/src/x/extract-profile';

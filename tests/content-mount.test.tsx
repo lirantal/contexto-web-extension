@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { detectXTheme, mountContextoSurface } from '@/src/x/mount-contexto-surface';
 import { AccountDraftStore } from '@/src/x/draft-store';

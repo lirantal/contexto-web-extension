@@ -17,6 +17,7 @@ export interface XSurfaceObserverOptions {
 export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
   const mounted = new Map<HTMLElement, { identity: string; cleanup: () => void }>();
   let queued = false;
+  let scanTimer: ReturnType<typeof setTimeout> | undefined;
   let previousUrl = options.currentUrl();
 
   const mount = (host: HTMLElement, kind: XSurfaceKind, profile: ProfileSnapshot | null) => {
@@ -60,7 +61,7 @@ export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
   const queueScan = () => {
     if (queued) return;
     queued = true;
-    queueMicrotask(scan);
+    scanTimer = setTimeout(scan, 100);
   };
 
   const observer = new MutationObserver(queueScan);
@@ -70,6 +71,7 @@ export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
   return {
     disconnect() {
       observer.disconnect();
+      if (scanTimer !== undefined) clearTimeout(scanTimer);
       for (const entry of mounted.values()) entry.cleanup();
       mounted.clear();
     },
