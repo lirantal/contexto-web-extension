@@ -14,6 +14,16 @@ vi.mock('@/src/ui/ContextoHoverLauncher', () => ({
 describe('mountContextoSurface', () => {
   it('mounts an isolated inline root and removes it during cleanup', () => {
     const host = document.createElement('div');
+    host.style.position = 'fixed';
+    host.innerHTML = `
+      <div data-testid="inner-card">
+        <div data-testid="UserName"><span>Theo</span><span>@theo</span></div>
+        <div data-testid="counts">
+          <a href="/theo/following">12 Following</a>
+          <a href="/theo/followers">34 Followers</a>
+        </div>
+        <a role="button" href="/theo">View Profile</a>
+      </div>`;
     document.body.append(host);
     const cleanup = mountContextoSurface({
       surface: {
@@ -28,9 +38,12 @@ describe('mountContextoSurface', () => {
     expect(mountHost?.getAttribute('data-theme')).toBe('dark');
     expect(mountHost?.shadowRoot).toHaveTextContent('Hover Contexto launcher');
     expect(mountHost?.shadowRoot).not.toHaveTextContent('Full Contexto editor');
-    expect(host.style.position).toBe('relative');
+    expect(mountHost?.parentElement).toBe(host.querySelector('[data-testid="inner-card"]'));
+    expect(mountHost?.previousElementSibling).toBe(host.querySelector('[data-testid="counts"]'));
+    expect(mountHost?.nextElementSibling).toBe(host.querySelector('a[role="button"]'));
+    expect(host.style.position).toBe('fixed');
     cleanup();
-    expect(host.style.position).toBe('');
+    expect(host.style.position).toBe('fixed');
     expect(host.querySelector('[data-contexto-surface]')).toBeNull();
   });
 

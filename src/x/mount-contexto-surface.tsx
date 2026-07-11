@@ -6,6 +6,7 @@ import type { AccountDraftStore } from './draft-store';
 import { ContextoHoverLauncher } from '@/src/ui/ContextoHoverLauncher';
 import type { ProfileSnapshot } from '@/src/shared/types';
 import type { ObservedXSurface } from './surface-observer';
+import { resolveHoverCardInsertion } from './hover-card-placement';
 
 export interface MountContextoSurfaceOptions {
   surface: ObservedXSurface;
@@ -26,10 +27,6 @@ export function detectXTheme(host: HTMLElement): 'light' | 'dark' {
 }
 
 export function mountContextoSurface({ surface, send, drafts, css, theme, openPageEditor = () => undefined }: MountContextoSurfaceOptions): () => void {
-  const previousHostPosition = surface.host.style.position;
-  const hostPosition = getComputedStyle(surface.host).position;
-  const positionHoverHost = surface.kind === 'hover-card' && (!hostPosition || hostPosition === 'static');
-  if (positionHoverHost) surface.host.style.position = 'relative';
   const mountHost = document.createElement('div');
   mountHost.dataset.contextoSurface = surface.kind;
   mountHost.dataset.theme = theme;
@@ -38,7 +35,12 @@ export function mountContextoSurface({ surface, send, drafts, css, theme, openPa
   style.textContent = css;
   const app = document.createElement('div');
   shadow.append(style, app);
-  surface.host.append(mountHost);
+  if (surface.kind === 'hover-card') {
+    const { parent, before } = resolveHoverCardInsertion(surface.host, surface.profile.handle);
+    parent.insertBefore(mountHost, before);
+  } else {
+    surface.host.append(mountHost);
+  }
   const root = createRoot(app);
   flushSync(() => {
     root.render(surface.kind === 'hover-card'
@@ -49,6 +51,5 @@ export function mountContextoSurface({ surface, send, drafts, css, theme, openPa
   return () => {
     root.unmount();
     mountHost.remove();
-    if (positionHoverHost) surface.host.style.position = previousHostPosition;
   };
 }
