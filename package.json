@@ -11,6 +11,7 @@
     "build": "wxt build -b chrome",
     "zip": "wxt zip -b chrome",
     "compile": "tsc --noEmit",
+    "verify:popup": "node scripts/verify-popup-bundle.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

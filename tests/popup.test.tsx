@@ -11,6 +11,11 @@ const mocks = vi.hoisted(() => ({
   setSearchState: vi.fn(),
   getHistory: vi.fn(),
   recordTarget: vi.fn(),
+  listAccounts: vi.fn(),
+}));
+
+vi.mock('@/src/data/repositories', () => ({
+  listTargetAccountSuggestions: mocks.listAccounts,
 }));
 
 vi.mock('@/src/shared/settings', () => ({
@@ -35,6 +40,7 @@ describe('popup search form', () => {
     mocks.setSearchState.mockResolvedValue(undefined);
     mocks.getHistory.mockResolvedValue([]);
     mocks.recordTarget.mockResolvedValue([]);
+    mocks.listAccounts.mockResolvedValue([]);
   });
 
   it('restores every search field when the popup opens again', async () => {
@@ -76,5 +82,18 @@ describe('popup search form', () => {
       since: '2026-01-01',
       until: '2026-02-01',
     }));
+  });
+
+  it('applies available popup state when another startup source fails', async () => {
+    mocks.getSettings.mockResolvedValue({ myXHandle: '@available', lastDashboardView: 'accounts' });
+    mocks.getSearchState.mockRejectedValue(new Error('Search state unavailable'));
+    mocks.getHistory.mockRejectedValue(new Error('History unavailable'));
+    mocks.listAccounts.mockRejectedValue(new Error('Accounts unavailable'));
+
+    render(<App />);
+
+    expect(await screen.findByLabelText('My X handle')).toHaveValue('@available');
+    expect(screen.getByLabelText(/Other person/)).toHaveValue('');
+    expect(screen.getByLabelText('Keyword')).toHaveValue('');
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { ExternalLink, Search, Settings, Users } from 'lucide-react';
 import { listTargetAccountSuggestions } from '@/src/data/repositories';
@@ -42,10 +42,14 @@ function App() {
   useEffect(() => {
     let active = true;
 
-    Promise.all([settingsItem.getValue(), popupSearchStateItem.getValue()]).then(([savedSettings, savedSearch]) => {
+    Promise.allSettled([settingsItem.getValue(), popupSearchStateItem.getValue()]).then(([settingsResult, searchResult]) => {
       if (!active) return;
-      setSettings(savedSettings);
-      setSearchState(savedSearch);
+      if (settingsResult.status === 'fulfilled') {
+        setSettings(settingsResult.value);
+      }
+      if (searchResult.status === 'fulfilled') {
+        setSearchState(searchResult.value);
+      }
     });
 
     return () => {

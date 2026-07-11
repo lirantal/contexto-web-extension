@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import type { TargetHandleSuggestion } from '../shared/target-handle-suggestions';
