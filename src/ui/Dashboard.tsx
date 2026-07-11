@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   ArchiveRestore,
@@ -27,6 +27,7 @@ import {
 import { buildXSearchQuery, buildXSearchUrl, labelSearchDirection, normalizeXHandle } from '@/src/shared/platforms/x';
 import { defaultSettings, settingsItem } from '@/src/shared/settings';
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
+import { getAdjacentAccountId } from './account-navigation';
 
 const searchDirections: SearchDirection[] = ['me-to-them', 'them-to-me', 'from-profile', 'to-profile', 'mentions'];
 
@@ -37,6 +38,7 @@ export function Dashboard() {
   const [newHandle, setNewHandle] = useState('');
   const [newDisplayName, setNewDisplayName] = useState('');
   const [status, setStatus] = useState('');
+  const activeRowRef = useRef<HTMLButtonElement>(null);
 
   const accounts = useLiveQuery(() => listAccountSummaries(filters), [
     filters.query,
@@ -52,6 +54,50 @@ export function Dashboard() {
   useEffect(() => {
     settingsItem.getValue().then(setSettings);
   }, []);
+
+  useEffect(() => {
+    if (!accounts) return;
+
+    if (accounts.length === 0) {
+      setSelectedId(undefined);
+      return;
+    }
+
+    if (!accounts.some((account) => account.id === selectedId)) {
+      setSelectedId(accounts[0].id);
+    }
+  }, [accounts, selectedId]);
+
+  useEffect(() => {
+    if (!accounts?.length) return;
+    const accountIds = accounts.map((account) => account.id);
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+
+      const target = event.target;
+      if (
+        target instanceof HTMLElement
+        && (
+          target.isContentEditable
+          || ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)
+        )
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      const offset = event.key === 'ArrowDown' ? 1 : -1;
+      setSelectedId((currentId) => getAdjacentAccountId(accountIds, currentId, offset));
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [accounts]);
+
+  useEffect(() => {
+    activeRowRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [selected?.id]);
 
   async function saveSettings(next: ContextoSettings) {
     setSettings(next);
@@ -165,14 +211,19 @@ export function Dashboard() {
       <section className="account-list" aria-label="Accounts">
         <div className="list-header">
           <h2>Accounts</h2>
-          <span>{accounts?.length ?? 0}</span>
+          <div className="list-meta">
+            <small>↑ ↓ navigate</small>
+            <span>{accounts?.length ?? 0}</span>
+          </div>
         </div>
         <div className="account-results">
           {accounts?.map((account) => (
             <button
               key={account.id}
               className={account.id === selected?.id ? 'account-row active' : 'account-row'}
+              ref={account.id === selected?.id ? activeRowRef : undefined}
               onClick={() => setSelectedId(account.id)}
+              aria-current={account.id === selected?.id ? 'true' : undefined}
             >
               <span className="avatar-fallback">{account.displayName.slice(0, 1).toUpperCase()}</span>
               <span>
@@ -186,7 +237,7 @@ export function Dashboard() {
       </section>
 
       <section className="detail-pane" aria-label="Account details">
-        {selected ? <AccountDetail account={selected} settings={settings} /> : <EmptyDetail />}
+        {selected ? <AccountDetail key={selected.id} account={selected} settings={settings} /> : <EmptyDetail />}
       </section>
     </main>
   );

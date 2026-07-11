@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buildXSearchQuery, buildXSearchUrl, normalizeXHandle, parseXProfileUrl } from '@/src/shared/platforms/x';
+import {
+  buildXSearchQuery,
+  buildXSearchUrl,
+  canRunXSearch,
+  normalizeXHandle,
+  parseXProfileUrl,
+} from '@/src/shared/platforms/x';
 
 const baseFilters = {
   viewerHandle: '@liran_tal',
@@ -24,6 +30,21 @@ describe('X platform adapter', () => {
       'from:liran_tal to:example_dev security since:2026-01-01 until:2026-02-01',
     );
     expect(buildXSearchQuery({ ...baseFilters, direction: 'them-to-me' })).toContain('from:example_dev to:liran_tal');
+  });
+
+  it('builds useful searches with only my handle', () => {
+    const filters = { viewerHandle: '@liran_tal', targetHandle: '', keyword: '', since: '', until: '' };
+
+    expect(buildXSearchQuery({ ...filters, direction: 'me-to-them' })).toBe('from:liran_tal');
+    expect(buildXSearchQuery({ ...filters, direction: 'them-to-me' })).toBe('to:liran_tal');
+  });
+
+  it('requires the handle used by each search action', () => {
+    expect(canRunXSearch({ viewerHandle: '@liran_tal', targetHandle: '', direction: 'me-to-them' })).toBe(true);
+    expect(canRunXSearch({ viewerHandle: '', targetHandle: '@example_dev', direction: 'me-to-them' })).toBe(false);
+    expect(canRunXSearch({ viewerHandle: '', targetHandle: '@example_dev', direction: 'from-profile' })).toBe(true);
+    expect(canRunXSearch({ viewerHandle: '@liran_tal', targetHandle: '', direction: 'from-profile' })).toBe(false);
+    expect(canRunXSearch({ viewerHandle: '', targetHandle: '@example_dev', direction: 'mentions' })).toBe(true);
   });
 
   it('encodes X search URLs', () => {

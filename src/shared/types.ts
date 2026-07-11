@@ -162,6 +162,13 @@ export interface ContextoSettings {
   lastDashboardView: 'accounts' | 'search' | 'settings';
 }
 
+export interface PopupSearchState {
+  targetHandle: string;
+  keyword: string;
+  since: string;
+  until: string;
+}
+
 export interface LookupData {
   companies: Company[];
   tags: Tag[];

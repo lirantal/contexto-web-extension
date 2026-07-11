@@ -63,12 +63,14 @@ export function buildXSearchQuery(filters: XSearchFilters): string {
   const parts: string[] = [];
 
   const direction = filters.direction;
-  if (direction === 'me-to-them' && viewer && target) {
-    parts.push(`from:${viewer}`, `to:${target}`);
+  if (direction === 'me-to-them') {
+    if (viewer) parts.push(`from:${viewer}`);
+    if (target) parts.push(`to:${target}`);
   }
 
-  if (direction === 'them-to-me' && viewer && target) {
-    parts.push(`from:${target}`, `to:${viewer}`);
+  if (direction === 'them-to-me') {
+    if (target) parts.push(`from:${target}`);
+    if (viewer) parts.push(`to:${viewer}`);
   }
 
   if (direction === 'from-profile' && target) {
@@ -96,6 +98,25 @@ export function buildXSearchQuery(filters: XSearchFilters): string {
   }
 
   return parts.join(' ').trim();
+}
+
+export function canRunXSearch(filters: XSearchFilters): boolean {
+  const viewer = filters.viewerHandle?.trim() ?? '';
+  const target = filters.targetHandle?.trim() ?? '';
+
+  if (filters.direction === 'me-to-them' || filters.direction === 'them-to-me') {
+    return isValidXHandle(viewer) && (!target || isValidXHandle(target));
+  }
+
+  if (
+    filters.direction === 'from-profile'
+    || filters.direction === 'to-profile'
+    || filters.direction === 'mentions'
+  ) {
+    return isValidXHandle(target);
+  }
+
+  return false;
 }
 
 export function buildXSearchUrl(filters: XSearchFilters): string {

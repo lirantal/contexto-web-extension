@@ -372,3 +372,24 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+.list-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.list-meta small {
+  color: #748076;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.list-meta span {
+  min-width: 26px;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #e8efea;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}

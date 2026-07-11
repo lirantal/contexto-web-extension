@@ -1,5 +1,5 @@
 .popup-shell {
-  width: 360px;
+  width: 380px;
   min-height: 480px;
   padding: 14px;
   background: #f7f8f5;
@@ -109,3 +109,67 @@
 .popup-shell footer > * {
   flex: 1;
 }
+
+.search-fields label {
+  position: relative;
+}
+
+.search-fields label > small {
+  color: #707970;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.optional-label {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: #707970;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.action-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.action-heading h2 {
+  margin: 0;
+  color: #313a32;
+  font-size: 13px;
+}
+
+.action-heading p {
+  font-size: 10px;
+  text-align: right;
+}
+
+.popup-shell .search-action {
+  justify-content: flex-start;
+  min-height: 47px;
+  padding: 7px 10px;
+  text-align: left;
+}
+
+.search-action > svg {
+  flex: 0 0 auto;
+  color: #0f7f76;
+}
+
+.search-action > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-action strong {
+  font-size: 12px;
+}
+
+.search-action small {
