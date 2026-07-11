@@ -4,7 +4,11 @@ import { detectXTheme, mountContextoSurface } from '@/src/x/mount-contexto-surfa
 import { AccountDraftStore } from '@/src/x/draft-store';
 
 vi.mock('@/src/ui/ContextoProfileSurface', () => ({
-  ContextoProfileSurface: () => <div>Inline Contexto</div>,
+  ContextoProfileSurface: () => <div>Full Contexto editor</div>,
+}));
+
+vi.mock('@/src/ui/ContextoHoverLauncher', () => ({
+  ContextoHoverLauncher: () => <div>Hover Contexto launcher</div>,
 }));
 
 describe('mountContextoSurface', () => {
@@ -17,14 +21,34 @@ describe('mountContextoSurface', () => {
         profile: { platform: 'x', handle: 'theo', profileUrl: 'https://x.com/theo' },
       },
       send: vi.fn(), drafts: new AccountDraftStore(), css: '.contexto-surface{}', theme: 'dark',
+      openPageEditor: vi.fn(),
     });
     const mountHost = host.querySelector<HTMLElement>('[data-contexto-surface="hover-card"]');
     expect(mountHost?.shadowRoot).not.toBeNull();
     expect(mountHost?.getAttribute('data-theme')).toBe('dark');
+    expect(mountHost?.shadowRoot).toHaveTextContent('Hover Contexto launcher');
+    expect(mountHost?.shadowRoot).not.toHaveTextContent('Full Contexto editor');
     cleanup();
     expect(host.querySelector('[data-contexto-surface]')).toBeNull();
   });
 
+
+  it('routes full profiles to the complete editor', () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const cleanup = mountContextoSurface({
+      surface: {
+        kind: 'full-profile', host,
+        profile: { platform: 'x', handle: 'theo', profileUrl: 'https://x.com/theo' },
+      },
+      send: vi.fn(), drafts: new AccountDraftStore(), css: '.contexto-surface{}', theme: 'light',
+      openPageEditor: vi.fn(),
+    });
+    const mountHost = host.querySelector<HTMLElement>('[data-contexto-surface="full-profile"]');
+    expect(mountHost?.shadowRoot).toHaveTextContent('Full Contexto editor');
+    expect(mountHost?.shadowRoot).not.toHaveTextContent('Hover Contexto launcher');
+    cleanup();
+  });
   it('inherits light theme through transparent X containers', () => {
     const host = document.createElement('div');
     document.body.style.backgroundColor = 'rgb(255, 255, 255)';

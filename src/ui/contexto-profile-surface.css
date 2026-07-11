@@ -5,6 +5,10 @@
 .contexto-header { align-items:center; justify-content:space-between; color:var(--ctx-accent); }
 .contexto-header strong { font-size:13px; letter-spacing:.02em; }
 .status-pill { border-radius:999px; padding:3px 8px; background:color-mix(in srgb,var(--ctx-muted) 15%,var(--ctx-bg)); color:var(--ctx-muted); font-size:12px; }
+.contexto-hover-launcher { --ctx-bg:#fff; --ctx-text:#0f1419; --ctx-muted:#536471; --ctx-border:#eff3f4; --ctx-accent:#5b3fd6; display:flex; box-sizing:border-box; align-items:center; gap:8px; min-height:36px; border-top:1px solid var(--ctx-border); background:var(--ctx-bg); color:var(--ctx-text); padding:6px 16px; font-size:12px; }
+:host([data-theme="dark"]) .contexto-hover-launcher { --ctx-bg:#000; --ctx-text:#e7e9ea; --ctx-muted:#71767b; --ctx-border:#2f3336; --ctx-accent:#9b8afb; }
+.contexto-hover-launcher strong { margin-right:auto; color:var(--ctx-accent); }
+.contexto-hover-launcher button { min-height:28px; padding:4px 10px; }
 .contexto-form,.contexto-summary,.multi-value-field { display:grid; gap:8px; }
 .contexto-form,.contexto-summary { margin-top:10px; }
 .field-row > label { flex:1; min-width:0; }
