@@ -2,11 +2,6 @@ import { defineConfig } from 'wxt';
 
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
-  react: {
-    vite: {
-      jsxRuntime: 'classic',
-    },
-  },
   manifest: {
     name: 'Contexto',
     description: 'A local-first relationship manager for practitioner community work on X.',

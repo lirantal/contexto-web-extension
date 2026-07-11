@@ -1,14 +1,25 @@
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const output = resolve('.output/chrome-mv3');
-const html = await readFile(resolve(output, 'popup.html'), 'utf8');
-const src = html.match(/<script[^>]+src="([^"]+)"/)?.[1];
+export async function verifyPopupBundle(output = resolve('.output/chrome-mv3')) {
+  const html = await readFile(resolve(output, 'popup.html'), 'utf8');
+  const src = html.match(/<script[^>]+src="([^"]+)"/)?.[1];
 
-if (!src) throw new Error('popup.html has no module entry');
+  if (!src) throw new Error('popup.html has no module entry');
 
-const bundle = await readFile(resolve(output, src.replace(/^\//, '')), 'utf8');
-if (/\bReact\.createElement\b/.test(bundle)) {
-  throw new Error('Popup bundle contains an unbound classic-JSX React reference');
+  const source = resolve(output, src.replace(/^\//, ''));
+  await readFile(source, 'utf8');
+
+  const files = await readdir(output, { recursive: true });
+  for (const file of files.filter((file) => file.endsWith('.js'))) {
+    const bundle = await readFile(resolve(output, file), 'utf8');
+    if (/\bjsxDEV\s*\(/.test(bundle)) throw new Error(`${file} contains development JSX output`);
+    if (/\b__self\s*:/.test(bundle)) throw new Error(`${file} contains classic JSX metadata`);
+  }
 }
-console.log('Popup bundle React binding verified');
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await verifyPopupBundle();
+  console.log('Release bundle JSX transform verified');
+}

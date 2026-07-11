@@ -8,8 +8,8 @@
     "dev": "wxt -b chrome",
     "dev:chrome": "wxt -b chrome",
     "dev:vivaldi": "wxt -b chrome",
-    "build": "wxt build -b chrome",
-    "zip": "wxt zip -b chrome",
+    "build": "cross-env NODE_ENV=production wxt build -b chrome",
+    "zip": "cross-env NODE_ENV=production wxt zip -b chrome",
     "compile": "tsc --noEmit",
     "verify:popup": "node scripts/verify-popup-bundle.mjs",
     "test": "vitest run",
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
+    "cross-env": "^7.0.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
