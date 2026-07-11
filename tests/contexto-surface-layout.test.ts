@@ -13,10 +13,16 @@ function ruleBody(selector: string) {
 }
 
 describe('Contexto X surface layout contract', () => {
-  it('keeps the hover launcher inside the original card footprint', () => {
+  it('renders the hover launcher as a full-width in-flow row', () => {
     const host = ruleBody(':host([data-contexto-surface="hover-card"])');
-    expect(host).toContain('position:absolute;');
-    expect(host).toContain('bottom:12px;');
-    expect(host).toContain('z-index:');
+    expect(host).toContain('display:block;');
+    expect(host).toContain('margin:8px 0;');
+    expect(host).not.toContain('position:absolute;');
+    expect(host).not.toContain('bottom:');
+    expect(host).not.toContain('right:');
+    expect(host).not.toContain('z-index:');
+
+    const launcher = ruleBody('.contexto-hover-launcher');
+    expect(launcher).toContain('width:100%;');
   });
 });

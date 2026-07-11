@@ -5,13 +5,13 @@
 :host([data-contexto-page-editor]) .contexto-surface { border-top:0; }
 :host([data-contexto-page-editor][data-placement="docked"]) .contexto-surface { border-radius:16px; }
 .contexto-surface { --ctx-bg:#fff; --ctx-text:#0f1419; --ctx-muted:#536471; --ctx-border:#eff3f4; --ctx-accent:#5b3fd6; --ctx-link:#1d9bf0; box-sizing:border-box; border-top:1px solid var(--ctx-border); background:var(--ctx-bg); color:var(--ctx-text); padding:12px 16px; font-size:14px; line-height:1.35; }
-:host([data-contexto-surface="hover-card"]) { position:absolute; z-index:2147483645; right:14px; bottom:12px; }
+:host([data-contexto-surface="hover-card"]) { display:block; margin:8px 0; }
 :host([data-theme="dark"]) .contexto-surface { --ctx-bg:#000; --ctx-text:#e7e9ea; --ctx-muted:#71767b; --ctx-border:#2f3336; --ctx-accent:#9b8afb; --ctx-link:#71c9ff; }
 .contexto-header,.field-row,.form-actions,.chip-row { display:flex; gap:8px; }
 .contexto-header { align-items:center; justify-content:space-between; color:var(--ctx-accent); }
 .contexto-header strong { font-size:13px; letter-spacing:.02em; }
 .status-pill { border-radius:999px; padding:3px 8px; background:color-mix(in srgb,var(--ctx-muted) 15%,var(--ctx-bg)); color:var(--ctx-muted); font-size:12px; }
-.contexto-hover-launcher { --ctx-bg:#fff; --ctx-text:#0f1419; --ctx-muted:#536471; --ctx-border:#eff3f4; --ctx-accent:#5b3fd6; display:flex; box-sizing:border-box; align-items:center; gap:8px; min-height:36px; border:1px solid var(--ctx-border); border-radius:999px; background:var(--ctx-bg); color:var(--ctx-text); padding:4px 6px 4px 10px; box-shadow:0 4px 14px rgb(15 20 25 / 16%); font-size:12px; }
+.contexto-hover-launcher { --ctx-bg:#fff; --ctx-text:#0f1419; --ctx-muted:#536471; --ctx-border:#eff3f4; --ctx-accent:#5b3fd6; display:flex; box-sizing:border-box; align-items:center; gap:8px; width:100%; min-height:36px; border:1px solid var(--ctx-border); border-radius:999px; background:var(--ctx-bg); color:var(--ctx-text); padding:4px 6px 4px 10px; box-shadow:none; font-size:12px; }
 :host([data-theme="dark"]) .contexto-hover-launcher { --ctx-bg:#000; --ctx-text:#e7e9ea; --ctx-muted:#71767b; --ctx-border:#2f3336; --ctx-accent:#9b8afb; }
 .contexto-hover-launcher strong { margin-right:auto; color:var(--ctx-accent); }
 .contexto-hover-launcher button { min-height:28px; padding:4px 10px; }

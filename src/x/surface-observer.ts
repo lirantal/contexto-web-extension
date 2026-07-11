@@ -7,15 +7,17 @@ export interface ObservedXSurface {
   profile: ProfileSnapshot;
 }
 
+export type XSurfaceCleanup = (() => void) & { isConnected?: () => boolean };
+
 export interface XSurfaceObserverOptions {
   root: HTMLElement;
   currentUrl: () => string;
   onPageContextChange?: () => void;
-  mount: (surface: ObservedXSurface) => () => void;
+  mount: (surface: ObservedXSurface) => XSurfaceCleanup;
 }
 
 export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
-  const mounted = new Map<HTMLElement, { identity: string; cleanup: () => void }>();
+  const mounted = new Map<HTMLElement, { identity: string; cleanup: XSurfaceCleanup }>();
   let queued = false;
   let scanTimer: ReturnType<typeof setTimeout> | undefined;
   let previousUrl = options.currentUrl();
@@ -24,7 +26,7 @@ export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
     if (!profile) return;
     const identity = `${kind}:${profile.handle.toLowerCase()}:${profile.profileUrl}`;
     const current = mounted.get(host);
-    if (current?.identity === identity) return;
+    if (current?.identity === identity && (current.cleanup.isConnected?.() ?? true)) return;
     current?.cleanup();
     mounted.set(host, { identity, cleanup: options.mount({ kind, host, profile }) });
   };
