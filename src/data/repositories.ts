@@ -22,6 +22,7 @@ import type {
   Tag,
   XSearchFilters,
 } from '../shared/types';
+import type { TargetAccountSuggestion } from '../shared/target-handle-suggestions';
 
 export function nowIso(): string {
   return new Date().toISOString();
@@ -392,6 +393,26 @@ export async function listAccountSummaries(filters: AccountFilters = {}, databas
       return true;
     })
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export async function listTargetAccountSuggestions(
+  database = db,
+): Promise<TargetAccountSuggestion[]> {
+  const accounts = active(await database.accounts.toArray())
+    .filter((account) => account.platform === 'x');
+
+  const suggestions = await Promise.all(accounts.map(async (account) => {
+    const company = account.companyId ? await database.companies.get(account.companyId) : undefined;
+    return {
+      id: account.id,
+      handle: account.handle,
+      displayName: account.displayName,
+      companyName: company && !company.deletedAt ? company.name : undefined,
+      updatedAt: account.updatedAt,
+    };
+  }));
+
+  return suggestions.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
 }
 
 export async function recordSearch(

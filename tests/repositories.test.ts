@@ -9,6 +9,7 @@ import {
   getAccountByHandle,
   importBackup,
   listAccountSummaries,
+  listTargetAccountSuggestions,
   resetDatabaseForTests,
   saveAccountContext,
   updateAccount,
@@ -61,6 +62,53 @@ describe('Contexto repositories', () => {
     expect(summaries).toHaveLength(1);
     expect(summaries[0].tags.map((tag) => tag.name)).toContain('security');
     expect(summaries[0].folders.map((folder) => folder.name)).toContain('DevRel friends');
+  });
+
+  it('lists active X accounts as lightweight suggestions ordered by recency', async () => {
+    const alice = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'alice', displayName: 'Alice', profileUrl: 'https://x.com/alice' },
+      database,
+    );
+    await updateAccount(alice.id, { companyName: 'Acme' }, database);
+    const bob = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'bob', displayName: 'Bob', profileUrl: 'https://x.com/bob' },
+      database,
+    );
+    const deleted = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'deleted', displayName: 'Deleted', profileUrl: 'https://x.com/deleted' },
+      database,
+    );
+    await database.accounts.add({
+      id: 'account_linkedin',
+      platform: 'linkedin',
+      handle: 'linked-person',
+      normalizedHandle: 'linked-person',
+      displayName: 'Linked Person',
+      profileUrl: 'https://linkedin.com/in/linked-person',
+      syncState: 'local-only',
+      createdAt: '2026-07-09T00:00:00Z',
+      updatedAt: '2026-07-09T00:00:00Z',
+    });
+    await database.accounts.update(alice.id, { updatedAt: '2026-07-10T00:00:00Z' });
+    await database.accounts.update(bob.id, { updatedAt: '2026-07-11T00:00:00Z' });
+    await database.accounts.update(deleted.id, { deletedAt: '2026-07-12T00:00:00Z' });
+
+    await expect(listTargetAccountSuggestions(database)).resolves.toEqual([
+      {
+        id: bob.id,
+        handle: 'bob',
+        displayName: 'Bob',
+        companyName: undefined,
+        updatedAt: '2026-07-11T00:00:00Z',
+      },
+      {
+        id: alice.id,
+        handle: 'alice',
+        displayName: 'Alice',
+        companyName: 'Acme',
+        updatedAt: '2026-07-10T00:00:00Z',
+      },
+    ]);
   });
 
   it('round-trips backup data', async () => {
