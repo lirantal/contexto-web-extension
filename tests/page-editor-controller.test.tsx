@@ -4,9 +4,10 @@ import { createPageEditorController } from '@/src/x/page-editor-controller';
 import { AccountDraftStore } from '@/src/x/draft-store';
 
 vi.mock('@/src/ui/ContextoProfileSurface', () => ({
-  ContextoProfileSurface: ({ profile, placement }: { profile: { handle: string }; placement: string }) => (
-    <button type="button" data-testid="editor">{profile.handle}:{placement}</button>
-  ),
+  ContextoProfileSurface: ({ profile, placement }: { profile: { handle: string }; placement: string }) => {
+    const [mountedHandle] = React.useState(profile.handle);
+    return <button type="button" data-testid="editor">{mountedHandle}:{profile.handle}:{placement}</button>;
+  },
 }));
 
 const profile = { platform: 'x' as const, handle: 'theo', profileUrl: 'https://x.com/theo' };
@@ -27,6 +28,7 @@ describe('page editor controller', () => {
     hover.append(button);
     const rail = document.createElement('aside');
     rail.dataset.testid = 'sidebarColumn';
+    rail.style.backgroundColor = 'rgb(0, 0, 0)';
     document.body.append(hover, rail);
     const controller = createPageEditorController({
       root: document.body,
@@ -40,6 +42,7 @@ describe('page editor controller', () => {
     const host = document.querySelector<HTMLElement>('[data-contexto-page-editor]');
     expect(host?.parentElement).toBe(rail);
     expect(host?.dataset.placement).toBe('docked');
+    expect(host?.dataset.theme).toBe('dark');
     hover.remove();
     expect(host?.isConnected).toBe(true);
     controller.disconnect();
@@ -66,7 +69,8 @@ describe('page editor controller', () => {
   it('starts in modal fallback and removes its host on disconnect', () => {
     const button = document.createElement('button');
     document.body.append(button);
-    const controller = createPageEditorController({ root: document.body, send: vi.fn(), drafts: new AccountDraftStore(), css: '' });
+    const drafts = new AccountDraftStore();
+    const controller = createPageEditorController({ root: document.body, send: vi.fn(), drafts, css: '' });
 
     controller.open(profile, button);
     const host = document.querySelector<HTMLElement>('[data-contexto-page-editor]')!;
@@ -74,10 +78,28 @@ describe('page editor controller', () => {
     expect(host.dataset.placement).toBe('modal');
     expect(host.shadowRoot?.activeElement).toBe(host.shadowRoot?.querySelector('button'));
 
+    drafts.set(profile.handle, { metadata: { displayName: 'Theo', position: 'CEO', profession: '', companyName: '', location: '', relationshipSource: '' }, tagNames: [], folderNames: [] });
+    host.shadowRoot?.querySelector('button')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(host.isConnected).toBe(true);
+
+    drafts.clear(profile.handle);
     host.shadowRoot?.querySelector('button')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(host.isConnected).toBe(false);
     expect(document.activeElement).toBe(button);
 
+    controller.disconnect();
+  });
+
+  it('remounts profile-scoped editor state when switching clean accounts', () => {
+    const button = document.createElement('button');
+    document.body.append(button);
+    const controller = createPageEditorController({ root: document.body, send: vi.fn(), drafts: new AccountDraftStore(), css: '' });
+
+    controller.open(profile, button);
+    controller.open({ ...profile, handle: 'alice', profileUrl: 'https://x.com/alice' }, button);
+
+    const editor = document.querySelector<HTMLElement>('[data-contexto-page-editor]')?.shadowRoot?.querySelector('[data-testid="editor"]');
+    expect(editor).toHaveTextContent('alice:alice:modal');
     controller.disconnect();
   });
 });

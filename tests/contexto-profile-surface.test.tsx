@@ -117,6 +117,7 @@ describe('ContextoProfileSurface', () => {
     expect(await screen.findByText('Lookup unavailable')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Retry lookup' }));
     expect(await screen.findByLabelText('Display name')).toHaveValue('Theo – t3.gg');
+    expect(screen.queryByText('Lookup unavailable')).not.toBeInTheDocument();
   });
 
   it('restores persisted values on cancel without hiding an inline editor', async () => {
@@ -141,5 +142,20 @@ describe('ContextoProfileSurface', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Contexto profile editor' });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
+  });
+
+  it('requests close without silently discarding an unsaved draft', async () => {
+    const drafts = new AccountDraftStore();
+    const onRequestClose = vi.fn();
+    const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
+      ? { ok: true, lookup: true, lookupAccount: undefined }
+      : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
+    render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="docked" onRequestClose={onRequestClose} send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
+
+    fireEvent.change(await screen.findByLabelText('Position'), { target: { value: 'CEO' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Close Contexto editor' }));
+
+    expect(onRequestClose).toHaveBeenCalledOnce();
+    expect(drafts.get(profile.handle)?.metadata.position).toBe('CEO');
   });
 });

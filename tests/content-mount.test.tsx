@@ -28,7 +28,9 @@ describe('mountContextoSurface', () => {
     expect(mountHost?.getAttribute('data-theme')).toBe('dark');
     expect(mountHost?.shadowRoot).toHaveTextContent('Hover Contexto launcher');
     expect(mountHost?.shadowRoot).not.toHaveTextContent('Full Contexto editor');
+    expect(host.style.position).toBe('relative');
     cleanup();
+    expect(host.style.position).toBe('');
     expect(host.querySelector('[data-contexto-surface]')).toBeNull();
   });
 

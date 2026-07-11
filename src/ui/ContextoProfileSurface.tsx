@@ -42,6 +42,8 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
   useEffect(() => {
     let cancelled = false;
     setState('loading');
+    setError('');
+    setSuccess('');
     Promise.all([
       send({ type: 'contexto:account:lookup', platform: 'x', handle: profile.handle }),
       send({ type: 'contexto:lookups:list' }),
@@ -96,7 +98,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
     <button type="button" onClick={() => setLookupAttempt((attempt) => attempt + 1)}>Retry lookup</button>
   </section>;
   return <section className="contexto-surface" data-surface={kind} data-placement={placement} role={placement === 'modal' ? 'dialog' : 'region'} aria-modal={placement === 'modal' ? true : undefined} aria-label="Contexto profile editor">
-    <header className="contexto-header"><strong>◆ Contexto</strong><span className="status-pill">{!account ? 'Not saved' : 'Saved'}</span>{onRequestClose && <button type="button" aria-label="Close Contexto editor" onClick={cancelEditing}>×</button>}</header>
+    <header className="contexto-header"><strong>◆ Contexto</strong><span className="status-pill">{!account ? 'Not saved' : 'Saved'}</span>{onRequestClose && <button type="button" aria-label="Close Contexto editor" onClick={onRequestClose}>×</button>}</header>
     <div className="contexto-form">
       <label>Display name<input value={draft.metadata.displayName ?? ''} disabled={saving} onChange={(event) => updateMetadata('displayName', event.target.value)} /></label>
       <label>X handle<input value={`@${profile.handle}`} readOnly /></label>

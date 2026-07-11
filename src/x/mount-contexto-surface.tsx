@@ -26,6 +26,10 @@ export function detectXTheme(host: HTMLElement): 'light' | 'dark' {
 }
 
 export function mountContextoSurface({ surface, send, drafts, css, theme, openPageEditor = () => undefined }: MountContextoSurfaceOptions): () => void {
+  const previousHostPosition = surface.host.style.position;
+  const hostPosition = getComputedStyle(surface.host).position;
+  const positionHoverHost = surface.kind === 'hover-card' && (!hostPosition || hostPosition === 'static');
+  if (positionHoverHost) surface.host.style.position = 'relative';
   const mountHost = document.createElement('div');
   mountHost.dataset.contextoSurface = surface.kind;
   mountHost.dataset.theme = theme;
@@ -45,5 +49,6 @@ export function mountContextoSurface({ surface, send, drafts, css, theme, openPa
   return () => {
     root.unmount();
     mountHost.remove();
+    if (positionHoverHost) surface.host.style.position = previousHostPosition;
   };
 }

@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import type { ProfileSnapshot } from '@/src/shared/types';
 import { ContextoProfileSurface, type ContextoProfileSurfaceProps } from '@/src/ui/ContextoProfileSurface';
 import type { AccountDraftStore } from './draft-store';
+import { detectXTheme } from './mount-contexto-surface';
 
 export interface PageEditorControllerOptions {
   root: HTMLElement;
@@ -34,7 +35,7 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
   }
 
   function requestClose() {
-    if (activeProfile) drafts.clear(activeProfile.handle);
+    if (activeProfile && drafts.get(activeProfile.handle)) return;
     close();
   }
 
@@ -79,6 +80,7 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
     flushSync(() => {
       reactRoot?.render(
         <ContextoProfileSurface
+          key={activeProfile!.handle.replace(/^@/, '').toLowerCase()}
           profile={activeProfile!}
           kind="hover-card"
           send={send}
@@ -97,6 +99,7 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
     const target = rail ?? root;
     if (host.parentElement !== target) target.append(host);
     host.dataset.placement = nextPlacement;
+    host.dataset.theme = detectXTheme(target);
     if (placement !== nextPlacement) {
       placement = nextPlacement;
       renderEditor();
@@ -113,6 +116,7 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
     placement = rail ? 'docked' : 'modal';
     (rail ?? root).append(host!);
     host!.dataset.placement = placement;
+    host!.dataset.theme = detectXTheme(rail ?? root);
     renderEditor();
     focusModalControl();
   }
