@@ -42,6 +42,9 @@ describe('mountContextoSurface', () => {
     expect(mountHost?.previousElementSibling).toBe(host.querySelector('[data-testid="counts"]'));
     expect(mountHost?.nextElementSibling).toBe(host.querySelector('a[role="button"]'));
     expect(host.style.position).toBe('fixed');
+    expect(cleanup.isConnected?.()).toBe(true);
+    host.querySelector('[data-testid="inner-card"]')?.remove();
+    expect(cleanup.isConnected?.()).toBe(false);
     cleanup();
     expect(host.style.position).toBe('fixed');
     expect(host.querySelector('[data-contexto-surface]')).toBeNull();

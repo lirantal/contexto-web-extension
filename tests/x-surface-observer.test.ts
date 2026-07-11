@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createXSurfaceObserver } from '@/src/x/surface-observer';
+import { createXSurfaceObserver, type XSurfaceCleanup } from '@/src/x/surface-observer';
 
 async function flushMutations() {
   await Promise.resolve();
@@ -52,6 +52,35 @@ describe('X surface observer', () => {
     dialog.remove();
     await flushMutations();
     expect(cleanup).toHaveBeenCalledTimes(1);
+    observer.disconnect();
+  });
+
+  it('remounts the same profile when X replaces the mounted inner subtree', async () => {
+    document.body.innerHTML = '';
+    const cleanups: XSurfaceCleanup[] = [];
+    const mount = vi.fn((surface: { host: HTMLElement }) => {
+      const marker = document.createElement('div');
+      marker.dataset.contextoSurface = 'hover-card';
+      surface.host.querySelector('[data-testid="inner"]')!.append(marker);
+      const cleanup = vi.fn(() => marker.remove()) as XSurfaceCleanup;
+      cleanup.isConnected = () => marker.isConnected && surface.host.contains(marker);
+      cleanups.push(cleanup);
+      return cleanup;
+    });
+    const observer = createXSurfaceObserver({ root: document.body, currentUrl: () => location.href, mount });
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    dialog.innerHTML = `<div data-testid="inner">
+      <a href="/theo"><img src="https://pbs.twimg.com/profile_images/theo.jpg"></a>
+      <div data-testid="UserName"><span>Theo</span><span>@theo</span></div>
+    </div>`;
+    document.body.append(dialog);
+    await flushMutations();
+    expect(mount).toHaveBeenCalledTimes(1);
+    dialog.innerHTML = '<div data-testid="inner"><a href="/theo"><img src="https://pbs.twimg.com/profile_images/theo.jpg"></a><div data-testid="UserName"><span>Theo</span><span>@theo</span></div></div>';
+    await flushMutations();
+    expect(mount).toHaveBeenCalledTimes(2);
+    expect(cleanups[0]).toHaveBeenCalledTimes(1);
     observer.disconnect();
   });
 

@@ -5,7 +5,7 @@ import { ContextoProfileSurface, type ContextoProfileSurfaceProps } from '@/src/
 import type { AccountDraftStore } from './draft-store';
 import { ContextoHoverLauncher } from '@/src/ui/ContextoHoverLauncher';
 import type { ProfileSnapshot } from '@/src/shared/types';
-import type { ObservedXSurface } from './surface-observer';
+import type { ObservedXSurface, XSurfaceCleanup } from './surface-observer';
 import { resolveHoverCardInsertion } from './hover-card-placement';
 
 export interface MountContextoSurfaceOptions {
@@ -26,7 +26,7 @@ export function detectXTheme(host: HTMLElement): 'light' | 'dark' {
   return 'light';
 }
 
-export function mountContextoSurface({ surface, send, drafts, css, theme, openPageEditor = () => undefined }: MountContextoSurfaceOptions): () => void {
+export function mountContextoSurface({ surface, send, drafts, css, theme, openPageEditor = () => undefined }: MountContextoSurfaceOptions): XSurfaceCleanup {
   const mountHost = document.createElement('div');
   mountHost.dataset.contextoSurface = surface.kind;
   mountHost.dataset.theme = theme;
@@ -48,8 +48,10 @@ export function mountContextoSurface({ surface, send, drafts, css, theme, openPa
       : <ContextoProfileSurface profile={surface.profile} kind={surface.kind} send={send} drafts={drafts} />
     );
   });
-  return () => {
+  const cleanup: XSurfaceCleanup = () => {
     root.unmount();
     mountHost.remove();
   };
+  cleanup.isConnected = () => mountHost.isConnected && surface.host.contains(mountHost);
+  return cleanup;
 }
