@@ -31,12 +31,16 @@ export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
       }
     }
 
-    for (const host of options.root.querySelectorAll<HTMLElement>('[role="dialog"][data-testid="HoverCard"]')) {
+    for (const host of options.root.querySelectorAll<HTMLElement>('[data-testid="HoverCard"], [role="dialog"], [role="tooltip"]')) {
       mount(host, 'hover-card', extractHoverCardProfile(host));
     }
 
-    const profileHost = options.root.querySelector<HTMLElement>('[data-testid="primaryColumn"]');
-    if (profileHost) mount(profileHost, 'full-profile', extractFullProfile(profileHost, options.currentUrl()));
+    const profileRoot = options.root.querySelector<HTMLElement>('[data-testid="primaryColumn"]');
+    const userName = profileRoot?.querySelector<HTMLElement>('[data-testid="UserName"]');
+    const profileHost = userName?.parentElement ?? profileRoot;
+    if (profileRoot && profileHost) {
+      mount(profileHost, 'full-profile', extractFullProfile(profileRoot, options.currentUrl()));
+    }
   };
 
   const queueScan = () => {

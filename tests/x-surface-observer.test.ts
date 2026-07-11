@@ -13,7 +13,6 @@ describe('X surface observer', () => {
     const observer = createXSurfaceObserver({ root: document.body, currentUrl: () => location.href, mount });
     const dialog = document.createElement('div');
     dialog.setAttribute('role', 'dialog');
-    dialog.dataset.testid = 'HoverCard';
     dialog.innerHTML = '<a href="/theo"><span>Theo</span><span>@theo</span></a>';
     document.body.append(dialog);
     await flushMutations();
@@ -30,9 +29,11 @@ describe('X surface observer', () => {
   it('mounts a full profile when the current URL is a profile', async () => {
     const mount = vi.fn(() => vi.fn());
     const observer = createXSurfaceObserver({ root: document.body, currentUrl: () => 'https://x.com/exampledev', mount });
-    document.body.innerHTML = '<main data-testid="primaryColumn"><div data-testid="UserName"><span>Example</span><span>@exampledev</span></div></main>';
+    document.body.innerHTML = '<main data-testid="primaryColumn"><section data-testid="profileHeader"><div data-testid="UserName"><span>Example</span><span>@exampledev</span></div></section></main>';
     await flushMutations();
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ kind: 'full-profile' }));
+    expect(mount).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'full-profile', host: document.querySelector('[data-testid="profileHeader"]'),
+    }));
     observer.disconnect();
   });
 });
