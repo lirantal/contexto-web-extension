@@ -90,14 +90,13 @@ export function buildTargetHandleSuggestions(
 
   const handleQuery = normalizeXHandle(trimmedQuery);
   return [...suggestions.values()]
-    .map((suggestion) => {
+    .flatMap((suggestion) => {
       let matchField: TargetHandleSuggestion['matchField'];
       if (suggestion.handle.includes(handleQuery)) matchField = 'handle';
       else if (suggestion.displayName?.toLowerCase().includes(trimmedQuery)) matchField = 'displayName';
       else if (suggestion.companyName?.toLowerCase().includes(trimmedQuery)) matchField = 'company';
-      return matchField ? { ...suggestion, matchField } : undefined;
+      return matchField ? [{ ...suggestion, matchField }] : [];
     })
-    .filter((suggestion): suggestion is TargetHandleSuggestion => Boolean(suggestion))
     .sort((left, right) => {
       const matchOrder = { handle: 0, displayName: 1, company: 2 } as const;
       const score = matchOrder[left.matchField!] - matchOrder[right.matchField!];
