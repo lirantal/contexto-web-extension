@@ -23,6 +23,8 @@ import {
   importBackup,
   listAccountSummaries,
   recordSearch,
+  removeFolder,
+  removeTag,
   updateAccount,
 } from '@/src/data/repositories';
 import { buildXSearchQuery, buildXSearchUrl, labelSearchDirection, normalizeXHandle } from '@/src/shared/platforms/x';
@@ -311,6 +313,14 @@ function AccountDetail({ account, settings }: { account: AccountSummary; setting
     setFolderName('');
   }
 
+  async function removeAssignedTag(tagId: string) {
+    await removeTag(account.id, tagId);
+  }
+
+  async function removeAssignedFolder(folderId: string) {
+    await removeFolder(account.id, folderId);
+  }
+
   async function addNoteAndClear() {
     if (!note.trim()) return;
     await addNote(account.id, note);
@@ -358,12 +368,24 @@ function AccountDetail({ account, settings }: { account: AccountSummary; setting
       <section className="panel detail-section split-section">
         <div>
           <h3><Tag size={16} aria-hidden="true" /> Tags</h3>
-          <div className="chip-row">{account.tags.map((tag) => <span className="chip" key={tag.id}>{tag.name}</span>)}</div>
+          <div className="chip-row">{account.tags.map((tag) => (
+            <span className="chip" key={tag.id}>
+              {tag.name}
+              <button type="button" aria-label={`Remove ${tag.name} from Tags`}
+                onClick={() => removeAssignedTag(tag.id)}>×</button>
+            </span>
+          ))}</div>
           <div className="inline-form"><input value={tagName} onChange={(event) => setTagName(event.target.value)} placeholder="Add tag" /><button onClick={addTagAndClear}>Add</button></div>
         </div>
         <div>
           <h3><FolderPlus size={16} aria-hidden="true" /> Folders</h3>
-          <div className="chip-row">{account.folders.map((folder) => <span className="chip folder-chip" key={folder.id}>{folder.name}</span>)}</div>
+          <div className="chip-row">{account.folders.map((folder) => (
+            <span className="chip folder-chip" key={folder.id}>
+              {folder.name}
+              <button type="button" aria-label={`Remove ${folder.name} from Folders`}
+                onClick={() => removeAssignedFolder(folder.id)}>×</button>
+            </span>
+          ))}</div>
           <div className="inline-form"><input value={folderName} onChange={(event) => setFolderName(event.target.value)} placeholder="Add folder" /><button onClick={addFolderAndClear}>Add</button></div>
         </div>
       </section>
