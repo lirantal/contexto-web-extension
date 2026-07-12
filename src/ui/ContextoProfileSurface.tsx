@@ -20,7 +20,7 @@ function draftFor(profile: ProfileSnapshot, account?: AccountSummary): AccountCo
   return {
     metadata: {
       displayName: account?.displayName ?? profile.displayName ?? profile.handle,
-      position: account?.position ?? '', profession: account?.profession ?? '',
+      role: account?.role ?? '',
       companyName: account?.company?.name ?? '', location: account?.location ?? profile.location ?? '',
       relationshipSource: account?.relationshipSource ?? '',
     },
@@ -102,10 +102,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
     <div className="contexto-form">
       <label>Display name<input value={draft.metadata.displayName ?? ''} disabled={saving} onChange={(event) => updateMetadata('displayName', event.target.value)} /></label>
       <label>X handle<input value={`@${profile.handle}`} readOnly /></label>
-      <div className="field-row">
-        <label>Position<input value={draft.metadata.position ?? ''} disabled={saving} onChange={(event) => updateMetadata('position', event.target.value)} /></label>
-        <label>Profession<input value={draft.metadata.profession ?? ''} disabled={saving} onChange={(event) => updateMetadata('profession', event.target.value)} /></label>
-      </div>
+      <label>Role<input value={draft.metadata.role ?? ''} disabled={saving} onChange={(event) => updateMetadata('role', event.target.value)} /></label>
       <label>Company<input list="contexto-companies" value={draft.metadata.companyName ?? ''} disabled={saving} onChange={(event) => updateMetadata('companyName', event.target.value)} /></label>
       <datalist id="contexto-companies">{lookups.companies.map((company) => <option key={company.id} value={company.name} />)}</datalist>
       <label>Location<input value={draft.metadata.location ?? ''} disabled={saving} onChange={(event) => updateMetadata('location', event.target.value)} /></label>

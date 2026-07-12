@@ -25,8 +25,9 @@ describe('ContextoProfileSurface', () => {
     renderSurface(send);
     expect(await screen.findByLabelText('Display name')).toHaveValue('Theo – t3.gg');
     expect(screen.getByLabelText('X handle')).toHaveValue('@theo');
-    expect(screen.getByLabelText('Position')).toBeVisible();
-    expect(screen.getByLabelText('Profession')).toBeVisible();
+    expect(screen.getByLabelText('Role')).toBeVisible();
+    expect(screen.queryByLabelText('Position')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Profession')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Company')).toBeVisible();
     expect(screen.getByLabelText('Location')).toHaveValue('San Francisco');
     expect(screen.getByLabelText('How you know them')).toBeVisible();
@@ -38,7 +39,7 @@ describe('ContextoProfileSurface', () => {
   it('saves distinct tag and folder values and keeps the editor visible', async () => {
     const saved = {
       id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo',
-      displayName: 'Theo Browne', profileUrl: 'https://x.com/theo', position: 'CEO',
+      displayName: 'Theo Browne', profileUrl: 'https://x.com/theo', role: 'CEO',
       company: { id: 'company_1', name: 't3dotchat' },
       tags: [{ id: 'tag_1', name: 'Founder' }], folders: [{ id: 'folder_1', name: 'Friends' }],
     };
@@ -48,7 +49,7 @@ describe('ContextoProfileSurface', () => {
       .mockResolvedValueOnce({ ok: true, account: saved });
     renderSurface(send);
     fireEvent.change(await screen.findByLabelText('Display name'), { target: { value: 'Theo Browne' } });
-    fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'CEO' } });
+    fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'CEO' } });
     fireEvent.change(screen.getByLabelText('Company'), { target: { value: 't3dotchat' } });
     fireEvent.change(screen.getByLabelText('Tags'), { target: { value: 'Founder' } });
     fireEvent.keyDown(screen.getByLabelText('Tags'), { key: 'Enter' });
@@ -60,7 +61,7 @@ describe('ContextoProfileSurface', () => {
       input: expect.objectContaining({ tagNames: ['Founder'], folderNames: ['Friends'] }),
     })));
     expect(await screen.findByLabelText('Display name')).toHaveValue('Theo Browne');
-    expect(screen.getByLabelText('Position')).toHaveValue('CEO');
+    expect(screen.getByLabelText('Role')).toHaveValue('CEO');
     expect(screen.getByLabelText('Company')).toHaveValue('t3dotchat');
     expect(screen.getByText('Saved to Contexto')).toHaveAttribute('role', 'status');
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
@@ -92,15 +93,15 @@ describe('ContextoProfileSurface', () => {
 
   it('restores an existing-account edit after a transient remount', async () => {
     const drafts = new AccountDraftStore();
-    const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', position: 'CTO', tags: [], folders: [] };
+    const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', role: 'CTO', tags: [], folders: [] };
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: saved }
       : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
     const first = render(<ContextoProfileSurface profile={profile} kind="hover-card" send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
-    fireEvent.change(await screen.findByLabelText('Position'), { target: { value: 'CEO' } });
+    fireEvent.change(await screen.findByLabelText('Role'), { target: { value: 'CEO' } });
     first.unmount();
     render(<ContextoProfileSurface profile={profile} kind="hover-card" send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
-    expect(await screen.findByLabelText('Position')).toHaveValue('CEO');
+    expect(await screen.findByLabelText('Role')).toHaveValue('CEO');
   });
 
   it('retries a failed lookup without discarding the prefilled editor', async () => {
@@ -121,16 +122,16 @@ describe('ContextoProfileSurface', () => {
   });
 
   it('restores persisted values on cancel without hiding an inline editor', async () => {
-    const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', position: 'CTO', tags: [], folders: [] };
+    const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', role: 'CTO', tags: [], folders: [] };
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: saved }
       : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
     renderSurface(send);
 
-    fireEvent.change(await screen.findByLabelText('Position'), { target: { value: 'CEO' } });
+    fireEvent.change(await screen.findByLabelText('Role'), { target: { value: 'CEO' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.getByLabelText('Position')).toHaveValue('CTO');
+    expect(screen.getByLabelText('Role')).toHaveValue('CTO');
     expect(screen.getByLabelText('Display name')).toBeVisible();
   });
 
@@ -167,7 +168,7 @@ describe('ContextoProfileSurface', () => {
       .mockResolvedValueOnce({ ok: false, error: 'Database unavailable' });
     render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="modal" onRequestClose={onRequestClose} send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
 
-    fireEvent.change(await screen.findByLabelText('Position'), { target: { value: 'CEO' } });
+    fireEvent.change(await screen.findByLabelText('Role'), { target: { value: 'CEO' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
     expect(await screen.findByText('Database unavailable')).toBeVisible();
     expect(onRequestClose).not.toHaveBeenCalled();

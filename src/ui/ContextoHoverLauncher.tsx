@@ -75,8 +75,8 @@ export function ContextoHoverLauncher({ profile, send, onEdit }: ContextoHoverLa
     </div>
     {account && <div className="contexto-hover-summary">
       <strong className="contexto-hover-name">{account.displayName}</strong>
-      {(account.profession || account.company?.name) && <span data-testid="contexto-hover-organization">
-        {[account.profession, account.company?.name].filter(Boolean).join(' · ')}
+      {(account.role || account.company?.name) && <span data-testid="contexto-hover-organization">
+        {[account.role, account.company?.name].filter(Boolean).join(' · ')}
       </span>}
       {account.tags.length > 0 && <div className="contexto-hover-tags" data-testid="contexto-hover-tags">
         {account.tags.map((tag) => <span className="contexto-hover-tag" key={tag.id}>{tag.name}</span>)}

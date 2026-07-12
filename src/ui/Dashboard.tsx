@@ -269,8 +269,7 @@ function EmptyDetail() {
 function AccountDetail({ account, settings }: { account: AccountSummary; settings: ContextoSettings }) {
   const [draft, setDraft] = useState({
     displayName: account.displayName,
-    profession: account.profession ?? '',
-    position: account.position ?? '',
+    role: account.role ?? '',
     companyName: account.company?.name ?? '',
     location: account.location ?? '',
     relationshipSource: account.relationshipSource ?? '',
@@ -286,8 +285,7 @@ function AccountDetail({ account, settings }: { account: AccountSummary; setting
   useEffect(() => {
     setDraft({
       displayName: account.displayName,
-      profession: account.profession ?? '',
-      position: account.position ?? '',
+      role: account.role ?? '',
       companyName: account.company?.name ?? '',
       location: account.location ?? '',
       relationshipSource: account.relationshipSource ?? '',
@@ -345,8 +343,7 @@ function AccountDetail({ account, settings }: { account: AccountSummary; setting
         <h3>Profile metadata</h3>
         <div className="form-grid two-columns">
           <label>Display name<input value={draft.displayName} onChange={(event) => setDraft({ ...draft, displayName: event.target.value })} /></label>
-          <label>Profession<input value={draft.profession} onChange={(event) => setDraft({ ...draft, profession: event.target.value })} /></label>
-          <label>Position<input value={draft.position} onChange={(event) => setDraft({ ...draft, position: event.target.value })} /></label>
+          <label>Role<input value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value })} /></label>
           <label>Company<input value={draft.companyName} onChange={(event) => setDraft({ ...draft, companyName: event.target.value })} /></label>
           <label>Location<input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} /></label>
           <label>How we know each other<input value={draft.relationshipSource} onChange={(event) => setDraft({ ...draft, relationshipSource: event.target.value })} /></label>
