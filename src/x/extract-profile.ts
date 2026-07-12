@@ -1,7 +1,7 @@
 import { parseXProfileUrl } from '@/src/shared/platforms/x';
 import type { ProfileSnapshot } from '@/src/shared/types';
 
-export type XSurfaceKind = 'hover-card' | 'full-profile';
+export type XSurfaceKind = 'hover-card' | 'full-profile' | 'feed-post';
 
 function compactText(value: string | null | undefined): string | undefined {
   return value?.replace(/\s+/g, ' ').trim() || undefined;
