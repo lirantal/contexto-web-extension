@@ -49,4 +49,20 @@ describe('X surface profile extraction', () => {
     root.innerHTML = '<article><span>@wrong</span><a href="/wrong">Wrong</a></article>';
     expect(extractFullProfile(root, 'https://x.com/exampledev')).toBeNull();
   });
+
+  it('extracts the identity name when an action button precedes it in UserName', () => {
+    document.body.innerHTML = `
+      <div role="dialog" data-testid="HoverCard">
+        <button><span>Following</span></button>
+        <div data-testid="UserName">
+          <button><span>Following</span></button>
+          <a href="/pauline"><span>Pauline P. Narvas</span><span>@pauline</span></a>
+        </div>
+        <a href="/pauline"><img src="https://pbs.twimg.com/profile_images/pauline.jpg"></a>
+        <div data-testid="UserDescription">Developer</div>
+      </div>`;
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
+
+    expect(extractHoverCardProfile(dialog)).toMatchObject({ handle: 'pauline', displayName: 'Pauline P. Narvas' });
+  });
 });

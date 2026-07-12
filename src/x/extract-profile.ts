@@ -14,13 +14,31 @@ function readHandle(surface: HTMLElement): string | undefined {
     ?.slice(1);
 }
 
+function anchorPath(anchor: HTMLAnchorElement): string | null {
+  try {
+    return new URL(anchor.getAttribute('href') ?? anchor.href, document.baseURI).pathname.replace(/\/$/, '').toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function readNameBeforeHandle(scope: ParentNode, handle: string): string | undefined {
+  const spans = Array.from(scope.querySelectorAll('span'));
+  const handleIndex = spans.findIndex((span) => compactText(span.textContent)?.toLowerCase() === `@${handle.toLowerCase()}`);
+  if (handleIndex < 0) return undefined;
+  for (let index = handleIndex - 1; index >= 0; index -= 1) {
+    const value = compactText(spans[index].textContent);
+    if (!value || value.startsWith('@') || spans[index].closest('button,[role="button"]')) continue;
+    return value;
+  }
+  return undefined;
+}
+
 function readDisplayName(surface: HTMLElement, handle: string): string | undefined {
-  const userName = surface.querySelector('[data-testid="UserName"]');
-  const values = [...(userName ?? surface).querySelectorAll('span')]
-    .map((node) => compactText(node.textContent))
-    .filter((value): value is string => Boolean(value));
-  const handleIndex = values.findIndex((value) => value.toLowerCase() === `@${handle.toLowerCase()}`);
-  return values.find((value, index) => index !== handleIndex && !value.startsWith('@'));
+  const profilePath = `/${handle.replace(/^@/, '').toLowerCase()}`;
+  const identityLink = Array.from(surface.querySelectorAll<HTMLAnchorElement>('a[href]'))
+    .find((anchor) => anchorPath(anchor) === profilePath && readNameBeforeHandle(anchor, handle));
+  return readNameBeforeHandle(identityLink ?? surface.querySelector('[data-testid="UserName"]') ?? surface, handle);
 }
 
 function snapshot(surface: HTMLElement, profileUrl: string, identityHandle?: string): ProfileSnapshot | null {
