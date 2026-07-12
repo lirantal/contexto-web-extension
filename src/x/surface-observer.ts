@@ -1,4 +1,5 @@
 import { extractFullProfile, extractHoverCardProfile, type XSurfaceKind } from './extract-profile';
+import { extractFeedPostProfile } from './feed-post-extraction';
 import type { ProfileSnapshot } from '@/src/shared/types';
 
 export interface ObservedXSurface {
@@ -23,7 +24,11 @@ export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
   let previousUrl = options.currentUrl();
 
   const mount = (host: HTMLElement, kind: XSurfaceKind, profile: ProfileSnapshot | null) => {
-    if (!profile) return;
+    if (!profile) {
+      mounted.get(host)?.cleanup();
+      mounted.delete(host);
+      return;
+    }
     const identity = `${kind}:${profile.handle.toLowerCase()}:${profile.profileUrl}`;
     const current = mounted.get(host);
     if (current?.identity === identity && (current.cleanup.isConnected?.() ?? true)) return;
@@ -45,7 +50,12 @@ export function createXSurfaceObserver(options: XSurfaceObserverOptions) {
       }
     }
 
-    for (const host of options.root.querySelectorAll<HTMLElement>('[data-testid="HoverCard"], [role="dialog"], [role="tooltip"]')) {
+    for (const host of options.root.querySelectorAll<HTMLElement>('[data-testid="HoverCard"], [role="dialog"], [role="tooltip"], [data-testid="tweet"]')) {
+      if (host.dataset.testid === 'tweet') {
+        if (host.parentElement?.closest<HTMLElement>('[data-testid="tweet"]')) continue;
+        mount(host, 'feed-post', extractFeedPostProfile(host));
+        continue;
+      }
       const hasHoverSignals = host.dataset.testid === 'HoverCard'
         || Boolean(host.querySelector('img[src*="profile_images"]') && host.querySelector('[data-testid="UserName"]'));
       if (!hasHoverSignals) continue;
