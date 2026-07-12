@@ -38,11 +38,9 @@ export function ContextoHoverLauncher({ profile, send, onEdit }: ContextoHoverLa
     if (buttonRef.current) onEdit(profile, buttonRef.current);
   }
 
-  function handlePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
-    if (event.pointerType === 'mouse' || event.pointerType === 'pen' || event.pointerType === 'touch') {
-      pointerActivatedRef.current = true;
-      openEditor();
-    }
+  function handlePointerDown() {
+    pointerActivatedRef.current = true;
+    openEditor();
   }
 
   function handleClick() {

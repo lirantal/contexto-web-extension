@@ -13,6 +13,16 @@ function ruleBody(selector: string) {
 }
 
 describe('Contexto X surface layout contract', () => {
+  it('keeps the docked editor visible as a fixed Contexto-owned right panel', () => {
+    const panel = ruleBody(':host([data-contexto-page-editor][data-placement="docked"])');
+    expect(panel).toContain('position:fixed;');
+    expect(panel).toContain('z-index:2147483645;');
+    expect(panel).toContain('top:12px;');
+    expect(panel).toContain('right:16px;');
+    expect(panel).toContain('width:min(380px,calc(100vw - 32px));');
+    expect(panel).not.toContain('position:sticky;');
+  });
+
   it('renders the hover launcher as a full-width in-flow row', () => {
     const host = ruleBody(':host([data-contexto-surface="hover-card"])');
     expect(host).toContain('display:block;');

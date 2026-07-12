@@ -61,12 +61,19 @@ describe('ContextoHoverLauncher', () => {
     expect(screen.queryByTestId('contexto-hover-tags')).not.toBeInTheDocument();
   });
 
-  it('opens on pointer-down before X can remove the hover card and does not duplicate on click', async () => {
+  it('opens on pointer-down without relying on pointerType before X can remove the hover card', async () => {
     const onEdit = renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: undefined }));
     const edit = await screen.findByRole('button', { name: 'Edit' });
 
-    fireEvent.pointerDown(edit, { pointerType: 'mouse' });
+    fireEvent.pointerDown(edit);
     expect(onEdit).toHaveBeenCalledOnce();
+  });
+
+  it('does not duplicate pointer activation with its subsequent click', async () => {
+    const onEdit = renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: undefined }));
+    const edit = await screen.findByRole('button', { name: 'Edit' });
+
+    fireEvent.pointerDown(edit);
     fireEvent.click(edit);
     expect(onEdit).toHaveBeenCalledOnce();
   });
