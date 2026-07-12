@@ -8,6 +8,8 @@ The feed integration only considers top-level, non-promoted post roots. Identity
 
 Contexto never creates an account from feed visibility. It performs an ephemeral local account lookup and renders the marker only when a saved `AccountSummary` is returned.
 
+When the primary post also has one validated canonical status URL, the panel checks the saved contact's bookmark collection. It offers **Capture this post** for uncaptured items or shows disabled **Bookmarked** state for duplicates. Capture uses an inline optional-reminder composer; invalid post evidence or bookmark lookup failure hides capture while preserving relationship context.
+
 ## Summary contents
 
 The read-only panel omits empty fields and may show:
@@ -24,6 +26,6 @@ The read-only panel omits empty fields and may show:
 
 Feed posts are transient and may be recycled by X. Contexto tracks the post host plus normalized author identity, removes stale mounts when identity changes, and cleans disconnected mounts. The marker is inserted in normal flow within the validated author header and is isolated in a Shadow DOM host.
 
-Only the normalized handle is sent through the existing local extension message boundary for lookup. Contexto does not read or store post text, post URLs, engagement data, or the visible set of unknown accounts.
+The normalized handle is sent for account lookup. For eligible saved contacts only, Contexto may additionally send the canonical post URL and a bounded top-level text excerpt through the local message boundary after explicit capture. It does not store engagement data, media, quoted content, or the visible set of unknown accounts.
 
-Feed context currently does not support post capture, editing, interaction scoring, feed filtering, or content analysis.
+Feed context does not support bookmark editing, interaction scoring, feed filtering, or content analysis.

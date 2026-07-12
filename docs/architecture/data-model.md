@@ -1,6 +1,6 @@
 # Data Model
 
-The current schema lives in `src/data/db.ts` and is versioned as Dexie version `2`.
+The current schema lives in `src/data/db.ts` and is versioned as Dexie version `3`.
 
 ## Core Records
 
@@ -9,6 +9,7 @@ The current schema lives in `src/data/db.ts` and is versioned as Dexie version `
 - `tags` and `accountTags`: many-to-many account labels.
 - `folders` and `folderAccounts`: many-to-many relationship groups.
 - `notes`: timestamped account notes.
+- `bookmarks`: account-scoped X post references with canonical URL, post ID, optional excerpt/reminder, capture timestamp, and soft-delete metadata.
 - `searchPresets`: saved search filters for future expansion.
 - `searchHistory`: generated X search URLs and filter payloads.
 - `backups`: local record of import events and backup metadata.
@@ -24,7 +25,10 @@ The important uniqueness constraints are:
 - `folders`: unique `normalizedName`.
 - `accountTags`: unique compound `[accountId+tagId]`.
 - `folderAccounts`: unique compound `[folderId+accountId]`.
+- `bookmarks`: unique compound `[accountId+postUrl]`.
 
 ## Sync Readiness
 
 Every user-edited core record uses stable UUID-based IDs and timestamps. Deletes should remain soft deletes when remote sync is introduced so another client can converge without losing intent.
+
+Bookmarks remain separate from account notes and from `AccountSummary`. Focused lookup/list operations avoid loading every bookmark during ordinary account searches and feed relationship lookups.

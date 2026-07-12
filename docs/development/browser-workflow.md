@@ -47,6 +47,8 @@ Run the relevant rows in both Chrome and Vivaldi when a change touches browser i
 | Scenario | Expected result |
 | --- | --- |
 | Unknown and saved accounts on feed hover cards | Correct handle and display name; the compact summary and Edit launcher do not overlap X controls. |
+| Saved-contact post capture | Eligible primary posts show Capture or Bookmarked; optional reminders save without leaving X; quoted/promoted/ambiguous posts do not expose capture. |
+| Dashboard bookmark collection | Multiple bookmarks appear newest first; Open on X uses the canonical post; Remove updates the collection without affecting contact metadata. |
 | Wide and narrow viewports | The editor opens in the Contexto-owned right rail or modal fallback without shifting the hover card. |
 | Hover dismissal and editor interaction | Moving away from the X card, typing, clicking fields or the backdrop, and pressing Escape do not close the editor. |
 | Save, failed Save, and Cancel | Successful Save and explicit Cancel close the owned editor; failed Save stays open with the draft intact. |

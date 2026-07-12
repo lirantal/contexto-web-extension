@@ -11,6 +11,7 @@ Contexto is X-first, but the CRM core is platform-neutral.
 - Reserved X route rejection, such as `/home`, `/messages`, and `/search`.
 - X search query construction.
 - X search URL construction.
+- Canonical X status URL parsing for supported `/<handle>/status/<numeric-id>` paths.
 
 ## X DOM Extraction Invariants
 
@@ -24,6 +25,8 @@ Content-script extraction must:
 - Exclude text inside buttons and elements with `role="button"` so action copy such as `Following` cannot become account metadata.
 - Use deliberate fallbacks and return no profile when identity evidence is inconsistent.
 - Add a minimal fixture and regression test whenever X introduces a newly observed DOM shape.
+
+Bookmark capture additionally requires one unambiguous top-level status link matching the validated primary-author handle. Only top-level `[data-testid="tweetText"]` may become the bounded excerpt; quoted-post links/text, promoted content, reply targets, and nested cards are excluded. Missing post evidence disables capture without removing saved-contact relationship context.
 
 Keep DOM extraction in the X content-script boundary. Shared platform adapters continue to own stable parsing, normalization, and URL construction rules.
 

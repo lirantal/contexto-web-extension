@@ -15,6 +15,8 @@ IndexedDB data persists while the extension remains installed in the same browse
 
 The MVP includes JSON export/import from the dashboard. Backups should be taken before risky browser-profile changes, extension reinstallations, or large schema migrations.
 
+Current exports use backup format version 2 and include bookmarks. Import remains compatible with format version 1 by treating bookmarks as an empty collection. Version 2 bookmark records are validated for owning-account, canonical URL, author, timestamp, and bounded-text integrity before the import transaction writes any data.
+
 ## Future Remote Sync
 
 The schema is prepared for a later sync service through:
