@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ContextoHoverLauncher, type ContextoHoverLauncherProps } from '@/src/ui/ContextoHoverLauncher';
@@ -29,13 +29,52 @@ describe('ContextoHoverLauncher', () => {
     expect(onEdit).toHaveBeenCalledWith(profile, edit);
   });
 
-  it('shows saved status without expanding the account metadata', async () => {
-    const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', tags: [], folders: [] };
+  it('shows saved display name and populated profession, company, and tags', async () => {
+    const saved = {
+      id: 'account_1', platform: 'x' as const, handle: 'theo', normalizedHandle: 'theo',
+      displayName: 'Theo Browne', profileUrl: 'https://x.com/theo',
+      profession: 'Developer', company: { id: 'company_1', name: 'Ping Labs', normalizedName: 'ping labs', updatedAt: '2026-07-12' },
+      tags: [
+        { id: 'tag_1', name: 'Founder', normalizedName: 'founder', updatedAt: '2026-07-12' },
+        { id: 'tag_2', name: 'Security', normalizedName: 'security', updatedAt: '2026-07-12' },
+      ],
+      folders: [],
+    };
     renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: saved }));
 
     expect(await screen.findByText('Saved')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Edit' })).toBeVisible();
-    expect(screen.queryByLabelText('Position')).not.toBeInTheDocument();
+    expect(screen.getByText('Theo Browne')).toBeVisible();
+    expect(screen.getByText('Developer · Ping Labs')).toBeVisible();
+    expect(screen.getByText('Founder')).toBeVisible();
+    expect(screen.getByText('Security')).toBeVisible();
+  });
+
+  it('omits empty optional metadata from a saved summary', async () => {
+    const saved = {
+      id: 'account_1', platform: 'x' as const, handle: 'theo', normalizedHandle: 'theo',
+      displayName: 'Theo', profileUrl: 'https://x.com/theo', tags: [], folders: [],
+    };
+    renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: saved }));
+
+    expect(await screen.findByText('Theo')).toBeVisible();
+    expect(screen.queryByTestId('contexto-hover-organization')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-hover-tags')).not.toBeInTheDocument();
+  });
+
+  it('opens on pointer-down before X can remove the hover card and does not duplicate on click', async () => {
+    const onEdit = renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: undefined }));
+    const edit = await screen.findByRole('button', { name: 'Edit' });
+
+    fireEvent.pointerDown(edit, { pointerType: 'mouse' });
+    expect(onEdit).toHaveBeenCalledOnce();
+    fireEvent.click(edit);
+    expect(onEdit).toHaveBeenCalledOnce();
+  });
+
+  it('keeps click activation for keyboard users', async () => {
+    const onEdit = renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: undefined }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    expect(onEdit).toHaveBeenCalledOnce();
   });
 
   it('offers a compact retry when lookup fails', async () => {

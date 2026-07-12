@@ -23,15 +23,17 @@ function buildCard(followerPath: string) {
 }
 
 describe('resolveHoverCardInsertion', () => {
-  it('places the launcher after the shared Following and Followers row', () => {
+  it('places the launcher after both links inside their shared count container', () => {
     const card = buildCard('/amanda/followers');
     const counts = card.querySelector<HTMLElement>('[data-testid="counts"]')!;
 
     const location = resolveHoverCardInsertion(card, 'amanda');
 
-    expect(location.parent).toBe(counts.parentElement);
-    expect(location.before).toBe(counts.nextSibling);
-    expect(location.parent).not.toBe(card);
+    expect(location).toEqual({ parent: counts, before: null });
+    expect(Array.from(counts.querySelectorAll('a')).map((anchor) => anchor.textContent)).toEqual([
+      '1,724 Following',
+      '3,149 Followers',
+    ]);
   });
 
   it('recognizes X verified-follower links as the follower count', () => {
@@ -40,8 +42,7 @@ describe('resolveHoverCardInsertion', () => {
 
     const location = resolveHoverCardInsertion(card, 'amanda');
 
-    expect(location.parent).toBe(counts.parentElement);
-    expect(location.before).toBe(counts.nextSibling);
+    expect(location).toEqual({ parent: counts, before: null });
   });
 
   it('falls back inside the inner card before the profile CTA', () => {

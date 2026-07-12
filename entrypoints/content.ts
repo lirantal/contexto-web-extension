@@ -1,17 +1,20 @@
 import surfaceCss from '@/src/ui/contexto-profile-surface.css?inline';
-import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
+import { createContentRuntimeSender } from '@/src/x/content-runtime-sender';
 import { AccountDraftStore } from '@/src/x/draft-store';
 import { mountContextoSurface, detectXTheme } from '@/src/x/mount-contexto-surface';
 import { createXSurfaceObserver } from '@/src/x/surface-observer';
 import { createPageEditorController } from '@/src/x/page-editor-controller';
 
 const drafts = new AccountDraftStore();
-const send = (message: ContextoRequest): Promise<ContextoResponse> => browser.runtime.sendMessage(message);
 
 export default defineContentScript({
   matches: ['https://x.com/*', 'https://twitter.com/*'],
   cssInjectionMode: 'ui',
   main(ctx) {
+    const send = createContentRuntimeSender(
+      ctx,
+      (message) => browser.runtime.sendMessage(message),
+    );
     const pageEditor = createPageEditorController({
       root: document.body,
       send,

@@ -38,9 +38,13 @@ describe('mountContextoSurface', () => {
     expect(mountHost?.getAttribute('data-theme')).toBe('dark');
     expect(mountHost?.shadowRoot).toHaveTextContent('Hover Contexto launcher');
     expect(mountHost?.shadowRoot).not.toHaveTextContent('Full Contexto editor');
-    expect(mountHost?.parentElement).toBe(host.querySelector('[data-testid="inner-card"]'));
-    expect(mountHost?.previousElementSibling).toBe(host.querySelector('[data-testid="counts"]'));
-    expect(mountHost?.nextElementSibling).toBe(host.querySelector('a[role="button"]'));
+    const counts = host.querySelector<HTMLElement>('[data-testid="counts"]')!;
+    expect(mountHost?.parentElement).toBe(counts);
+    expect(counts.lastElementChild).toBe(mountHost);
+    expect(Array.from(counts.querySelectorAll('a')).map((anchor) => anchor.textContent)).toEqual([
+      '12 Following',
+      '34 Followers',
+    ]);
     expect(host.style.position).toBe('fixed');
     expect(cleanup.isConnected?.()).toBe(true);
     host.querySelector('[data-testid="inner-card"]')?.remove();
