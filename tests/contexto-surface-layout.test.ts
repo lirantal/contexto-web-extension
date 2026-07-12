@@ -16,6 +16,8 @@ describe('Contexto X surface layout contract', () => {
   it('renders the hover launcher as a full-width in-flow row', () => {
     const host = ruleBody(':host([data-contexto-surface="hover-card"])');
     expect(host).toContain('display:block;');
+    expect(host).toContain('flex:0 0 100%;');
+    expect(host).toContain('width:100%;');
     expect(host).toContain('margin:8px 0;');
     expect(host).not.toContain('position:absolute;');
     expect(host).not.toContain('bottom:');

@@ -40,8 +40,8 @@ export function resolveHoverCardInsertion(host: HTMLElement, handle: string): Ho
 
   if (following && followers) {
     const countsRow = nearestCommonAncestor(following, followers, container);
-    if (countsRow?.parentElement && container.contains(countsRow.parentElement)) {
-      return { parent: countsRow.parentElement, before: countsRow.nextSibling };
+    if (countsRow && countsRow !== container && container.contains(countsRow)) {
+      return { parent: countsRow, before: null };
     }
   }
 
