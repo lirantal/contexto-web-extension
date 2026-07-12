@@ -144,18 +144,36 @@ describe('ContextoProfileSurface', () => {
     expect(dialog).toHaveAttribute('aria-modal', 'true');
   });
 
-  it('requests close without silently discarding an unsaved draft', async () => {
+  it('closes through the request callback after a successful save', async () => {
+    const onRequestClose = vi.fn();
+    const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', tags: [], folders: [] };
+    const send = vi.fn()
+      .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [] } })
+      .mockResolvedValueOnce({ ok: true, account: saved });
+    render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="modal" onRequestClose={onRequestClose} send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Save to Contexto' }));
+    await waitFor(() => expect(onRequestClose).toHaveBeenCalledOnce());
+    expect(screen.queryByRole('button', { name: 'Close Contexto editor' })).not.toBeInTheDocument();
+  });
+
+  it('keeps a failed save open and closes only when Cancel is clicked', async () => {
     const drafts = new AccountDraftStore();
     const onRequestClose = vi.fn();
-    const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
-      ? { ok: true, lookup: true, lookupAccount: undefined }
-      : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
-    render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="docked" onRequestClose={onRequestClose} send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
+    const send = vi.fn()
+      .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [] } })
+      .mockResolvedValueOnce({ ok: false, error: 'Database unavailable' });
+    render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="modal" onRequestClose={onRequestClose} send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
 
     fireEvent.change(await screen.findByLabelText('Position'), { target: { value: 'CEO' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Close Contexto editor' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
+    expect(await screen.findByText('Database unavailable')).toBeVisible();
+    expect(onRequestClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(onRequestClose).toHaveBeenCalledOnce();
-    expect(drafts.get(profile.handle)?.metadata.position).toBe('CEO');
+    expect(drafts.get(profile.handle)).toBeUndefined();
   });
 });

@@ -95,15 +95,30 @@ describe('page editor controller', () => {
     expect(host.dataset.placement).toBe('modal');
     expect(host.shadowRoot?.activeElement).toBe(host.shadowRoot?.querySelector('button'));
 
-    drafts.set(profile.handle, { metadata: { displayName: 'Theo', position: 'CEO', profession: '', companyName: '', location: '', relationshipSource: '' }, tagNames: [], folderNames: [] });
     host.shadowRoot?.querySelector('button')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(host.isConnected).toBe(true);
 
-    drafts.clear(profile.handle);
     host.shadowRoot?.querySelector('button')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    expect(host.isConnected).toBe(false);
-    expect(document.activeElement).toBe(button);
+    expect(host.isConnected).toBe(true);
 
+    controller.disconnect();
+    expect(document.activeElement).toBe(button);
+  });
+
+  it('keeps the editor open for internal and backdrop clicks and Escape', () => {
+    installMatchMedia(false);
+    const button = document.createElement('button');
+    document.body.append(button);
+    const controller = createPageEditorController({ root: document.body, send: vi.fn(), drafts: new AccountDraftStore(), css: '' });
+    controller.open(profile, button);
+    const host = document.querySelector<HTMLElement>('[data-contexto-page-editor]')!;
+    const editorButton = host.shadowRoot?.querySelector('[data-testid="editor"]')!;
+
+    editorButton.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    host.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    host.shadowRoot?.querySelector('button')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(host.isConnected).toBe(true);
     controller.disconnect();
   });
 

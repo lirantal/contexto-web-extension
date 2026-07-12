@@ -31,9 +31,9 @@ describe('page editor controller with the real editor', () => {
     expect(shadow.activeElement).toBeNull();
     resolveLookup({ ok: true, lookup: true, lookupAccount: undefined });
     await waitFor(() => {
-      const close = shadow.querySelector('[aria-label="Close Contexto editor"]');
-      expect(close).not.toBeNull();
-      expect(shadow.activeElement).toBe(close);
+      const firstControl = shadow.querySelector('input, button, [tabindex]:not([tabindex="-1"])');
+      expect(firstControl).not.toBeNull();
+      expect(shadow.activeElement).toBe(firstControl);
     });
 
     const position = Array.from(shadow.querySelectorAll('label'))

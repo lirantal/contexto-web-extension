@@ -46,11 +46,6 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
 
   function handleModalKeydown(event: KeyboardEvent) {
     if (placement !== 'modal') return;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      requestClose();
-      return;
-    }
     if (event.key !== 'Tab' || !shadow) return;
     const focusable = Array.from(shadow.querySelectorAll<HTMLElement>('input, button, [tabindex]:not([tabindex="-1"])'))
       .filter((element) => !element.hasAttribute('disabled'));
@@ -78,7 +73,6 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
     shadow.addEventListener('keydown', (event) => handleModalKeydown(event as KeyboardEvent));
     editorObserver = new MutationObserver(focusModalControl);
     editorObserver.observe(app, { childList: true, subtree: true });
-    host.addEventListener('click', (event) => { if (event.target === host) requestClose(); });
     reactRoot = createRoot(app);
   }
 
