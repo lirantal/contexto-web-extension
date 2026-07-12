@@ -318,6 +318,34 @@ export async function assignFolder(accountId: string, name: string, database = d
   return getAccountSummary(accountId, database) as Promise<AccountSummary>;
 }
 
+export async function removeTag(accountId: string, tagId: string, database = db): Promise<AccountSummary> {
+  const assignment = await database.accountTags
+    .where('[accountId+tagId]')
+    .equals([accountId, tagId])
+    .first();
+
+  if (assignment) {
+    await database.accountTags.delete(assignment.id);
+    await recordChange(database, 'account', accountId, 'update');
+  }
+
+  return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+}
+
+export async function removeFolder(accountId: string, folderId: string, database = db): Promise<AccountSummary> {
+  const assignment = await database.folderAccounts
+    .where('[folderId+accountId]')
+    .equals([folderId, accountId])
+    .first();
+
+  if (assignment) {
+    await database.folderAccounts.delete(assignment.id);
+    await recordChange(database, 'account', accountId, 'update');
+  }
+
+  return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+}
+
 export async function getLookups(database = db): Promise<LookupData> {
   const [companies, tags, folders] = await Promise.all([
     database.companies.orderBy('name').toArray(),

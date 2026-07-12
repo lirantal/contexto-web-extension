@@ -7,9 +7,12 @@ import {
   ensureAccountFromProfile,
   exportBackup,
   getAccountByHandle,
+  getLookups,
   importBackup,
   listAccountSummaries,
   listTargetAccountSuggestions,
+  removeFolder,
+  removeTag,
   resetDatabaseForTests,
   saveAccountContext,
   updateAccount,
@@ -62,6 +65,33 @@ describe('Contexto repositories', () => {
     expect(summaries).toHaveLength(1);
     expect(summaries[0].tags.map((tag) => tag.name)).toContain('security');
     expect(summaries[0].folders.map((folder) => folder.name)).toContain('DevRel friends');
+  });
+
+  it('removes account tag and folder assignments without deleting shared lookups', async () => {
+    const first = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'First', displayName: 'First', profileUrl: 'https://x.com/first' },
+      database,
+    );
+    const second = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'Second', displayName: 'Second', profileUrl: 'https://x.com/second' },
+      database,
+    );
+    const assignedFirst = await assignFolder(first.id, 'Friends', database);
+    const withBoth = await assignTag(first.id, 'founder', database);
+    await assignFolder(second.id, 'Friends', database);
+    await assignTag(second.id, 'founder', database);
+
+    const withoutTag = await removeTag(first.id, withBoth.tags[0].id, database);
+    const withoutFolder = await removeFolder(first.id, assignedFirst.folders[0].id, database);
+
+    expect(withoutTag.tags).toEqual([]);
+    expect(withoutFolder.folders).toEqual([]);
+    const secondSummary = await getAccountByHandle('x', 'second', database);
+    expect(secondSummary?.tags.map(({ name }) => name)).toEqual(['founder']);
+    expect(secondSummary?.folders.map(({ name }) => name)).toEqual(['Friends']);
+    const lookups = await getLookups(database);
+    expect(lookups.tags.map(({ name }) => name)).toContain('founder');
+    expect(lookups.folders.map(({ name }) => name)).toContain('Friends');
   });
 
   it('lists active X accounts as lightweight suggestions ordered by recency', async () => {
