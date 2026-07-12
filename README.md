@@ -57,6 +57,7 @@ For day-to-day iteration, prefer `npm run dev` with a persistent browser profile
 
 ## Documentation
 
+- [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Data model](docs/architecture/data-model.md)
 - [Platform adapters](docs/architecture/platform-adapters.md)
