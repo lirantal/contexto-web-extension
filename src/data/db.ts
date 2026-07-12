@@ -43,6 +43,26 @@ export class ContextoDatabase extends Dexie {
       backups: 'id, createdAt',
       changeLog: 'id, entityType, entityId, changedAt',
     });
+
+    this.version(2).stores({
+      accounts:
+        'id, &[platform+normalizedHandle], platform, normalizedHandle, displayName, companyId, role, location, updatedAt, deletedAt',
+      companies: 'id, &normalizedName, name, updatedAt, deletedAt',
+      tags: 'id, &normalizedName, name, updatedAt, deletedAt',
+      accountTags: 'id, &[accountId+tagId], accountId, tagId',
+      folders: 'id, &normalizedName, name, updatedAt, deletedAt',
+      folderAccounts: 'id, &[folderId+accountId], folderId, accountId',
+      notes: 'id, accountId, createdAt, updatedAt, deletedAt',
+      searchPresets: 'id, platform, name, updatedAt, deletedAt',
+      searchHistory: 'id, platform, accountId, createdAt',
+      backups: 'id, createdAt',
+      changeLog: 'id, entityType, entityId, changedAt',
+    }).upgrade(async (transaction) => {
+      await transaction.table('accounts').toCollection().modify((account: Record<string, unknown>) => {
+        delete account.profession;
+        delete account.position;
+      });
+    });
   }
 }
 

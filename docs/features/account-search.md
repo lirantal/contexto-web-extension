@@ -7,7 +7,7 @@ Search currently matches:
 - Handle.
 - Display name.
 - Company.
-- Profession and position.
+- Role.
 - Location.
 - Relationship source.
 - Latest note text.

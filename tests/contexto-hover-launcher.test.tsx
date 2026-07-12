@@ -29,11 +29,11 @@ describe('ContextoHoverLauncher', () => {
     expect(onEdit).toHaveBeenCalledWith(profile, edit);
   });
 
-  it('shows saved display name and populated profession, company, and tags', async () => {
+  it('shows saved display name and populated role, company, and tags', async () => {
     const saved = {
       id: 'account_1', platform: 'x' as const, handle: 'theo', normalizedHandle: 'theo',
       displayName: 'Theo Browne', profileUrl: 'https://x.com/theo',
-      profession: 'Developer', company: { id: 'company_1', name: 'Ping Labs', normalizedName: 'ping labs', updatedAt: '2026-07-12' },
+      role: 'Developer', company: { id: 'company_1', name: 'Ping Labs', normalizedName: 'ping labs', updatedAt: '2026-07-12' },
       tags: [
         { id: 'tag_1', name: 'Founder', normalizedName: 'founder', updatedAt: '2026-07-12' },
         { id: 'tag_2', name: 'Security', normalizedName: 'security', updatedAt: '2026-07-12' },

@@ -36,12 +36,12 @@ describe('page editor controller with the real editor', () => {
       expect(shadow.activeElement).toBe(firstControl);
     });
 
-    const position = Array.from(shadow.querySelectorAll('label'))
-      .find((label) => label.textContent?.startsWith('Position'))?.querySelector('input');
-    position?.focus();
+    const role = Array.from(shadow.querySelectorAll('label'))
+      .find((label) => label.textContent?.startsWith('Role'))?.querySelector('input');
+    role?.focus();
     document.body.append(document.createElement('div'));
     await new Promise((resolve) => setTimeout(resolve, 60));
-    expect(shadow.activeElement).toBe(position);
+    expect(shadow.activeElement).toBe(role);
     controller.disconnect();
   });
 });

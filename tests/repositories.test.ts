@@ -1,3 +1,4 @@
+import Dexie from 'dexie';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ContextoDatabase } from '@/src/data/db';
 import {
@@ -36,7 +37,7 @@ describe('Contexto repositories', () => {
     const updated = await updateAccount(
       account.id,
       {
-        profession: 'Security engineer',
+        role: '  Security engineer  ',
         companyName: 'Example Corp',
         location: 'Berlin',
         relationshipSource: 'Met at a conference',
@@ -45,8 +46,48 @@ describe('Contexto repositories', () => {
     );
 
     expect(updated.company?.name).toBe('Example Corp');
-    expect(updated.profession).toBe('Security engineer');
+    expect(updated.role).toBe('Security engineer');
+    expect(await listAccountSummaries({ query: 'security engineer' }, database)).toHaveLength(1);
+    const exported = (await exportBackup(database)).data.accounts[0];
+    expect(exported).toMatchObject({ role: 'Security engineer' });
+    expect(exported).not.toHaveProperty('profession');
+    expect(exported).not.toHaveProperty('position');
     expect(await getAccountByHandle('x', '@exampledev', database)).toMatchObject({ id: account.id });
+  });
+
+  it('discards legacy profession and position values during the database upgrade', async () => {
+    const name = `ContextoLegacyRoleMigration-${globalThis.crypto.randomUUID()}`;
+    const legacy = new Dexie(name);
+    legacy.version(1).stores({
+      accounts:
+        'id, &[platform+normalizedHandle], platform, normalizedHandle, displayName, companyId, profession, position, location, updatedAt, deletedAt',
+    });
+    await legacy.table('accounts').put({
+      id: 'account_legacy',
+      platform: 'x',
+      handle: 'legacy',
+      normalizedHandle: 'legacy',
+      displayName: 'Legacy User',
+      profileUrl: 'https://x.com/legacy',
+      profession: 'Developer',
+      position: 'CTO',
+      location: 'Berlin',
+      syncState: 'local-only',
+      createdAt: '2026-07-01T00:00:00.000Z',
+      updatedAt: '2026-07-01T00:00:00.000Z',
+    });
+    legacy.close();
+
+    const upgraded = new ContextoDatabase(name);
+    try {
+      const account = await upgraded.accounts.get('account_legacy');
+      expect(account).toMatchObject({ displayName: 'Legacy User', location: 'Berlin' });
+      expect(account).not.toHaveProperty('profession');
+      expect(account).not.toHaveProperty('position');
+      expect(account).not.toHaveProperty('role');
+    } finally {
+      await upgraded.delete();
+    }
   });
 
   it('assigns folders, tags, and notes for dashboard search', async () => {
@@ -142,8 +183,7 @@ describe('Contexto repositories', () => {
       },
       metadata: {
         displayName: 'Saved Name',
-        profession: 'Developer',
-        position: 'CTO',
+        role: 'CTO',
         companyName: 'Example Corp',
         location: 'Berlin',
         relationshipSource: 'Conference',
@@ -152,7 +192,7 @@ describe('Contexto repositories', () => {
       folderNames: ['Friends', 'Speakers'],
     }, database);
 
-    expect(first).toMatchObject({ displayName: 'Saved Name', position: 'CTO' });
+    expect(first).toMatchObject({ displayName: 'Saved Name', role: 'CTO' });
     expect(first.tags.map(({ name }) => name).sort()).toEqual(['Founder', 'Security']);
     expect(first.folders.map(({ name }) => name).sort()).toEqual(['Friends', 'Speakers']);
 
@@ -165,8 +205,7 @@ describe('Contexto repositories', () => {
       },
       metadata: {
         displayName: 'Saved Name',
-        profession: 'Developer',
-        position: 'CTO',
+        role: 'CTO',
         companyName: 'Example Corp',
         location: 'Berlin',
         relationshipSource: 'Conference',

@@ -1,10 +1,10 @@
 # Data Model
 
-The current schema lives in `src/data/db.ts` and is versioned as Dexie version `1`.
+The current schema lives in `src/data/db.ts` and is versioned as Dexie version `2`.
 
 ## Core Records
 
-- `accounts`: platform-neutral social accounts. Important fields include `platform`, `handle`, `normalizedHandle`, `displayName`, `profileUrl`, `profession`, `position`, `companyId`, `location`, `relationshipSource`, `syncState`, timestamps, and soft-delete metadata.
+- `accounts`: platform-neutral social accounts. Important fields include `platform`, `handle`, `normalizedHandle`, `displayName`, `profileUrl`, `role`, `companyId`, `location`, `relationshipSource`, `syncState`, timestamps, and soft-delete metadata.
 - `companies`: normalized company records referenced by accounts.
 - `tags` and `accountTags`: many-to-many account labels.
 - `folders` and `folderAccounts`: many-to-many relationship groups.
