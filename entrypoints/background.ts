@@ -2,7 +2,9 @@ import {
   addNote,
   assignFolder,
   assignTag,
+  captureBookmark,
   ensureAccountFromProfile,
+  findBookmarkByPost,
   getAccountByHandle,
   getLookups,
   listAccountSummaries,
@@ -37,6 +39,22 @@ export async function handleRequest(message: ContextoRequest): Promise<ContextoR
         return { ok: true, accounts: await listAccountSummaries(message.filters) };
       case 'contexto:note:add':
         return { ok: true, account: await addNote(message.accountId, message.body) };
+      case 'contexto:bookmark:lookup':
+        return {
+          ok: true,
+          bookmarkLookup: true,
+          lookupBookmark: await findBookmarkByPost(message.accountId, message.postUrl),
+        };
+      case 'contexto:bookmark:capture':
+        return {
+          ok: true,
+          bookmark: await captureBookmark(message.accountId, {
+            authorHandle: message.authorHandle,
+            postUrl: message.postUrl,
+            excerpt: message.excerpt,
+            reminder: message.reminder,
+          }),
+        };
       case 'contexto:tag:assign':
         return { ok: true, account: await assignTag(message.accountId, message.name) };
       case 'contexto:folder:assign':

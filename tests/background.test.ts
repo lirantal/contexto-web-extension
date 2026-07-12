@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const repositories = vi.hoisted(() => ({
+  captureBookmark: vi.fn(),
+  findBookmarkByPost: vi.fn(),
   getAccountByHandle: vi.fn(),
   saveAccountContext: vi.fn(),
 }));
 
 vi.mock('@/src/data/repositories', () => ({
+  captureBookmark: repositories.captureBookmark,
+  findBookmarkByPost: repositories.findBookmarkByPost,
   getAccountByHandle: repositories.getAccountByHandle,
   saveAccountContext: repositories.saveAccountContext,
 }));
@@ -36,5 +40,36 @@ describe('background account context messages', () => {
     await handleRequest({ type: 'contexto:account:saveContext', input });
     expect(repositories.saveAccountContext).toHaveBeenCalledWith(input);
   });
-});
 
+  it('routes bookmark lookup and capture without creating an account', async () => {
+    const existing = { id: 'bookmark_1', postUrl: 'https://x.com/dev/status/123' };
+    repositories.findBookmarkByPost.mockResolvedValue(existing);
+    await expect(handleRequest({
+      type: 'contexto:bookmark:lookup',
+      accountId: 'account_1',
+      postUrl: 'https://x.com/dev/status/123',
+    })).resolves.toEqual({ ok: true, bookmarkLookup: true, lookupBookmark: existing });
+    expect(repositories.findBookmarkByPost).toHaveBeenCalledWith(
+      'account_1',
+      'https://x.com/dev/status/123',
+    );
+
+    const created = { ...existing, reminder: 'Possible guest' };
+    repositories.captureBookmark.mockResolvedValue(created);
+    await expect(handleRequest({
+      type: 'contexto:bookmark:capture',
+      accountId: 'account_1',
+      authorHandle: 'dev',
+      postUrl: 'https://x.com/dev/status/123',
+      excerpt: 'Release update',
+      reminder: 'Possible guest',
+    })).resolves.toEqual({ ok: true, bookmark: created });
+    expect(repositories.captureBookmark).toHaveBeenCalledWith('account_1', {
+      authorHandle: 'dev',
+      postUrl: 'https://x.com/dev/status/123',
+      excerpt: 'Release update',
+      reminder: 'Possible guest',
+    });
+    expect(repositories.saveAccountContext).not.toHaveBeenCalled();
+  });
+});
