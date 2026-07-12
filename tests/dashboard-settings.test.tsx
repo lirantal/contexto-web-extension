@@ -4,13 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dashboard } from '@/src/ui/Dashboard';
 
 const mocks = vi.hoisted(() => ({
+  accounts: [] as Array<Record<string, unknown>>,
   clearTargetHistory: vi.fn(),
   getSettings: vi.fn(),
+  removeFolder: vi.fn(),
+  removeTag: vi.fn(),
 }));
 
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: vi.fn((_query, dependencies?: unknown[]) => dependencies?.length
-    ? []
+    ? mocks.accounts
     : { companies: [], tags: [], folders: [] }),
 }));
 
@@ -24,6 +27,8 @@ vi.mock('@/src/data/repositories', () => ({
   importBackup: vi.fn(),
   listAccountSummaries: vi.fn(),
   recordSearch: vi.fn(),
+  removeFolder: mocks.removeFolder,
+  removeTag: mocks.removeTag,
   updateAccount: vi.fn(),
 }));
 
@@ -35,7 +40,9 @@ vi.mock('@/src/shared/settings', () => ({
 
 describe('dashboard target handle history settings', () => {
   beforeEach(() => {
+    HTMLElement.prototype.scrollIntoView = vi.fn();
     vi.clearAllMocks();
+    mocks.accounts = [];
     mocks.getSettings.mockResolvedValue({ myXHandle: '@me', lastDashboardView: 'accounts' });
     mocks.clearTargetHistory.mockResolvedValue(undefined);
   });
@@ -48,5 +55,35 @@ describe('dashboard target handle history settings', () => {
 
     expect(mocks.clearTargetHistory).toHaveBeenCalledOnce();
     expect(await screen.findByText('Target handle history cleared')).toBeVisible();
+  });
+
+  it('immediately removes tag and folder assignments from the selected account', async () => {
+    mocks.accounts = [{
+      id: 'account-1',
+      platform: 'x',
+      handle: 'founder',
+      normalizedHandle: 'founder',
+      displayName: 'Founder',
+      profileUrl: 'https://x.com/founder',
+      syncState: 'local-only',
+      createdAt: '2026-07-12T00:00:00.000Z',
+      updatedAt: '2026-07-12T00:00:00.000Z',
+      tags: [{
+        id: 'tag-1', name: 'founder', normalizedName: 'founder',
+        createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      }],
+      folders: [{
+        id: 'folder-1', name: 'Friends', normalizedName: 'friends',
+        createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      }],
+    }];
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    await user.click(await screen.findByRole('button', { name: 'Remove founder from Tags' }));
+    await user.click(screen.getByRole('button', { name: 'Remove Friends from Folders' }));
+
+    expect(mocks.removeTag).toHaveBeenCalledWith('account-1', 'tag-1');
+    expect(mocks.removeFolder).toHaveBeenCalledWith('account-1', 'folder-1');
   });
 });

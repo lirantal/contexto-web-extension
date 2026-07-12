@@ -310,6 +310,7 @@ textarea {
 .chip {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   min-height: 26px;
   border-radius: 999px;
   padding: 2px 9px;
@@ -317,6 +318,17 @@ textarea {
   color: #0c5e59;
   font-weight: 700;
   font-size: 12px;
+}
+
+.chip button {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  min-height: 24px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
 }
 
 .folder-chip {
