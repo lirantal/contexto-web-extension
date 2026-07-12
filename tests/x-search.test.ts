@@ -4,6 +4,7 @@ import {
   buildXSearchUrl,
   canRunXSearch,
   normalizeXHandle,
+  parseXPostUrl,
   parseXProfileUrl,
 } from '@/src/shared/platforms/x';
 
@@ -23,6 +24,22 @@ describe('X platform adapter', () => {
   it('parses profile URLs and rejects reserved paths', () => {
     expect(parseXProfileUrl('https://x.com/liran_tal')?.handle).toBe('liran_tal');
     expect(parseXProfileUrl('https://x.com/messages')).toBeNull();
+  });
+
+  it('canonicalizes supported X post URLs and rejects unsafe shapes', () => {
+    expect(parseXPostUrl('https://twitter.com/Theo/status/123?ref=home#x')).toEqual({
+      handle: 'theo',
+      postId: '123',
+      postUrl: 'https://x.com/theo/status/123',
+    });
+    expect(parseXPostUrl('/Theo/status/123')).toEqual({
+      handle: 'theo',
+      postId: '123',
+      postUrl: 'https://x.com/theo/status/123',
+    });
+    expect(parseXPostUrl('https://example.com/theo/status/123')).toBeNull();
+    expect(parseXPostUrl('https://x.com/theo/status/not-numeric')).toBeNull();
+    expect(parseXPostUrl('https://x.com/messages/status/123')).toBeNull();
   });
 
   it('builds profile search queries', () => {

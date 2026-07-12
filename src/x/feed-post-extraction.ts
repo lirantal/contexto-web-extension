@@ -1,5 +1,5 @@
-import { normalizeXHandle, parseXProfileUrl } from '@/src/shared/platforms/x';
-import type { ProfileSnapshot } from '@/src/shared/types';
+import { normalizeXHandle, parseXPostUrl, parseXProfileUrl } from '@/src/shared/platforms/x';
+import type { ProfileSnapshot, XPostSnapshot } from '@/src/shared/types';
 
 interface FeedPostIdentity {
   container: HTMLElement;
@@ -78,5 +78,31 @@ export function extractFeedPostProfile(post: HTMLElement): ProfileSnapshot | nul
     displayName: identity.displayName,
     avatarUrl: identity.container.querySelector<HTMLImageElement>('img[src*="profile_images"]')?.src,
     capturedAt: new Date().toISOString(),
+  };
+}
+
+export function extractFeedPostSnapshot(post: HTMLElement): XPostSnapshot | null {
+  const identity = findFeedPostIdentity(post);
+  if (!identity || isPromoted(post)) return null;
+
+  const candidates = Array.from(post.querySelectorAll<HTMLAnchorElement>('a[href]'))
+    .filter((anchor) => anchor.closest<HTMLElement>('[data-testid="tweet"]') === post)
+    .map((anchor) => parseXPostUrl(anchor.getAttribute('href') ?? anchor.href))
+    .filter((snapshot) => snapshot?.handle === identity.handle);
+  const unique = new Map(candidates.map((snapshot) => [snapshot!.postUrl, snapshot!]));
+  if (unique.size !== 1) return null;
+
+  const source = unique.values().next().value;
+  if (!source) return null;
+  const excerptNode = Array.from(post.querySelectorAll<HTMLElement>('[data-testid="tweetText"]'))
+    .find((node) => node.closest<HTMLElement>('[data-testid="tweet"]') === post);
+  const excerpt = compactText(excerptNode?.textContent);
+
+  return {
+    platform: 'x',
+    authorHandle: identity.handle,
+    postId: source.postId,
+    postUrl: source.postUrl,
+    excerpt: excerpt ? [...excerpt].slice(0, 280).join('') : undefined,
   };
 }

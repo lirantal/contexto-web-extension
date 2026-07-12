@@ -129,6 +129,14 @@ export interface ProfileSnapshot {
   capturedAt?: string;
 }
 
+export interface XPostSnapshot {
+  platform: 'x';
+  authorHandle: string;
+  postId: string;
+  postUrl: string;
+  excerpt?: string;
+}
+
 export interface AccountSummary extends Account {
   company?: Company;
   tags: Tag[];

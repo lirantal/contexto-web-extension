@@ -57,6 +57,29 @@ export function parseXProfileUrl(rawUrl: string): ProfileSnapshot | null {
   };
 }
 
+export function parseXPostUrl(rawUrl: string): { handle: string; postId: string; postUrl: string } | null {
+  let url: URL;
+
+  try {
+    url = new URL(rawUrl, 'https://x.com');
+  } catch {
+    return null;
+  }
+
+  if (!['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(url.hostname.toLowerCase())) {
+    return null;
+  }
+
+  const match = url.pathname.match(/^\/([A-Za-z0-9_]{1,15})\/status\/(\d+)\/?$/);
+  if (!match) return null;
+
+  const handle = normalizeXHandle(match[1]);
+  if (RESERVED_X_PATHS.has(handle) || !isValidXHandle(handle)) return null;
+
+  const postId = match[2];
+  return { handle, postId, postUrl: `https://x.com/${handle}/status/${postId}` };
+}
+
 export function buildXSearchQuery(filters: XSearchFilters): string {
   const viewer = filters.viewerHandle ? normalizeXHandle(filters.viewerHandle) : '';
   const target = filters.targetHandle ? normalizeXHandle(filters.targetHandle) : '';

@@ -1,7 +1,11 @@
 <article data-testid="tweet">
   <div data-testid="User-Name">
     <a href="/theo"><span>Theo</span><span>@theo</span></a>
-    <time datetime="2026-07-12T12:00:00.000Z">2h</time>
   </div>
-  <div data-testid="tweetText">A visible post body that Contexto must not read.</div>
+  <a href="/theo/status/123"><time datetime="2026-07-12T12:00:00.000Z">2h</time></a>
+  <div data-testid="tweetText">A visible post body worth remembering.</div>
+  <div data-testid="tweet">
+    <a href="/quoted/status/456"><time>1h</time></a>
+    <div data-testid="tweetText">Quoted content must not be captured.</div>
+  </div>
 </article>
