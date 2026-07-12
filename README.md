@@ -7,6 +7,7 @@ The extension is built with [WXT](https://wxt.dev/), React, TypeScript, and Inde
 ## Current MVP
 
 - Compact X/Twitter hover launchers plus persistent right-rail/modal and full-profile editors for explicitly saving relationship metadata without leaving X.
+- Saved-contact feed markers with compact read-only relationship context and a path into the full editor.
 - Local IndexedDB database for accounts, companies, tags, folders, notes, search history, and backups.
 - Dashboard/options page for offline account search, metadata editing, filtering, import, and export.
 - Popup quick-search builder for X searches with keyword and date filters.

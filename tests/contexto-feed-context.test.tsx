@@ -19,7 +19,7 @@ const saved: AccountSummary = {
   latestNote: { id: 'note_1', accountId: 'account_1', body: 'Invite Theo to the security roundtable.', source: 'manual', createdAt: '2026-07-12', updatedAt: '2026-07-12' },
 };
 
-function renderFeed(account: AccountSummary | undefined = saved, onEdit = vi.fn()) {
+function renderFeed(account: AccountSummary | null = saved, onEdit = vi.fn()) {
   const send = vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: account ?? undefined });
   render(<ContextoFeedContext profile={profile} send={send} onEdit={onEdit} />);
   return { send, onEdit };

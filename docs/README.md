@@ -23,6 +23,7 @@ These documents describe Contexto's current architecture, behavior, development 
 - [Message and profile search](features/message-profile-search.md) — X interaction-search workflows.
 - [Profile metadata](features/profile-metadata.md) — hover, profile, and editor interaction contracts.
 - [X search builder](features/x-search-builder.md) — popup query construction.
+- [Saved-contact feed context](features/feed-saved-contact-context.md) — local relationship context on saved authors in X feeds.
 
 ## Decision history
 

@@ -31,7 +31,9 @@ export function ContextoFeedContext({ profile, send, onEdit }: ContextoFeedConte
     if (!open) return undefined;
     const closeOnPointerOutside = (event: PointerEvent) => {
       const path = event.composedPath();
-      if (!path.includes(markerRef.current) && !path.includes(panelRef.current)) setOpen(false);
+      const insideMarker = markerRef.current ? path.includes(markerRef.current) : false;
+      const insidePanel = panelRef.current ? path.includes(panelRef.current) : false;
+      if (!insideMarker && !insidePanel) setOpen(false);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false);

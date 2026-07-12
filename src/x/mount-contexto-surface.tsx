@@ -4,9 +4,11 @@ import { flushSync } from 'react-dom';
 import { ContextoProfileSurface, type ContextoProfileSurfaceProps } from '@/src/ui/ContextoProfileSurface';
 import type { AccountDraftStore } from './draft-store';
 import { ContextoHoverLauncher } from '@/src/ui/ContextoHoverLauncher';
+import { ContextoFeedContext } from '@/src/ui/ContextoFeedContext';
 import type { ProfileSnapshot } from '@/src/shared/types';
 import type { ObservedXSurface, XSurfaceCleanup } from './surface-observer';
 import { resolveHoverCardInsertion } from './hover-card-placement';
+import { resolveFeedPostInsertion } from './feed-post-placement';
 
 export interface MountContextoSurfaceOptions {
   surface: ObservedXSurface;
@@ -38,6 +40,14 @@ export function mountContextoSurface({ surface, send, drafts, css, theme, openPa
   if (surface.kind === 'hover-card') {
     const { parent, before } = resolveHoverCardInsertion(surface.host, surface.profile.handle);
     parent.insertBefore(mountHost, before);
+  } else if (surface.kind === 'feed-post') {
+    const insertion = resolveFeedPostInsertion(surface.host, surface.profile.handle);
+    if (!insertion) {
+      const cleanup = (() => undefined) as XSurfaceCleanup;
+      cleanup.isConnected = () => false;
+      return cleanup;
+    }
+    insertion.parent.insertBefore(mountHost, insertion.before);
   } else {
     surface.host.append(mountHost);
   }
@@ -45,7 +55,9 @@ export function mountContextoSurface({ surface, send, drafts, css, theme, openPa
   flushSync(() => {
     root.render(surface.kind === 'hover-card'
       ? <ContextoHoverLauncher profile={surface.profile} send={send} onEdit={openPageEditor} />
-      : <ContextoProfileSurface profile={surface.profile} kind={surface.kind} send={send} drafts={drafts} />
+      : surface.kind === 'feed-post'
+        ? <ContextoFeedContext profile={surface.profile} send={send} onEdit={openPageEditor} />
+        : <ContextoProfileSurface profile={surface.profile} kind={surface.kind} send={send} drafts={drafts} />
     );
   });
   const cleanup: XSurfaceCleanup = () => {
