@@ -5,13 +5,17 @@ import {
   addNote,
   assignFolder,
   assignTag,
+  captureBookmark,
   ensureAccountFromProfile,
   exportBackup,
+  findBookmarkByPost,
   getAccountByHandle,
   getLookups,
   importBackup,
   listAccountSummaries,
+  listBookmarks,
   listTargetAccountSuggestions,
+  removeBookmark,
   removeFolder,
   removeTag,
   resetDatabaseForTests,
@@ -214,12 +218,148 @@ describe('Contexto repositories', () => {
       database,
     );
     await assignTag(account.id, 'backup', database);
+    const bookmark = await captureBookmark(account.id, {
+      authorHandle: 'backupuser',
+      postUrl: 'https://twitter.com/BackupUser/status/123?ref=home',
+      excerpt: 'Backup   release',
+      reminder: 'Restore this',
+    }, database);
 
     const backup = await exportBackup(database);
+    expect(backup.formatVersion).toBe(2);
+    expect(backup.data.bookmarks).toEqual([bookmark]);
     await resetDatabaseForTests(database);
     await importBackup(backup, database);
 
     expect(await listAccountSummaries({}, database)).toHaveLength(1);
+    expect(await listBookmarks(account.id, database)).toEqual([bookmark]);
+  });
+
+  it('captures, deduplicates, removes, and restores contact bookmarks', async () => {
+    const account = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'Theo', displayName: 'Theo', profileUrl: 'https://x.com/theo' },
+      database,
+    );
+    const first = await captureBookmark(account.id, {
+      authorHandle: 'theo',
+      postUrl: 'https://twitter.com/Theo/status/123?ref=home',
+      excerpt: ' Release   update ',
+      reminder: ' Possible  podcast guest \n Follow up ',
+    }, database);
+
+    expect(first).toMatchObject({
+      accountId: account.id,
+      platform: 'x',
+      postId: '123',
+      postUrl: 'https://x.com/theo/status/123',
+      excerpt: 'Release update',
+      reminder: 'Possible podcast guest\nFollow up',
+    });
+    expect(await findBookmarkByPost(account.id, 'https://x.com/theo/status/123', database)).toEqual(first);
+    expect(await captureBookmark(account.id, {
+      authorHandle: 'theo',
+      postUrl: first.postUrl,
+      reminder: 'Do not replace an active duplicate',
+    }, database)).toEqual(first);
+    expect(await database.bookmarks.count()).toBe(1);
+
+    await removeBookmark(first.id, database);
+    expect(await listBookmarks(account.id, database)).toEqual([]);
+    expect((await database.bookmarks.get(first.id))?.deletedAt).toBeDefined();
+
+    const restored = await captureBookmark(account.id, {
+      authorHandle: 'theo',
+      postUrl: first.postUrl,
+      excerpt: 'Updated excerpt',
+      reminder: 'Updated reminder',
+    }, database);
+    expect(restored).toMatchObject({
+      id: first.id,
+      createdAt: first.createdAt,
+      excerpt: 'Updated excerpt',
+      reminder: 'Updated reminder',
+      deletedAt: undefined,
+    });
+    expect(restored.capturedAt >= first.capturedAt).toBe(true);
+    expect(await database.changeLog.where('entityType').equals('bookmark').count()).toBe(3);
+    expect((await database.accounts.get(account.id))?.syncState).toBe('pending-sync');
+  });
+
+  it('validates bookmark ownership, URL shape, and bounded text', async () => {
+    const account = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo' },
+      database,
+    );
+
+    await expect(captureBookmark(account.id, {
+      authorHandle: 'other', postUrl: 'https://x.com/theo/status/123',
+    }, database)).rejects.toThrow('Bookmark author does not match');
+    await expect(captureBookmark(account.id, {
+      authorHandle: 'theo', postUrl: 'https://x.com/other/status/123',
+    }, database)).rejects.toThrow('Bookmark author does not match');
+    await expect(captureBookmark(account.id, {
+      authorHandle: 'theo', postUrl: 'https://example.com/theo/status/123',
+    }, database)).rejects.toThrow('valid X post');
+    await expect(captureBookmark(account.id, {
+      authorHandle: 'theo', postUrl: 'https://x.com/theo/status/123', excerpt: 'x'.repeat(281),
+    }, database)).rejects.toThrow('Excerpt must be 280');
+    await expect(captureBookmark(account.id, {
+      authorHandle: 'theo', postUrl: 'https://x.com/theo/status/123', reminder: 'x'.repeat(501),
+    }, database)).rejects.toThrow('Reminder must be 500');
+    expect(await database.bookmarks.count()).toBe(0);
+  });
+
+  it('lists active bookmarks by account and captured recency', async () => {
+    const firstAccount = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'first', displayName: 'First', profileUrl: 'https://x.com/first' },
+      database,
+    );
+    const secondAccount = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'second', displayName: 'Second', profileUrl: 'https://x.com/second' },
+      database,
+    );
+    const older = await captureBookmark(firstAccount.id, {
+      authorHandle: 'first', postUrl: 'https://x.com/first/status/1',
+    }, database);
+    const newer = await captureBookmark(firstAccount.id, {
+      authorHandle: 'first', postUrl: 'https://x.com/first/status/2',
+    }, database);
+    await captureBookmark(secondAccount.id, {
+      authorHandle: 'second', postUrl: 'https://x.com/second/status/3',
+    }, database);
+    await database.bookmarks.update(older.id, { capturedAt: '2026-07-10T00:00:00.000Z' });
+    await database.bookmarks.update(newer.id, { capturedAt: '2026-07-11T00:00:00.000Z' });
+
+    expect((await listBookmarks(firstAccount.id, database)).map(({ id }) => id)).toEqual([newer.id, older.id]);
+  });
+
+  it('imports legacy backups without bookmarks and rejects orphaned version 2 bookmarks atomically', async () => {
+    const account = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'legacy', displayName: 'Legacy', profileUrl: 'https://x.com/legacy' },
+      database,
+    );
+    const backup = await exportBackup(database);
+    const legacyData = { ...backup.data } as Record<string, unknown>;
+    delete legacyData.bookmarks;
+    await resetDatabaseForTests(database);
+    await importBackup({ ...backup, formatVersion: 1, data: legacyData } as never, database);
+    expect(await listBookmarks(account.id, database)).toEqual([]);
+
+    await resetDatabaseForTests(database);
+    const orphaned = {
+      ...backup,
+      data: {
+        ...backup.data,
+        bookmarks: [{
+          id: 'bookmark_orphan', accountId: 'missing', platform: 'x' as const, postId: '123',
+          postUrl: 'https://x.com/legacy/status/123', capturedAt: '2026-07-12T00:00:00.000Z',
+          createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+        }],
+      },
+    };
+    await expect(importBackup(orphaned, database)).rejects.toThrow('owning account');
+    expect(await database.accounts.count()).toBe(0);
+    expect(await database.bookmarks.count()).toBe(0);
   });
 
   it('keeps a missing-account lookup read-only', async () => {

@@ -63,6 +63,23 @@ export interface Note extends TimestampedRecord {
   source?: 'manual' | 'import' | 'x-profile';
 }
 
+export interface Bookmark extends TimestampedRecord {
+  accountId: RecordId;
+  platform: 'x';
+  postId: string;
+  postUrl: string;
+  excerpt?: string;
+  reminder?: string;
+  capturedAt: string;
+}
+
+export interface BookmarkCaptureInput {
+  authorHandle: string;
+  postUrl: string;
+  excerpt?: string;
+  reminder?: string;
+}
+
 export type SearchDirection =
   | 'me-to-them'
   | 'them-to-me'
@@ -108,6 +125,7 @@ export type ChangeEntityType =
   | 'tag'
   | 'folder'
   | 'note'
+  | 'bookmark'
   | 'searchPreset';
 
 export interface ChangeLogEntry {
@@ -187,21 +205,32 @@ export interface LookupData {
   folders: Folder[];
 }
 
-export interface BackupEnvelope {
+interface BackupDataV1 {
+  accounts: Account[];
+  companies: Company[];
+  tags: Tag[];
+  accountTags: AccountTag[];
+  folders: Folder[];
+  folderAccounts: FolderAccount[];
+  notes: Note[];
+  searchPresets: SearchPreset[];
+  searchHistory: SearchHistory[];
+  backups: BackupRecord[];
+  changeLog: ChangeLogEntry[];
+}
+
+export interface BackupEnvelopeV1 {
   app: 'Contexto';
   formatVersion: 1;
   exportedAt: string;
-  data: {
-    accounts: Account[];
-    companies: Company[];
-    tags: Tag[];
-    accountTags: AccountTag[];
-    folders: Folder[];
-    folderAccounts: FolderAccount[];
-    notes: Note[];
-    searchPresets: SearchPreset[];
-    searchHistory: SearchHistory[];
-    backups: BackupRecord[];
-    changeLog: ChangeLogEntry[];
-  };
+  data: BackupDataV1;
 }
+
+export interface BackupEnvelope {
+  app: 'Contexto';
+  formatVersion: 2;
+  exportedAt: string;
+  data: BackupDataV1 & { bookmarks: Bookmark[] };
+}
+
+export type BackupImportEnvelope = BackupEnvelopeV1 | BackupEnvelope;

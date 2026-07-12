@@ -1,5 +1,5 @@
 import { ContextoDatabase, db } from './db';
-import { buildXSearchQuery, normalizeXHandle, parseXProfileUrl } from '../shared/platforms/x';
+import { buildXSearchQuery, normalizeXHandle, parseXPostUrl, parseXProfileUrl } from '../shared/platforms/x';
 import type {
   Account,
   AccountFilters,
@@ -8,7 +8,10 @@ import type {
   AccountContextSaveInput,
   AccountUpdateInput,
   BackupEnvelope,
+  BackupImportEnvelope,
   BackupRecord,
+  Bookmark,
+  BookmarkCaptureInput,
   ChangeEntityType,
   Company,
   Folder,
@@ -291,6 +294,137 @@ export async function addNote(accountId: string, body: string, database = db): P
   return getAccountSummary(accountId, database) as Promise<AccountSummary>;
 }
 
+function normalizeBookmarkExcerpt(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') throw new Error('Bookmark excerpt must be text');
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  if ([...normalized].length > 280) throw new Error('Excerpt must be 280 characters or fewer');
+  return normalized || undefined;
+}
+
+function normalizeBookmarkReminder(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') throw new Error('Bookmark reminder must be text');
+  const normalized = value
+    .split(/\r?\n/)
+    .map((line) => line.replace(/[\t ]+/g, ' ').trim())
+    .join('\n')
+    .trim();
+  if ([...normalized].length > 500) throw new Error('Reminder must be 500 characters or fewer');
+  return normalized || undefined;
+}
+
+async function validateBookmarkCapture(
+  accountId: string,
+  input: BookmarkCaptureInput,
+  database: ContextoDatabase,
+): Promise<{ account: Account; postId: string; postUrl: string; excerpt?: string; reminder?: string }> {
+  const account = await database.accounts.get(accountId);
+  if (!account || account.deletedAt) throw new Error('Bookmark owning account was not found');
+  if (account.platform !== 'x') throw new Error('Bookmarks currently require an X account');
+
+  const parsed = parseXPostUrl(input.postUrl);
+  if (!parsed) throw new Error('Bookmark must reference a valid X post');
+  const inputHandle = normalizeXHandle(input.authorHandle);
+  if (inputHandle !== account.normalizedHandle || parsed.handle !== account.normalizedHandle) {
+    throw new Error('Bookmark author does not match the owning account');
+  }
+
+  return {
+    account,
+    postId: parsed.postId,
+    postUrl: parsed.postUrl,
+    excerpt: normalizeBookmarkExcerpt(input.excerpt),
+    reminder: normalizeBookmarkReminder(input.reminder),
+  };
+}
+
+export async function captureBookmark(
+  accountId: string,
+  input: BookmarkCaptureInput,
+  database = db,
+): Promise<Bookmark> {
+  const validated = await validateBookmarkCapture(accountId, input, database);
+  return database.transaction(
+    'rw',
+    [database.accounts, database.bookmarks, database.changeLog],
+    async () => {
+      const existing = await database.bookmarks
+        .where('[accountId+postUrl]')
+        .equals([accountId, validated.postUrl])
+        .first();
+      if (existing && !existing.deletedAt) return existing;
+
+      const timestamp = nowIso();
+      let bookmark: Bookmark;
+      if (existing) {
+        bookmark = {
+          ...existing,
+          postId: validated.postId,
+          excerpt: validated.excerpt,
+          reminder: validated.reminder,
+          capturedAt: timestamp,
+          updatedAt: timestamp,
+          deletedAt: undefined,
+        };
+        await database.bookmarks.put(bookmark);
+        await recordChange(database, 'bookmark', bookmark.id, 'update');
+      } else {
+        bookmark = {
+          id: createId('bookmark'),
+          accountId,
+          platform: 'x',
+          postId: validated.postId,
+          postUrl: validated.postUrl,
+          excerpt: validated.excerpt,
+          reminder: validated.reminder,
+          capturedAt: timestamp,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        };
+        await database.bookmarks.add(bookmark);
+        await recordChange(database, 'bookmark', bookmark.id, 'create');
+      }
+      await database.accounts.update(accountId, { updatedAt: timestamp, syncState: 'pending-sync' });
+      return bookmark;
+    },
+  );
+}
+
+export async function findBookmarkByPost(
+  accountId: string,
+  postUrl: string,
+  database = db,
+): Promise<Bookmark | undefined> {
+  const parsed = parseXPostUrl(postUrl);
+  if (!parsed) return undefined;
+  const bookmark = await database.bookmarks
+    .where('[accountId+postUrl]')
+    .equals([accountId, parsed.postUrl])
+    .first();
+  return bookmark && !bookmark.deletedAt ? bookmark : undefined;
+}
+
+export async function listBookmarks(accountId: string, database = db): Promise<Bookmark[]> {
+  const bookmarks = active(await database.bookmarks.where('accountId').equals(accountId).toArray());
+  return bookmarks.sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
+}
+
+export async function removeBookmark(bookmarkId: string, database = db): Promise<void> {
+  await database.transaction(
+    'rw',
+    [database.accounts, database.bookmarks, database.changeLog],
+    async () => {
+      const bookmark = await database.bookmarks.get(bookmarkId);
+      if (!bookmark || bookmark.deletedAt) return;
+      const timestamp = nowIso();
+      await database.bookmarks.update(bookmarkId, { deletedAt: timestamp, updatedAt: timestamp });
+      await database.accounts.update(bookmark.accountId, { updatedAt: timestamp, syncState: 'pending-sync' });
+      await recordChange(database, 'bookmark', bookmark.id, 'delete');
+    },
+  );
+}
+
 export async function assignTag(accountId: string, name: string, database = db): Promise<AccountSummary> {
   const tag = await upsertTagByName(name, database);
   const existing = await database.accountTags.where('[accountId+tagId]').equals([accountId, tag.id]).first();
@@ -499,7 +633,7 @@ export async function listSearchPresets(database = db): Promise<SearchPreset[]> 
 }
 
 export async function exportBackup(database = db): Promise<BackupEnvelope> {
-  const [accounts, companies, tags, accountTags, folders, folderAccounts, notes, searchPresets, searchHistory, backups, changeLog] =
+  const [accounts, companies, tags, accountTags, folders, folderAccounts, notes, bookmarks, searchPresets, searchHistory, backups, changeLog] =
     await Promise.all([
       database.accounts.toArray(),
       database.companies.toArray(),
@@ -508,6 +642,7 @@ export async function exportBackup(database = db): Promise<BackupEnvelope> {
       database.folders.toArray(),
       database.folderAccounts.toArray(),
       database.notes.toArray(),
+      database.bookmarks.toArray(),
       database.searchPresets.toArray(),
       database.searchHistory.toArray(),
       database.backups.toArray(),
@@ -516,9 +651,9 @@ export async function exportBackup(database = db): Promise<BackupEnvelope> {
 
   return {
     app: 'Contexto',
-    formatVersion: 1,
+    formatVersion: 2,
     exportedAt: nowIso(),
-    data: { accounts, companies, tags, accountTags, folders, folderAccounts, notes, searchPresets, searchHistory, backups, changeLog },
+    data: { accounts, companies, tags, accountTags, folders, folderAccounts, notes, bookmarks, searchPresets, searchHistory, backups, changeLog },
   };
 }
 
@@ -526,8 +661,43 @@ function assertArray(value: unknown, label: string): asserts value is unknown[] 
   if (!Array.isArray(value)) throw new Error(`Backup field ${label} must be an array`);
 }
 
-export async function importBackup(envelope: BackupEnvelope, database = db): Promise<void> {
-  if (envelope.app !== 'Contexto' || envelope.formatVersion !== 1) {
+function validTimestamp(value: unknown): value is string {
+  return typeof value === 'string' && !Number.isNaN(Date.parse(value));
+}
+
+function validateImportedBookmarks(
+  records: unknown[],
+  accounts: Account[],
+): asserts records is Bookmark[] {
+  const accountsById = new Map(accounts.map((account) => [account.id, account]));
+  for (const value of records) {
+    if (!value || typeof value !== 'object') throw new Error('Backup bookmark must be an object');
+    const bookmark = value as Partial<Bookmark>;
+    const account = typeof bookmark.accountId === 'string' ? accountsById.get(bookmark.accountId) : undefined;
+    if (!account) throw new Error('Backup bookmark owning account was not found');
+    const parsed = typeof bookmark.postUrl === 'string' ? parseXPostUrl(bookmark.postUrl) : null;
+    if (
+      typeof bookmark.id !== 'string'
+      || bookmark.platform !== 'x'
+      || !parsed
+      || parsed.postUrl !== bookmark.postUrl
+      || parsed.postId !== bookmark.postId
+      || parsed.handle !== normalizeXHandle(account.normalizedHandle)
+      || account.platform !== 'x'
+      || !validTimestamp(bookmark.createdAt)
+      || !validTimestamp(bookmark.updatedAt)
+      || !validTimestamp(bookmark.capturedAt)
+      || (bookmark.deletedAt !== undefined && !validTimestamp(bookmark.deletedAt))
+    ) {
+      throw new Error('Backup bookmark is invalid');
+    }
+    normalizeBookmarkExcerpt(bookmark.excerpt);
+    normalizeBookmarkReminder(bookmark.reminder);
+  }
+}
+
+export async function importBackup(envelope: BackupImportEnvelope, database = db): Promise<void> {
+  if (envelope.app !== 'Contexto' || ![1, 2].includes(envelope.formatVersion)) {
     throw new Error('Unsupported Contexto backup format');
   }
 
@@ -535,6 +705,9 @@ export async function importBackup(envelope: BackupEnvelope, database = db): Pro
   for (const [key, value] of Object.entries(data)) {
     assertArray(value, key);
   }
+  const bookmarks: unknown[] = envelope.formatVersion === 2 ? envelope.data.bookmarks : [];
+  assertArray(bookmarks, 'bookmarks');
+  validateImportedBookmarks(bookmarks, data.accounts);
 
   await database.transaction(
     'rw',
@@ -546,6 +719,7 @@ export async function importBackup(envelope: BackupEnvelope, database = db): Pro
       database.folders,
       database.folderAccounts,
       database.notes,
+      database.bookmarks,
       database.searchPresets,
       database.searchHistory,
       database.backups,
@@ -560,6 +734,7 @@ export async function importBackup(envelope: BackupEnvelope, database = db): Pro
         database.folders.bulkPut(data.folders),
         database.folderAccounts.bulkPut(data.folderAccounts),
         database.notes.bulkPut(data.notes),
+        database.bookmarks.bulkPut(bookmarks),
         database.searchPresets.bulkPut(data.searchPresets),
         database.searchHistory.bulkPut(data.searchHistory),
         database.backups.bulkPut(data.backups),
@@ -569,8 +744,11 @@ export async function importBackup(envelope: BackupEnvelope, database = db): Pro
       const backupRecord: BackupRecord = {
         id: createId('backup'),
         createdAt: nowIso(),
-        formatVersion: 1,
-        itemCounts: Object.fromEntries(Object.entries(data).map(([key, value]) => [key, value.length])),
+        formatVersion: envelope.formatVersion,
+        itemCounts: {
+          ...Object.fromEntries(Object.entries(data).map(([key, value]) => [key, value.length])),
+          bookmarks: bookmarks.length,
+        },
       };
       await database.backups.put(backupRecord);
       await database.changeLog.add({
