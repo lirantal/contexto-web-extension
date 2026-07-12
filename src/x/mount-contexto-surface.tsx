@@ -56,7 +56,7 @@ export function mountContextoSurface({ surface, send, drafts, css, theme, openPa
     root.render(surface.kind === 'hover-card'
       ? <ContextoHoverLauncher profile={surface.profile} send={send} onEdit={openPageEditor} />
       : surface.kind === 'feed-post'
-        ? <ContextoFeedContext profile={surface.profile} send={send} onEdit={openPageEditor} />
+        ? <ContextoFeedContext profile={surface.profile} post={surface.post} send={send} onEdit={openPageEditor} />
         : <ContextoProfileSurface profile={surface.profile} kind={surface.kind} send={send} drafts={drafts} />
     );
   });

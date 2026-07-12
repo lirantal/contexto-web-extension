@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { AccountSummary, ProfileSnapshot } from '@/src/shared/types';
+import type { AccountSummary, ProfileSnapshot, XPostSnapshot } from '@/src/shared/types';
 import type { ContextoProfileSurfaceProps } from './ContextoProfileSurface';
 
 export interface ContextoFeedContextProps {
   profile: ProfileSnapshot;
+  post?: XPostSnapshot;
   send: ContextoProfileSurfaceProps['send'];
   onEdit(profile: ProfileSnapshot, returnFocusTarget: HTMLElement): void;
 }
