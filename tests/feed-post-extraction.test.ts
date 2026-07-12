@@ -92,6 +92,16 @@ describe('X feed post extraction', () => {
     expect(extractFeedPostProfile(post)).toBeNull();
   });
 
+  it('fails closed when multiple top-level identity blocks disagree', () => {
+    const post = createPost(`
+      <div data-testid="User-Name"><a href="/theo"><span>Theo</span><span>@theo</span></a></div>
+      <div data-testid="User-Name"><a href="/other"><span>Other</span><span>@other</span></a></div>
+      <a href="/theo/status/123"><time>2h</time></a>`);
+
+    expect(extractFeedPostProfile(post)).toBeNull();
+    expect(extractFeedPostSnapshot(post)).toBeNull();
+  });
+
   it('resolves an in-flow insertion point inside the validated author block', () => {
     const post = createPost(`
       <div data-testid="User-Name" class="primary-author">

@@ -158,10 +158,9 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
           <textarea
             autoFocus
             rows={3}
-            maxLength={500}
             value={reminder}
             disabled={saving}
-            onChange={(event) => setReminder(event.target.value)}
+            onChange={(event) => setReminder([...event.target.value].slice(0, 500).join(''))}
           />
         </label>
         {bookmarkError && <p className="contexto-error" role="alert">{bookmarkError}</p>}

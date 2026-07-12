@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { AccountBookmarks } from '@/src/ui/AccountBookmarks';
@@ -73,5 +73,35 @@ describe('AccountBookmarks', () => {
     resolveFirst([bookmark]);
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(screen.queryByText('Possible podcast guest')).not.toBeInTheDocument();
+  });
+
+  it('does not let an old removal overwrite a newly selected contact', async () => {
+    let resolveRemove!: () => void;
+    let resolveSecondLoad!: (bookmarks: Bookmark[]) => void;
+    const removal = new Promise<void>((resolve) => { resolveRemove = resolve; });
+    const secondLoad = new Promise<Bookmark[]>((resolve) => { resolveSecondLoad = resolve; });
+    const second = { ...bookmark, id: 'bookmark_2', accountId: 'account_2', reminder: 'Second contact' };
+    const load = vi.fn()
+      .mockResolvedValueOnce([bookmark])
+      .mockReturnValueOnce(secondLoad)
+      .mockResolvedValueOnce([bookmark]);
+    const remove = vi.fn().mockReturnValue(removal);
+    const { rerender } = render(<AccountBookmarks accountId="account_1" load={load} remove={remove} />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Remove bookmark' }));
+
+    rerender(<AccountBookmarks accountId="account_2" load={load} remove={remove} />);
+    await act(async () => {
+      resolveRemove();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      resolveSecondLoad([second]);
+      await Promise.resolve();
+    });
+
+    expect(await screen.findByText('Second contact')).toBeVisible();
+    expect(screen.queryByText('Possible podcast guest')).not.toBeInTheDocument();
+    expect(load).toHaveBeenCalledTimes(2);
   });
 });

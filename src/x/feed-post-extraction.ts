@@ -49,10 +49,18 @@ function isNestedIdentity(candidate: HTMLElement, post: HTMLElement): boolean {
   return candidate.closest<HTMLElement>('[data-testid="tweet"]') !== post;
 }
 
+function isInsideNestedPostCard(node: HTMLElement, post: HTMLElement): boolean {
+  const card = node.parentElement?.closest<HTMLElement>(
+    '[data-testid="quoteTweet"], [data-testid="card.wrapper"], [role="link"]',
+  );
+  return Boolean(card && card !== post && card.closest<HTMLElement>('[data-testid="tweet"]') === post);
+}
+
 export function findFeedPostIdentity(post: HTMLElement): FeedPostIdentity | null {
   if (isPromoted(post)) return null;
   const candidates = Array.from(post.querySelectorAll<HTMLElement>('[data-testid="User-Name"], [data-testid="UserName"]'))
-    .filter((candidate) => !isNestedIdentity(candidate, post));
+    .filter((candidate) => !isNestedIdentity(candidate, post) && !isInsideNestedPostCard(candidate, post));
+  const identities: FeedPostIdentity[] = [];
 
   for (const container of candidates) {
     const handle = readHandle(container);
@@ -63,9 +71,10 @@ export function findFeedPostIdentity(post: HTMLElement): FeedPostIdentity | null
     if (!anchor) continue;
     const displayName = readDisplayName(container, handle);
     if (!displayName) continue;
-    return { container, anchor, handle: normalizedHandle, displayName };
+    identities.push({ container, anchor, handle: normalizedHandle, displayName });
   }
-  return null;
+  const signatures = new Set(identities.map(({ handle, displayName }) => `${handle}\0${displayName}`));
+  return signatures.size === 1 ? identities[0] : null;
 }
 
 export function extractFeedPostProfile(post: HTMLElement): ProfileSnapshot | null {
@@ -86,7 +95,8 @@ export function extractFeedPostSnapshot(post: HTMLElement): XPostSnapshot | null
   if (!identity || isPromoted(post)) return null;
 
   const candidates = Array.from(post.querySelectorAll<HTMLAnchorElement>('a[href]'))
-    .filter((anchor) => anchor.closest<HTMLElement>('[data-testid="tweet"]') === post)
+    .filter((anchor) => anchor.closest<HTMLElement>('[data-testid="tweet"]') === post
+      && !isInsideNestedPostCard(anchor, post))
     .map((anchor) => parseXPostUrl(anchor.getAttribute('href') ?? anchor.href))
     .filter((snapshot) => snapshot?.handle === identity.handle);
   const unique = new Map(candidates.map((snapshot) => [snapshot!.postUrl, snapshot!]));
@@ -95,7 +105,8 @@ export function extractFeedPostSnapshot(post: HTMLElement): XPostSnapshot | null
   const source = unique.values().next().value;
   if (!source) return null;
   const excerptNode = Array.from(post.querySelectorAll<HTMLElement>('[data-testid="tweetText"]'))
-    .find((node) => node.closest<HTMLElement>('[data-testid="tweet"]') === post);
+    .find((node) => node.closest<HTMLElement>('[data-testid="tweet"]') === post
+      && !isInsideNestedPostCard(node, post));
   const excerpt = compactText(excerptNode?.textContent);
 
   return {

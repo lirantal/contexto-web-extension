@@ -18,11 +18,14 @@ export function AccountBookmarks({
   const [error, setError] = useState('');
   const [removingId, setRemovingId] = useState<string>();
   const requestRef = useRef(0);
+  const accountIdRef = useRef(accountId);
+  accountIdRef.current = accountId;
 
   useEffect(() => {
     const request = ++requestRef.current;
     setBookmarks(undefined);
     setError('');
+    setRemovingId(undefined);
     load(accountId)
       .then((records) => {
         if (request === requestRef.current) setBookmarks(records);
@@ -36,17 +39,21 @@ export function AccountBookmarks({
   }, [accountId, load]);
 
   async function removeAndReload(bookmarkId: string) {
+    const operationAccountId = accountId;
     setRemovingId(bookmarkId);
     setError('');
     try {
       await remove(bookmarkId);
+      if (accountIdRef.current !== operationAccountId) return;
       const request = ++requestRef.current;
-      const records = await load(accountId);
-      if (request === requestRef.current) setBookmarks(records);
+      const records = await load(operationAccountId);
+      if (request === requestRef.current && accountIdRef.current === operationAccountId) setBookmarks(records);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not remove bookmark');
+      if (accountIdRef.current === operationAccountId) {
+        setError(caught instanceof Error ? caught.message : 'Could not remove bookmark');
+      }
     } finally {
-      setRemovingId(undefined);
+      if (accountIdRef.current === operationAccountId) setRemovingId(undefined);
     }
   }
 

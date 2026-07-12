@@ -202,4 +202,16 @@ describe('ContextoFeedContext', () => {
     resolveCapture({ ok: true, bookmark: bookmarkRecord });
     expect(await screen.findByRole('button', { name: 'Bookmarked' })).toBeDisabled();
   });
+
+  it('limits reminders by Unicode code points rather than UTF-16 units', async () => {
+    renderCapturable();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+    await user.click(await screen.findByRole('button', { name: 'Capture this post' }));
+    const reminder = screen.getByRole('textbox', { name: 'Why are you saving this? (optional)' });
+
+    expect(reminder).not.toHaveAttribute('maxlength');
+    fireEvent.change(reminder, { target: { value: '😀'.repeat(501) } });
+    expect([...String((reminder as HTMLTextAreaElement).value)]).toHaveLength(500);
+  });
 });
