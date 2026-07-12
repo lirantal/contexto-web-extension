@@ -1,5 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { extractFullProfile, extractHoverCardProfile } from '@/src/x/extract-profile';
+
+const hoverCardActionBeforeIdentity = readFileSync(
+  resolve('tests/fixtures/x/hover-card-action-before-identity.html'),
+  'utf8',
+);
 
 describe('X surface profile extraction', () => {
   it('extracts only the hovered account from its dialog', () => {
@@ -51,18 +58,12 @@ describe('X surface profile extraction', () => {
   });
 
   it('extracts the identity name when an action button precedes it in UserName', () => {
-    document.body.innerHTML = `
-      <div role="dialog" data-testid="HoverCard">
-        <button><span>Following</span></button>
-        <div data-testid="UserName">
-          <button><span>Following</span></button>
-          <a href="/pauline"><span>Pauline P. Narvas</span><span>@pauline</span></a>
-        </div>
-        <a href="/pauline"><img src="https://pbs.twimg.com/profile_images/pauline.jpg"></a>
-        <div data-testid="UserDescription">Developer</div>
-      </div>`;
+    document.body.innerHTML = hoverCardActionBeforeIdentity;
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
 
-    expect(extractHoverCardProfile(dialog)).toMatchObject({ handle: 'pauline', displayName: 'Pauline P. Narvas' });
+    expect(extractHoverCardProfile(dialog)).toMatchObject({
+      handle: 'exampledev',
+      displayName: 'Example Developer',
+    });
   });
 });

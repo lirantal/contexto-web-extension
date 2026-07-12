@@ -15,6 +15,8 @@ You can enrich an account with:
 
 Tags and folders are separate multi-value fields with the same interaction model: search existing values, select multiple values, create a new value inline, and remove selections.
 
-After saving, the editor remains visible and is repopulated from the authoritative saved account. A brief **Saved to Contexto** status confirms persistence without hiding the metadata. The right-rail or modal editor is owned by Contexto, so it remains open when X dismisses the originating hover card. Unsaved drafts remain memory-only and Cancel restores persisted values.
+The right-rail or modal editor is owned by Contexto, so it stays mounted when X dismisses the originating hover card. Internal clicks, backdrop clicks, Escape, and pointer movement do not close it. A successful **Save** or explicit **Cancel** closes this owned editor; a failed Save keeps it open with the draft intact. Navigation, extension reload, and content-script teardown remain system lifecycle events rather than user close actions.
+
+The full-profile editor is inline and remains visible after Save or Cancel. Save repopulates it from the authoritative account, while Cancel restores persisted values. Unsaved drafts remain memory-only.
 
 The dashboard exposes the same metadata in a larger offline editing view.
