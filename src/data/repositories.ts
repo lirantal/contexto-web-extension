@@ -319,29 +319,41 @@ export async function assignFolder(accountId: string, name: string, database = d
 }
 
 export async function removeTag(accountId: string, tagId: string, database = db): Promise<AccountSummary> {
-  const assignment = await database.accountTags
-    .where('[accountId+tagId]')
-    .equals([accountId, tagId])
-    .first();
+  await database.transaction(
+    'rw',
+    [database.accountTags, database.changeLog],
+    async () => {
+      const assignment = await database.accountTags
+        .where('[accountId+tagId]')
+        .equals([accountId, tagId])
+        .first();
 
-  if (assignment) {
-    await database.accountTags.delete(assignment.id);
-    await recordChange(database, 'account', accountId, 'update');
-  }
+      if (assignment) {
+        await database.accountTags.delete(assignment.id);
+        await recordChange(database, 'account', accountId, 'update');
+      }
+    },
+  );
 
   return getAccountSummary(accountId, database) as Promise<AccountSummary>;
 }
 
 export async function removeFolder(accountId: string, folderId: string, database = db): Promise<AccountSummary> {
-  const assignment = await database.folderAccounts
-    .where('[folderId+accountId]')
-    .equals([folderId, accountId])
-    .first();
+  await database.transaction(
+    'rw',
+    [database.folderAccounts, database.changeLog],
+    async () => {
+      const assignment = await database.folderAccounts
+        .where('[folderId+accountId]')
+        .equals([folderId, accountId])
+        .first();
 
-  if (assignment) {
-    await database.folderAccounts.delete(assignment.id);
-    await recordChange(database, 'account', accountId, 'update');
-  }
+      if (assignment) {
+        await database.folderAccounts.delete(assignment.id);
+        await recordChange(database, 'account', accountId, 'update');
+      }
+    },
+  );
 
   return getAccountSummary(accountId, database) as Promise<AccountSummary>;
 }

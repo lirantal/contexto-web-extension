@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ContextoDatabase } from '@/src/data/db';
 import {
   addNote,
@@ -92,6 +92,32 @@ describe('Contexto repositories', () => {
     const lookups = await getLookups(database);
     expect(lookups.tags.map(({ name }) => name)).toContain('founder');
     expect(lookups.folders.map(({ name }) => name)).toContain('Friends');
+  });
+
+  it('rolls back assignment removal when change recording fails', async () => {
+    const account = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'Rollback', displayName: 'Rollback', profileUrl: 'https://x.com/rollback' },
+      database,
+    );
+    const withTag = await assignTag(account.id, 'founder', database);
+    const withFolder = await assignFolder(account.id, 'Friends', database);
+    const addChange = vi.spyOn(database.changeLog, 'add');
+
+    try {
+      addChange.mockRejectedValueOnce(new Error('change log failure'));
+      await expect(removeTag(account.id, withTag.tags[0].id, database))
+        .rejects.toThrow('change log failure');
+      expect((await getAccountByHandle('x', account.handle, database))?.tags)
+        .toHaveLength(1);
+
+      addChange.mockRejectedValueOnce(new Error('change log failure'));
+      await expect(removeFolder(account.id, withFolder.folders[0].id, database))
+        .rejects.toThrow('change log failure');
+      expect((await getAccountByHandle('x', account.handle, database))?.folders)
+        .toHaveLength(1);
+    } finally {
+      addChange.mockRestore();
+    }
   });
 
   it('lists active X accounts as lightweight suggestions ordered by recency', async () => {
