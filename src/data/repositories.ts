@@ -184,8 +184,7 @@ export async function updateAccount(accountId: string, input: AccountUpdateInput
   };
 
   if (input.displayName !== undefined) patch.displayName = input.displayName.trim();
-  if (input.profession !== undefined) patch.profession = input.profession.trim();
-  if (input.position !== undefined) patch.position = input.position.trim();
+  if (input.role !== undefined) patch.role = input.role.trim();
   if (input.location !== undefined) patch.location = input.location.trim();
   if (input.relationshipSource !== undefined) patch.relationshipSource = input.relationshipSource.trim();
   if (input.bioSnapshot !== undefined) patch.bioSnapshot = input.bioSnapshot.trim();
@@ -371,8 +370,7 @@ export async function listAccountSummaries(filters: AccountFilters = {}, databas
           summary.handle,
           summary.displayName,
           summary.company?.name,
-          summary.profession,
-          summary.position,
+          summary.role,
           summary.location,
           summary.relationshipSource,
           summary.latestNote?.body,
@@ -389,7 +387,6 @@ export async function listAccountSummaries(filters: AccountFilters = {}, databas
       if (filters.folderId && !summary.folders.some((folder) => folder.id === filters.folderId)) return false;
       if (filters.companyId && summary.companyId !== filters.companyId) return false;
       if (filters.location && summary.location !== filters.location) return false;
-      if (filters.profession && summary.profession !== filters.profession) return false;
       return true;
     })
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));

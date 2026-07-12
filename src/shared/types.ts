@@ -17,8 +17,7 @@ export interface Account extends TimestampedRecord {
   profileUrl: string;
   avatarUrl?: string;
   bioSnapshot?: string;
-  profession?: string;
-  position?: string;
+  role?: string;
   companyId?: RecordId;
   location?: string;
   relationshipSource?: string;
@@ -143,13 +142,11 @@ export interface AccountFilters {
   folderId?: RecordId;
   companyId?: RecordId;
   location?: string;
-  profession?: string;
 }
 
 export interface AccountUpdateInput {
   displayName?: string;
-  profession?: string;
-  position?: string;
+  role?: string;
   companyName?: string;
   companyId?: RecordId;
   location?: string;
