@@ -4,8 +4,7 @@ Contexto integrates directly into X user hover cards and full profile pages. Hov
 
 You can enrich an account with:
 
-- Profession.
-- Position.
+- Role.
 - Company.
 - Location.
 - How you know each other.

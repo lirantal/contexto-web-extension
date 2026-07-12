@@ -47,7 +47,6 @@ export function Dashboard() {
     filters.folderId,
     filters.companyId,
     filters.location,
-    filters.profession,
   ]);
   const lookups = useLiveQuery(() => getLookups(), []);
   const selected = useMemo(() => accounts?.find((account) => account.id === selectedId) ?? accounts?.[0], [accounts, selectedId]);
