@@ -12,23 +12,40 @@ vi.mock('@/src/ui/ContextoProfileSurface', () => ({
 
 const profile = { platform: 'x' as const, handle: 'theo', profileUrl: 'https://x.com/theo' };
 
-async function flushPlacement() {
-  await Promise.resolve();
-  await new Promise((resolve) => setTimeout(resolve, 60));
+function installMatchMedia(initialMatches: boolean) {
+  let matches = initialMatches;
+  const listeners = new Set<(event: MediaQueryListEvent) => void>();
+  const query = {
+    get matches() { return matches; },
+    media: '(min-width: 1100px)', onchange: null,
+    addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => listeners.add(listener),
+    removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => listeners.delete(listener),
+    addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+  } as unknown as MediaQueryList;
+  vi.stubGlobal('matchMedia', vi.fn(() => query));
+  return {
+    setMatches(next: boolean) {
+      matches = next;
+      for (const listener of listeners) listener({ matches: next, media: query.media } as MediaQueryListEvent);
+    },
+    listeners,
+  };
 }
 
 describe('page editor controller', () => {
   afterEach(() => {
     document.body.innerHTML = '';
+    vi.unstubAllGlobals();
   });
 
-  it('docks outside the hover card and survives its removal', async () => {
+  it('renders a wide-screen panel under the Contexto-owned root instead of X sidebar content', () => {
+    installMatchMedia(true);
     const hover = document.createElement('div');
     const button = document.createElement('button');
     hover.append(button);
     const rail = document.createElement('aside');
     rail.dataset.testid = 'sidebarColumn';
-    rail.style.backgroundColor = 'rgb(0, 0, 0)';
+    rail.append(document.createElement('div'), document.createElement('div'));
     document.body.append(hover, rail);
     const controller = createPageEditorController({
       root: document.body,
@@ -40,34 +57,34 @@ describe('page editor controller', () => {
     controller.open(profile, button);
 
     const host = document.querySelector<HTMLElement>('[data-contexto-page-editor]');
-    expect(host?.parentElement).toBe(rail);
+    expect(host?.parentElement).toBe(document.body);
+    expect(rail.contains(host)).toBe(false);
     expect(host?.dataset.placement).toBe('docked');
-    expect(host?.dataset.theme).toBe('dark');
     hover.remove();
     expect(host?.isConnected).toBe(true);
     controller.disconnect();
   });
 
-  it('moves the same open editor to modal fallback when the rail disappears', async () => {
-    const rail = document.createElement('aside');
-    rail.dataset.testid = 'sidebarColumn';
+  it('uses the same body-owned host when changing from panel to modal', () => {
+    const viewport = installMatchMedia(true);
     const button = document.createElement('button');
-    document.body.append(button, rail);
+    document.body.append(button);
     const controller = createPageEditorController({ root: document.body, send: vi.fn(), drafts: new AccountDraftStore(), css: '' });
 
     controller.open(profile, button);
     const host = document.querySelector<HTMLElement>('[data-contexto-page-editor]')!;
-    rail.remove();
-    await flushPlacement();
+    viewport.setMatches(false);
 
     expect(document.querySelector('[data-contexto-page-editor]')).toBe(host);
     expect(host.parentElement).toBe(document.body);
     expect(host.dataset.placement).toBe('modal');
     controller.disconnect();
+    expect(viewport.listeners.size).toBe(0);
   });
 
   it('starts in modal fallback and removes its host on disconnect', () => {
     const button = document.createElement('button');
+    installMatchMedia(false);
     document.body.append(button);
     const drafts = new AccountDraftStore();
     const controller = createPageEditorController({ root: document.body, send: vi.fn(), drafts, css: '' });
@@ -92,6 +109,7 @@ describe('page editor controller', () => {
 
   it('remounts profile-scoped editor state when switching clean accounts', () => {
     const button = document.createElement('button');
+    installMatchMedia(true);
     document.body.append(button);
     const controller = createPageEditorController({ root: document.body, send: vi.fn(), drafts: new AccountDraftStore(), css: '' });
 
@@ -99,7 +117,7 @@ describe('page editor controller', () => {
     controller.open({ ...profile, handle: 'alice', profileUrl: 'https://x.com/alice' }, button);
 
     const editor = document.querySelector<HTMLElement>('[data-contexto-page-editor]')?.shadowRoot?.querySelector('[data-testid="editor"]');
-    expect(editor).toHaveTextContent('alice:alice:modal');
+    expect(editor).toHaveTextContent('alice:alice:docked');
     controller.disconnect();
   });
 });

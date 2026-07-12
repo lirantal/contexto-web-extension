@@ -29,7 +29,7 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
   let focusTarget: HTMLElement | undefined;
   let placement: 'docked' | 'modal' = 'modal';
   let needsModalFocus = false;
-  let placementTimer: ReturnType<typeof setTimeout> | undefined;
+  const wideViewport = root.ownerDocument.defaultView?.matchMedia?.('(min-width: 1100px)');
 
   function focusModalControl() {
     if (placement !== 'modal' || !needsModalFocus) return;
@@ -101,12 +101,10 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
 
   function place() {
     if (!host || !activeProfile) return;
-    const rail = root.querySelector<HTMLElement>('[data-testid="sidebarColumn"]');
-    const nextPlacement = rail ? 'docked' : 'modal';
-    const target = rail ?? root;
-    if (host.parentElement !== target) target.append(host);
+    const nextPlacement = wideViewport?.matches ? 'docked' : 'modal';
+    if (host.parentElement !== root) root.append(host);
     host.dataset.placement = nextPlacement;
-    host.dataset.theme = detectXTheme(target);
+    host.dataset.theme = detectXTheme(root);
     if (placement !== nextPlacement) {
       placement = nextPlacement;
       needsModalFocus = nextPlacement === 'modal';
@@ -115,17 +113,18 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
     focusModalControl();
   }
 
+  wideViewport?.addEventListener('change', place);
+
   function open(profile: ProfileSnapshot, returnFocusTarget: HTMLElement) {
     if (activeProfile && activeProfile.handle.toLowerCase() !== profile.handle.toLowerCase() && drafts.get(activeProfile.handle)) return;
     activeProfile = profile;
     focusTarget = returnFocusTarget;
     ensureHost();
-    const rail = root.querySelector<HTMLElement>('[data-testid="sidebarColumn"]');
-    placement = rail ? 'docked' : 'modal';
+    placement = wideViewport?.matches ? 'docked' : 'modal';
     needsModalFocus = placement === 'modal';
-    (rail ?? root).append(host!);
+    root.append(host!);
     host!.dataset.placement = placement;
-    host!.dataset.theme = detectXTheme(rail ?? root);
+    host!.dataset.theme = detectXTheme(root);
     renderEditor();
     focusModalControl();
   }
@@ -146,21 +145,11 @@ export function createPageEditorController({ root, send, drafts, css }: PageEdit
     if (target?.isConnected) target.focus();
   }
 
-  const observer = new MutationObserver(() => {
-    if (!activeProfile || placementTimer !== undefined) return;
-    placementTimer = setTimeout(() => {
-      placementTimer = undefined;
-      place();
-    }, 25);
-  });
-  observer.observe(root, { childList: true, subtree: true });
-
   return {
     open,
     close,
     disconnect() {
-      observer.disconnect();
-      if (placementTimer !== undefined) clearTimeout(placementTimer);
+      wideViewport?.removeEventListener('change', place);
       close();
     },
   };
