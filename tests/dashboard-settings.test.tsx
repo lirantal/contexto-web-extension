@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   clearTargetHistory: vi.fn(),
   getSettings: vi.fn(),
   removeFolder: vi.fn(),
+  removeBookmark: vi.fn(),
   removeTag: vi.fn(),
 }));
 
@@ -26,7 +27,9 @@ vi.mock('@/src/data/repositories', () => ({
   getLookups: vi.fn(),
   importBackup: vi.fn(),
   listAccountSummaries: vi.fn(),
+  listBookmarks: vi.fn().mockResolvedValue([]),
   recordSearch: vi.fn(),
+  removeBookmark: mocks.removeBookmark,
   removeFolder: mocks.removeFolder,
   removeTag: mocks.removeTag,
   updateAccount: vi.fn(),

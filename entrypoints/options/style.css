@@ -343,6 +343,49 @@ textarea {
   background: #f2f6f4;
 }
 
+.bookmark-list {
+  display: grid;
+  gap: 10px;
+}
+
+.bookmark-card {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #dde2dc;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fbfcfb;
+}
+
+.bookmark-card > strong,
+.bookmark-card > p {
+  margin: 0;
+}
+
+.bookmark-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #667066;
+  font-size: 12px;
+}
+
+.bookmark-meta time {
+  margin-right: auto;
+}
+
+.bookmark-meta a,
+.bookmark-meta button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.error-line {
+  color: #a42424;
+}
+
 .search-actions {
   flex-wrap: wrap;
 }

@@ -31,6 +31,7 @@ import { buildXSearchQuery, buildXSearchUrl, labelSearchDirection, normalizeXHan
 import { clearTargetHandleHistory, defaultSettings, settingsItem } from '@/src/shared/settings';
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
 import { getAdjacentAccountId } from './account-navigation';
+import { AccountBookmarks } from './AccountBookmarks';
 
 const searchDirections: SearchDirection[] = ['me-to-them', 'them-to-me', 'from-profile', 'to-profile', 'mentions'];
 
@@ -392,6 +393,8 @@ function AccountDetail({ account, settings }: { account: AccountSummary; setting
         <textarea rows={4} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add context, follow-up ideas, or relationship history" />
         <button onClick={addNoteAndClear}>Add note</button>
       </section>
+
+      <AccountBookmarks accountId={account.id} />
 
       <section className="panel detail-section">
         <h3><Search size={16} aria-hidden="true" /> X search</h3>
