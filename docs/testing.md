@@ -29,6 +29,8 @@ Use surface tests for successful Save, failed Save, Cancel, draft retention, and
 
 Bookmark component tests cover duplicate lookup, optional-reminder capture, pending controls, success, retry-preserved drafts, Cancel/panel-close clearing, dashboard loading/removal errors, safe source links, empty collections, and stale account requests. Repository tests cover ownership and URL validation, field bounds, deduplication, soft deletion/restoration, recency ordering, change logging, and backup format 1/2 compatibility.
 
+Prior-interaction shortcut tests cover normalized two-way query construction, live X search URL parameters, invalid handles, safe new-tab attributes, conditional visibility, and settings-failure isolation from saved context and bookmark capture.
+
 ## Manual browser checks
 
 Synthetic tests cannot reproduce every X or browser lifecycle. Run the matrix in [Browser Development Workflow](development/browser-workflow.md) after changing content-script mounting, X selectors, popup layout, Shadow DOM behavior, or extension lifecycle handling.
