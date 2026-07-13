@@ -148,6 +148,16 @@ export function buildXSearchUrl(filters: XSearchFilters): string {
   return `https://x.com/search?${params.toString()}`;
 }
 
+export function buildXInteractionSearchUrl(viewerHandle: string, targetHandle: string): string | null {
+  if (!isValidXHandle(viewerHandle) || !isValidXHandle(targetHandle)) return null;
+
+  const viewer = normalizeXHandle(viewerHandle);
+  const target = normalizeXHandle(targetHandle);
+  const query = `(from:${viewer} to:${target}) OR (from:${target} to:${viewer})`;
+  const params = new URLSearchParams({ q: query, src: 'typed_query', f: 'live' });
+  return `https://x.com/search?${params.toString()}`;
+}
+
 export function labelSearchDirection(direction: SearchDirection): string {
   const labels: Record<SearchDirection, string> = {
     'me-to-them': 'Messages I sent',

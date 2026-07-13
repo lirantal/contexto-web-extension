@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildXInteractionSearchUrl,
   buildXSearchQuery,
   buildXSearchUrl,
   canRunXSearch,
@@ -68,5 +69,23 @@ describe('X platform adapter', () => {
     const url = buildXSearchUrl({ ...baseFilters, direction: 'mentions' });
     expect(url).toContain('https://x.com/search?');
     expect(decodeURIComponent(url)).toContain('@example_dev');
+  });
+
+  it('builds a normalized live search for interactions in both directions', () => {
+    const url = buildXInteractionSearchUrl('@Liran_Tal', '@Example_Dev');
+
+    expect(url).not.toBeNull();
+    const parsed = new URL(url!);
+    expect(parsed.origin + parsed.pathname).toBe('https://x.com/search');
+    expect(parsed.searchParams.get('q')).toBe(
+      '(from:liran_tal to:example_dev) OR (from:example_dev to:liran_tal)',
+    );
+    expect(parsed.searchParams.get('src')).toBe('typed_query');
+    expect(parsed.searchParams.get('f')).toBe('live');
+  });
+
+  it('omits an interaction search when either handle is invalid', () => {
+    expect(buildXInteractionSearchUrl('', 'example_dev')).toBeNull();
+    expect(buildXInteractionSearchUrl('liran_tal', 'not-valid!')).toBeNull();
   });
 });
