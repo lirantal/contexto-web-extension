@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { buildXInteractionSearchUrl } from '@/src/shared/platforms/x';
 import type { AccountSummary, ProfileSnapshot, XPostSnapshot } from '@/src/shared/types';
 import type { ContextoProfileSurfaceProps } from './ContextoProfileSurface';
 
@@ -13,6 +14,7 @@ type BookmarkState = 'unavailable' | 'loading' | 'available' | 'saved';
 
 export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFeedContextProps) {
   const [account, setAccount] = useState<AccountSummary>();
+  const [viewerHandle, setViewerHandle] = useState('');
   const [open, setOpen] = useState(false);
   const [bookmarkState, setBookmarkState] = useState<BookmarkState>('unavailable');
   const [composerOpen, setComposerOpen] = useState(false);
@@ -32,6 +34,14 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
     setReminder('');
     setBookmarkError('');
     setBookmarkSuccess('');
+    setViewerHandle('');
+    send({ type: 'contexto:settings:get' })
+      .then((response) => {
+        if (!cancelled && response.ok && 'settings' in response) {
+          setViewerHandle(response.settings.myXHandle);
+        }
+      })
+      .catch(() => undefined);
     send({ type: 'contexto:account:lookup', platform: 'x', handle: profile.handle })
       .then(async (response) => {
         if (cancelled || !response.ok || !('lookup' in response)) return;
@@ -91,6 +101,7 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
 
   const panelId = `contexto-feed-context-${account.id}`;
   const organization = [account.role, account.company?.name].filter(Boolean).join(' · ');
+  const interactionUrl = buildXInteractionSearchUrl(viewerHandle, account.handle);
   const openEditor = () => {
     if (markerRef.current) onEdit(profile, markerRef.current);
   };
@@ -172,6 +183,12 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
         </div>
       </div>}
       {bookmarkSuccess && <p className="contexto-success" aria-live="polite">{bookmarkSuccess}</p>}
+      {interactionUrl && <a
+        className="contexto-feed-interactions"
+        href={interactionUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+      >View our interactions</a>}
       <button className="primary-action" type="button" onClick={openEditor}>Open full context</button>
     </section>}
   </span>;

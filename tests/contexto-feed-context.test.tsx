@@ -62,6 +62,24 @@ function renderCapturable(
   return send;
 }
 
+function renderWithSettings(settingsResponse: ContextoResponse | Error) {
+  const send = vi.fn(async (message: ContextoRequest): Promise<ContextoResponse> => {
+    if (message.type === 'contexto:account:lookup') {
+      return { ok: true, lookup: true, lookupAccount: saved };
+    }
+    if (message.type === 'contexto:settings:get') {
+      if (settingsResponse instanceof Error) throw settingsResponse;
+      return settingsResponse;
+    }
+    if (message.type === 'contexto:bookmark:lookup') {
+      return { ok: true, bookmarkLookup: true, lookupBookmark: undefined };
+    }
+    return { ok: false, error: 'Unexpected request' };
+  });
+  render(<ContextoFeedContext profile={profile} post={post} send={send} onEdit={vi.fn()} />);
+  return send;
+}
+
 describe('ContextoFeedContext', () => {
   it('shows saved context and opens the existing editor from the marker', async () => {
     const user = userEvent.setup();
@@ -115,6 +133,43 @@ describe('ContextoFeedContext', () => {
     await user.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Contexto relationship context' })).not.toBeInTheDocument();
+  });
+
+  it('opens a safe two-way X interaction search when my handle is configured', async () => {
+    renderWithSettings({
+      ok: true,
+      settings: { myXHandle: '@Liran_Tal', lastDashboardView: 'accounts' },
+    });
+
+    await userEvent.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+    const link = await screen.findByRole('link', { name: 'View our interactions' });
+    const url = new URL(link.getAttribute('href')!);
+
+    expect(url.searchParams.get('q')).toBe('(from:liran_tal to:theo) OR (from:theo to:liran_tal)');
+    expect(url.searchParams.get('f')).toBe('live');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it.each([
+    ['missing', { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts' } }],
+    ['invalid', { ok: true, settings: { myXHandle: 'not-valid!', lastDashboardView: 'accounts' } }],
+    ['unsuccessful', { ok: false, error: 'Settings unavailable' }],
+  ] as const)('hides the shortcut for %s settings without hiding saved context', async (_name, response) => {
+    cleanup();
+    renderWithSettings(response as ContextoResponse);
+    await userEvent.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+    expect(screen.queryByRole('link', { name: 'View our interactions' })).not.toBeInTheDocument();
+    expect(screen.getByText('Conference friend')).toBeVisible();
+  });
+
+  it('keeps saved context and bookmark capture available when settings reject', async () => {
+    renderWithSettings(new Error('Settings unavailable'));
+    await userEvent.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+
+    expect(screen.queryByRole('link', { name: 'View our interactions' })).not.toBeInTheDocument();
+    expect(screen.getByText('Conference friend')).toBeVisible();
+    expect(await screen.findByRole('button', { name: 'Capture this post' })).toBeVisible();
   });
 
   it('captures a post with an optional reminder and becomes bookmarked', async () => {
