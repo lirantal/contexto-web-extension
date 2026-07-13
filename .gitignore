@@ -17,6 +17,10 @@ stats-*.json
 web-ext.config.ts
 .env*
 
+# Contexto exports contain private CRM and relationship data
+contexto-backup-*.json
+*.contexto-backup.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
