@@ -9,8 +9,11 @@ Export includes:
 - Tags and account-tag joins.
 - Folders and folder-account joins.
 - Notes.
+- Bookmarks, including reminder and handled state.
 - Search presets and history.
 - Backup metadata.
 - Change log.
 
 Imported records are merged by ID through Dexie `bulkPut`. Treat exported JSON as sensitive relationship data.
+
+Version 2 bookmark import validates ownership, canonical X identity, post ID, text bounds, and all present timestamps—including the optional handled timestamp—before writing.

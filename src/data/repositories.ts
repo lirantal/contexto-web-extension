@@ -12,6 +12,7 @@ import type {
   BackupRecord,
   Bookmark,
   BookmarkCaptureInput,
+  BookmarkUpdateInput,
   ChangeEntityType,
   Company,
   Folder,
@@ -389,6 +390,7 @@ export async function captureBookmark(
           excerpt: validated.excerpt,
           reminder: validated.reminder,
           capturedAt: timestamp,
+          completedAt: undefined,
           updatedAt: timestamp,
           deletedAt: undefined,
         };
@@ -433,6 +435,47 @@ export async function findBookmarkByPost(
 export async function listBookmarks(accountId: string, database = db): Promise<Bookmark[]> {
   const bookmarks = active(await database.bookmarks.where('accountId').equals(accountId).toArray());
   return bookmarks.sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
+}
+
+export async function updateBookmark(
+  bookmarkId: string,
+  input: BookmarkUpdateInput,
+  database = db,
+  changedAt = nowIso(),
+): Promise<Bookmark> {
+  if (input.completed !== undefined && typeof input.completed !== 'boolean') {
+    throw new Error('Bookmark completed state must be true or false');
+  }
+  const updatesReminder = input.reminder !== undefined;
+  const updatesCompletion = input.completed !== undefined;
+  const reminder = updatesReminder ? normalizeBookmarkReminder(input.reminder) : undefined;
+
+  return database.transaction(
+    'rw',
+    [database.accounts, database.bookmarks, database.changeLog],
+    async () => {
+      const bookmark = await database.bookmarks.get(bookmarkId);
+      if (!bookmark || bookmark.deletedAt) throw new Error('Bookmark not found');
+      if (!updatesReminder && !updatesCompletion) return bookmark;
+
+      const timestamp = new Date(changedAt).toISOString();
+      const updated: Bookmark = {
+        ...bookmark,
+        ...(updatesReminder ? { reminder } : {}),
+        ...(updatesCompletion
+          ? { completedAt: input.completed ? timestamp : undefined }
+          : {}),
+        updatedAt: timestamp,
+      };
+      await database.bookmarks.put(updated);
+      await database.accounts.update(bookmark.accountId, {
+        updatedAt: timestamp,
+        syncState: 'pending-sync',
+      });
+      await recordChange(database, 'bookmark', bookmark.id, 'update');
+      return updated;
+    },
+  );
 }
 
 export async function removeBookmark(bookmarkId: string, database = db): Promise<void> {
@@ -712,6 +755,7 @@ function validateImportedBookmarks(
       || !validTimestamp(bookmark.createdAt)
       || !validTimestamp(bookmark.updatedAt)
       || !validTimestamp(bookmark.capturedAt)
+      || (bookmark.completedAt !== undefined && !validTimestamp(bookmark.completedAt))
       || (bookmark.deletedAt !== undefined && !validTimestamp(bookmark.deletedAt))
     ) {
       throw new Error('Backup bookmark is invalid');

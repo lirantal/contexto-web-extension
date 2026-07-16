@@ -35,6 +35,7 @@ vi.mock('@/src/data/repositories', () => ({
   removeFolder: mocks.removeFolder,
   removeTag: mocks.removeTag,
   updateAccount: vi.fn(),
+  updateBookmark: vi.fn(),
 }));
 
 vi.mock('@/src/shared/settings', () => ({

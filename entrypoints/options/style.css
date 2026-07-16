@@ -369,9 +369,63 @@ textarea {
   background: #fbfcfb;
 }
 
-.bookmark-card > strong,
-.bookmark-card > p {
+.bookmark-card.handled {
+  border-color: #b8d6ca;
+  background: #f4f8f5;
+}
+
+.bookmark-reminder-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bookmark-reminder-row strong {
+  min-width: 0;
+  white-space: pre-line;
+}
+
+.bookmark-reminder-row button,
+.bookmark-meta button {
+  min-height: 30px;
+  padding: 5px 8px;
+}
+
+.bookmark-empty-reminder {
+  color: #7a837b;
+  font-style: italic;
+}
+
+.bookmark-reminder-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.bookmark-reminder-editor textarea {
+  resize: vertical;
+}
+
+.bookmark-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bookmark-excerpt {
   margin: 0;
+}
+
+.bookmark-handled {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #dcefe7;
+  color: #176245;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .bookmark-meta {

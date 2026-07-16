@@ -72,6 +72,7 @@ export interface Bookmark extends TimestampedRecord {
   excerpt?: string;
   reminder?: string;
   capturedAt: string;
+  completedAt?: string;
 }
 
 export interface BookmarkCaptureInput {
@@ -79,6 +80,11 @@ export interface BookmarkCaptureInput {
   postUrl: string;
   excerpt?: string;
   reminder?: string;
+}
+
+export interface BookmarkUpdateInput {
+  reminder?: string;
+  completed?: boolean;
 }
 
 export type SearchDirection =

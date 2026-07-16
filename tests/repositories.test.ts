@@ -22,6 +22,7 @@ import {
   resetDatabaseForTests,
   saveAccountContext,
   updateAccount,
+  updateBookmark,
 } from '@/src/data/repositories';
 
 const database = new ContextoDatabase('ContextoTestDatabase');
@@ -272,15 +273,32 @@ describe('Contexto repositories', () => {
       excerpt: 'Backup   release',
       reminder: 'Restore this',
     }, database);
+    const handled = await updateBookmark(
+      bookmark.id,
+      { completed: true },
+      database,
+      '2026-07-16T12:00:00.000Z',
+    );
 
     const backup = await exportBackup(database);
     expect(backup.formatVersion).toBe(2);
-    expect(backup.data.bookmarks).toEqual([bookmark]);
+    expect(backup.data.bookmarks).toEqual([handled]);
     await resetDatabaseForTests(database);
+
+    const invalidCompletion = {
+      ...backup,
+      data: {
+        ...backup.data,
+        bookmarks: [{ ...handled, completedAt: 'not-a-timestamp' }],
+      },
+    };
+    await expect(importBackup(invalidCompletion, database)).rejects.toThrow('Backup bookmark is invalid');
+    expect(await database.bookmarks.count()).toBe(0);
+
     await importBackup(backup, database);
 
     expect(await listAccountSummaries({}, database)).toHaveLength(1);
-    expect(await listBookmarks(account.id, database)).toEqual([bookmark]);
+    expect(await listBookmarks(account.id, database)).toEqual([handled]);
   });
 
   it('captures, deduplicates, removes, and restores contact bookmarks', async () => {
@@ -311,6 +329,7 @@ describe('Contexto repositories', () => {
     }, database)).toEqual(first);
     expect(await database.bookmarks.count()).toBe(1);
 
+    await database.bookmarks.update(first.id, { completedAt: '2026-07-15T12:00:00.000Z' });
     await removeBookmark(first.id, database);
     expect(await listBookmarks(account.id, database)).toEqual([]);
     expect((await database.bookmarks.get(first.id))?.deletedAt).toBeDefined();
@@ -326,6 +345,7 @@ describe('Contexto repositories', () => {
       createdAt: first.createdAt,
       excerpt: 'Updated excerpt',
       reminder: 'Updated reminder',
+      completedAt: undefined,
       deletedAt: undefined,
     });
     expect(restored.capturedAt >= first.capturedAt).toBe(true);
@@ -355,6 +375,88 @@ describe('Contexto repositories', () => {
       authorHandle: 'theo', postUrl: 'https://x.com/theo/status/123', reminder: 'x'.repeat(501),
     }, database)).rejects.toThrow('Reminder must be 500');
     expect(await database.bookmarks.count()).toBe(0);
+  });
+
+  it('edits bookmark reminders and toggles handled state without removing the source', async () => {
+    const account = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo' },
+      database,
+    );
+    const captured = await captureBookmark(account.id, {
+      authorHandle: 'theo',
+      postUrl: 'https://x.com/theo/status/123',
+      reminder: 'Original reminder',
+    }, database);
+
+    const handled = await updateBookmark(captured.id, {
+      reminder: '  Invite after launch \n Follow up  ',
+      completed: true,
+    }, database, '2026-07-16T12:00:00.000Z');
+    expect(handled).toMatchObject({
+      id: captured.id,
+      postUrl: captured.postUrl,
+      reminder: 'Invite after launch\nFollow up',
+      completedAt: '2026-07-16T12:00:00.000Z',
+      updatedAt: '2026-07-16T12:00:00.000Z',
+    });
+    expect(await findBookmarkByPost(account.id, captured.postUrl, database)).toEqual(handled);
+    expect(await listBookmarks(account.id, database)).toEqual([handled]);
+
+    const reopened = await updateBookmark(
+      captured.id,
+      { reminder: '', completed: false },
+      database,
+      '2026-07-16T12:05:00.000Z',
+    );
+    expect(reopened.reminder).toBeUndefined();
+    expect(reopened.completedAt).toBeUndefined();
+    expect(reopened.updatedAt).toBe('2026-07-16T12:05:00.000Z');
+    expect((await database.accounts.get(account.id))?.syncState).toBe('pending-sync');
+    expect(await database.changeLog.where('entityType').equals('bookmark').count()).toBe(3);
+  });
+
+  it('rejects invalid or removed bookmark updates', async () => {
+    const account = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo' },
+      database,
+    );
+    const bookmark = await captureBookmark(account.id, {
+      authorHandle: 'theo', postUrl: 'https://x.com/theo/status/123',
+    }, database);
+
+    await expect(updateBookmark(bookmark.id, { reminder: 'x'.repeat(501) }, database))
+      .rejects.toThrow('Reminder must be 500');
+    await removeBookmark(bookmark.id, database);
+    await expect(updateBookmark(bookmark.id, { completed: true }, database))
+      .rejects.toThrow('Bookmark not found');
+    await expect(updateBookmark('missing', { completed: true }, database))
+      .rejects.toThrow('Bookmark not found');
+  });
+
+  it('rolls back bookmark edits when change recording fails', async () => {
+    const account = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo' },
+      database,
+    );
+    const bookmark = await captureBookmark(account.id, {
+      authorHandle: 'theo', postUrl: 'https://x.com/theo/status/123', reminder: 'Original',
+    }, database);
+    const accountBefore = await database.accounts.get(account.id);
+    const addChange = vi.spyOn(database.changeLog, 'add');
+
+    try {
+      addChange.mockRejectedValueOnce(new Error('change log failure'));
+      await expect(updateBookmark(
+        bookmark.id,
+        { reminder: 'Changed', completed: true },
+        database,
+        '2026-07-16T12:00:00.000Z',
+      )).rejects.toThrow('change log failure');
+      expect(await database.bookmarks.get(bookmark.id)).toEqual(bookmark);
+      expect(await database.accounts.get(account.id)).toEqual(accountBefore);
+    } finally {
+      addChange.mockRestore();
+    }
   });
 
   it('lists active bookmarks by account and captured recency', async () => {

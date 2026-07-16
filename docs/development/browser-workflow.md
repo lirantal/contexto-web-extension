@@ -51,7 +51,7 @@ Run the relevant rows in both Chrome and Vivaldi when a change touches browser i
 | Saved-contact prior interactions | A valid configured viewer handle shows View our interactions and opens a live two-way X query in a new tab; a missing or invalid viewer handle hides the action without affecting context or bookmarks. |
 | Saved-contact catch-up | Catch up on X opens live author posts since the displayed checkpoint; opening does not advance it; explicit Mark caught up updates it; failed updates preserve the previous date and context. |
 | Saved-contact quick note | Add quick note opens an inline focused composer; empty drafts cannot save; success refreshes Latest note; failure preserves the draft; Cancel or panel close clears it; bookmark and note composers do not appear together. |
-| Dashboard bookmark collection | Multiple bookmarks appear newest first; Open on X uses the canonical post; Remove updates the collection without affecting contact metadata. |
+| Dashboard bookmark collection | Multiple bookmarks appear newest first; reminder edits accept text or an empty value; failed saves retain the draft; Mark handled preserves the source and exposes Reopen; Open on X remains canonical; Remove updates the collection without affecting contact metadata. |
 | Wide and narrow viewports | The editor opens in the Contexto-owned right rail or modal fallback without shifting the hover card. |
 | Hover dismissal and editor interaction | Moving away from the X card, typing, clicking fields or the backdrop, and pressing Escape do not close the editor. |
 | Save, failed Save, and Cancel | Successful Save and explicit Cancel close the owned editor; failed Save stays open with the draft intact. |

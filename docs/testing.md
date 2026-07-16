@@ -27,7 +27,7 @@ Use controller tests with composed Shadow DOM events for mounting, focus, and di
 
 Use surface tests for successful Save, failed Save, Cancel, draft retention, and the inline-versus-modal lifecycle distinction. A failed Save must leave the owned editor and draft available; the full-profile inline editor must remain visible after Save or Cancel.
 
-Bookmark component tests cover duplicate lookup, optional-reminder capture, pending controls, success, retry-preserved drafts, Cancel/panel-close clearing, dashboard loading/removal errors, safe source links, empty collections, and stale account requests. Repository tests cover ownership and URL validation, field bounds, deduplication, soft deletion/restoration, recency ordering, change logging, and backup format 1/2 compatibility.
+Bookmark component tests cover duplicate lookup, optional-reminder capture, pending controls, success, retry-preserved drafts, Cancel/panel-close clearing, dashboard reminder editing and Handled/Reopen controls, loading/update/removal errors, safe source links, empty collections, and stale account requests. Repository tests cover ownership and URL validation, field bounds, transactional reminder/completion updates, deduplication, soft deletion/restoration, recency ordering, change logging, handled-state backup validation, and backup format 1/2 compatibility.
 
 Prior-interaction shortcut tests cover normalized two-way query construction, live X search URL parameters, invalid handles, safe new-tab attributes, conditional visibility, and settings-failure isolation from saved context and bookmark capture.
 
