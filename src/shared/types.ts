@@ -21,6 +21,7 @@ export interface Account extends TimestampedRecord {
   companyId?: RecordId;
   location?: string;
   relationshipSource?: string;
+  lastCatchUpAt?: string;
   syncState: 'local-only' | 'pending-sync' | 'synced' | 'conflict';
 }
 

@@ -15,6 +15,7 @@ import {
   listAccountSummaries,
   listBookmarks,
   listTargetAccountSuggestions,
+  markAccountCaughtUp,
   removeBookmark,
   removeFolder,
   removeTag,
@@ -60,6 +61,53 @@ describe('Contexto repositories', () => {
     expect(exported).not.toHaveProperty('profession');
     expect(exported).not.toHaveProperty('position');
     expect(await getAccountByHandle('x', '@exampledev', database)).toMatchObject({ id: account.id });
+  });
+
+  it('advances an explicit catch-up checkpoint and preserves it in backups', async () => {
+    const account = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'CatchUp', displayName: 'Catch Up', profileUrl: 'https://x.com/catchup' },
+      database,
+    );
+
+    const updated = await markAccountCaughtUp(account.id, database, '2026-07-16T10:15:00.000Z');
+
+    expect(updated).toMatchObject({
+      id: account.id,
+      lastCatchUpAt: '2026-07-16T10:15:00.000Z',
+      updatedAt: '2026-07-16T10:15:00.000Z',
+      syncState: 'pending-sync',
+    });
+    const backup = await exportBackup(database);
+    expect(backup.data.accounts[0].lastCatchUpAt)
+      .toBe('2026-07-16T10:15:00.000Z');
+    expect(await database.changeLog.where('entityType').equals('account').count()).toBe(2);
+
+    await resetDatabaseForTests(database);
+    await importBackup(backup, database);
+    expect((await getAccountByHandle('x', 'catchup', database))?.lastCatchUpAt)
+      .toBe('2026-07-16T10:15:00.000Z');
+  });
+
+  it('rolls back a catch-up checkpoint when change recording fails', async () => {
+    const account = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'RollbackCatchUp', displayName: 'Rollback', profileUrl: 'https://x.com/rollbackcatchup' },
+      database,
+    );
+    const addChange = vi.spyOn(database.changeLog, 'add');
+
+    try {
+      addChange.mockRejectedValueOnce(new Error('change log failure'));
+      await expect(markAccountCaughtUp(
+        account.id,
+        database,
+        '2026-07-16T10:15:00.000Z',
+      )).rejects.toThrow('change log failure');
+      const unchanged = await database.accounts.get(account.id);
+      expect(unchanged?.updatedAt).toBe(account.updatedAt);
+      expect(unchanged).not.toHaveProperty('lastCatchUpAt');
+    } finally {
+      addChange.mockRestore();
+    }
   });
 
   it('discards legacy profession and position values during the database upgrade', async () => {

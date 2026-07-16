@@ -4,6 +4,7 @@ const repositories = vi.hoisted(() => ({
   captureBookmark: vi.fn(),
   findBookmarkByPost: vi.fn(),
   getAccountByHandle: vi.fn(),
+  markAccountCaughtUp: vi.fn(),
   saveAccountContext: vi.fn(),
 }));
 
@@ -11,6 +12,7 @@ vi.mock('@/src/data/repositories', () => ({
   captureBookmark: repositories.captureBookmark,
   findBookmarkByPost: repositories.findBookmarkByPost,
   getAccountByHandle: repositories.getAccountByHandle,
+  markAccountCaughtUp: repositories.markAccountCaughtUp,
   saveAccountContext: repositories.saveAccountContext,
 }));
 
@@ -39,6 +41,16 @@ describe('background account context messages', () => {
     repositories.saveAccountContext.mockResolvedValue({ id: 'account_1', tags: [], folders: [] });
     await handleRequest({ type: 'contexto:account:saveContext', input });
     expect(repositories.saveAccountContext).toHaveBeenCalledWith(input);
+  });
+
+  it('routes an explicit catch-up checkpoint without accepting a caller timestamp', async () => {
+    const updated = { id: 'account_1', lastCatchUpAt: '2026-07-16T10:15:00.000Z' };
+    repositories.markAccountCaughtUp.mockResolvedValue(updated);
+
+    await expect(handleRequest({
+      type: 'contexto:account:markCaughtUp', accountId: 'account_1',
+    })).resolves.toEqual({ ok: true, account: updated });
+    expect(repositories.markAccountCaughtUp).toHaveBeenCalledWith('account_1');
   });
 
   it('routes bookmark lookup and capture without creating an account', async () => {

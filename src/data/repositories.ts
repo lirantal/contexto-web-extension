@@ -203,6 +203,31 @@ export async function updateAccount(accountId: string, input: AccountUpdateInput
   return getAccountSummary(accountId, database) as Promise<AccountSummary>;
 }
 
+export async function markAccountCaughtUp(
+  accountId: string,
+  database = db,
+  caughtUpAt = nowIso(),
+): Promise<AccountSummary> {
+  const account = await database.accounts.get(accountId);
+  if (!account || account.deletedAt) throw new Error('Account not found');
+
+  const timestamp = new Date(caughtUpAt).toISOString();
+  await database.transaction(
+    'rw',
+    [database.accounts, database.changeLog],
+    async () => {
+      await database.accounts.update(accountId, {
+        lastCatchUpAt: timestamp,
+        updatedAt: timestamp,
+        syncState: 'pending-sync',
+      });
+      await recordChange(database, 'account', accountId, 'update');
+    },
+  );
+
+  return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+}
+
 async function syncAccountTags(accountId: string, names: string[], database: ContextoDatabase): Promise<void> {
   const uniqueNames = [...new Map(names.map((name) => [normalizeName(name), name.trim()])).values()].filter(Boolean);
   const tags = await Promise.all(uniqueNames.map((name) => upsertTagByName(name, database)));

@@ -158,6 +158,23 @@ export function buildXInteractionSearchUrl(viewerHandle: string, targetHandle: s
   return `https://x.com/search?${params.toString()}`;
 }
 
+export function buildXCatchUpSearchUrl(targetHandle: string, lastCatchUpAt?: string): string | null {
+  if (!isValidXHandle(targetHandle)) return null;
+
+  let since = '';
+  if (lastCatchUpAt !== undefined) {
+    const checkpoint = new Date(lastCatchUpAt);
+    if (Number.isNaN(checkpoint.getTime())) return null;
+    since = checkpoint.toISOString().slice(0, 10);
+  }
+
+  return buildXSearchUrl({
+    targetHandle: normalizeXHandle(targetHandle),
+    since,
+    direction: 'from-profile',
+  });
+}
+
 export function labelSearchDirection(direction: SearchDirection): string {
   const labels: Record<SearchDirection, string> = {
     'me-to-them': 'Messages I sent',

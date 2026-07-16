@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { buildXInteractionSearchUrl } from '@/src/shared/platforms/x';
+import { buildXCatchUpSearchUrl, buildXInteractionSearchUrl } from '@/src/shared/platforms/x';
 import type { AccountSummary, ProfileSnapshot, XPostSnapshot } from '@/src/shared/types';
 import type { ContextoProfileSurfaceProps } from './ContextoProfileSurface';
 
@@ -22,6 +22,9 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
   const [saving, setSaving] = useState(false);
   const [bookmarkError, setBookmarkError] = useState('');
   const [bookmarkSuccess, setBookmarkSuccess] = useState('');
+  const [markingCaughtUp, setMarkingCaughtUp] = useState(false);
+  const [catchUpError, setCatchUpError] = useState('');
+  const [catchUpSuccess, setCatchUpSuccess] = useState('');
   const markerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
 
@@ -34,6 +37,9 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
     setReminder('');
     setBookmarkError('');
     setBookmarkSuccess('');
+    setMarkingCaughtUp(false);
+    setCatchUpError('');
+    setCatchUpSuccess('');
     setViewerHandle('');
     send({ type: 'contexto:settings:get' })
       .then((response) => {
@@ -102,6 +108,7 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
   const panelId = `contexto-feed-context-${account.id}`;
   const organization = [account.role, account.company?.name].filter(Boolean).join(' · ');
   const interactionUrl = buildXInteractionSearchUrl(viewerHandle, account.handle);
+  const catchUpUrl = buildXCatchUpSearchUrl(account.handle, account.lastCatchUpAt);
   const openEditor = () => {
     if (markerRef.current) onEdit(profile, markerRef.current);
   };
@@ -141,6 +148,27 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
       setBookmarkError(error instanceof Error ? error.message : 'Could not save bookmark');
     } finally {
       setSaving(false);
+    }
+  };
+  const markCaughtUp = async () => {
+    setMarkingCaughtUp(true);
+    setCatchUpError('');
+    setCatchUpSuccess('');
+    try {
+      const response = await send({
+        type: 'contexto:account:markCaughtUp',
+        accountId: account.id,
+      });
+      if (response.ok && 'account' in response) {
+        setAccount(response.account);
+        setCatchUpSuccess('Catch-up checkpoint updated');
+        return;
+      }
+      setCatchUpError(!response.ok ? response.error : 'Could not update catch-up checkpoint');
+    } catch (error) {
+      setCatchUpError(error instanceof Error ? error.message : 'Could not update catch-up checkpoint');
+    } finally {
+      setMarkingCaughtUp(false);
     }
   };
 
@@ -183,6 +211,26 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
         </div>
       </div>}
       {bookmarkSuccess && <p className="contexto-success" aria-live="polite">{bookmarkSuccess}</p>}
+      {catchUpUrl && <div className="contexto-feed-catch-up">
+        <div>
+          <a
+            className="contexto-feed-interactions"
+            href={catchUpUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >Catch up on X</a>
+          {account.lastCatchUpAt
+            ? <time dateTime={account.lastCatchUpAt}>
+              Last caught up {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(account.lastCatchUpAt))}
+            </time>
+            : <span>No catch-up checkpoint yet</span>}
+        </div>
+        <button type="button" disabled={markingCaughtUp} onClick={markCaughtUp}>
+          {markingCaughtUp ? 'Updating…' : 'Mark caught up'}
+        </button>
+      </div>}
+      {catchUpError && <p className="contexto-error" role="alert">{catchUpError}</p>}
+      {catchUpSuccess && <p className="contexto-success" aria-live="polite">{catchUpSuccess}</p>}
       {interactionUrl && <a
         className="contexto-feed-interactions"
         href={interactionUrl}

@@ -57,6 +57,9 @@ button:focus-visible,input:focus-visible { outline:2px solid var(--ctx-accent); 
 .contexto-feed-bookmark-composer textarea { box-sizing:border-box; width:100%; resize:vertical; border:1px solid var(--ctx-border); border-radius:9px; padding:8px 10px; background:var(--ctx-bg); color:var(--ctx-text); font:inherit; }
 .contexto-feed-bookmark-composer textarea:focus-visible { outline:2px solid var(--ctx-accent); outline-offset:2px; }
 .contexto-feed-bookmark-actions { display:flex; flex-wrap:wrap; gap:7px; }
+.contexto-feed-catch-up { display:flex; align-items:center; justify-content:space-between; gap:8px; border-top:1px solid var(--ctx-border); padding-top:7px; }
+.contexto-feed-catch-up > div { display:grid; gap:2px; min-width:0; }
+.contexto-feed-catch-up time,.contexto-feed-catch-up span { color:var(--ctx-muted); font-size:11px; }
 .contexto-feed-interactions { color:var(--ctx-link,#1d9bf0); font-weight:650; text-decoration:none; }
 .contexto-feed-interactions:hover { text-decoration:underline; }
 .contexto-feed-interactions:focus-visible { outline:2px solid var(--ctx-accent); outline-offset:2px; border-radius:4px; }

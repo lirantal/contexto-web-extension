@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildXCatchUpSearchUrl,
   buildXInteractionSearchUrl,
   buildXSearchQuery,
   buildXSearchUrl,
@@ -87,5 +88,22 @@ describe('X platform adapter', () => {
   it('omits an interaction search when either handle is invalid', () => {
     expect(buildXInteractionSearchUrl('', 'example_dev')).toBeNull();
     expect(buildXInteractionSearchUrl('liran_tal', 'not-valid!')).toBeNull();
+  });
+
+  it('builds a live author catch-up search from the last explicit checkpoint', () => {
+    const url = buildXCatchUpSearchUrl('@Example_Dev', '2026-07-10T18:42:00.000Z');
+
+    expect(url).not.toBeNull();
+    const parsed = new URL(url!);
+    expect(parsed.searchParams.get('q')).toBe('from:example_dev since:2026-07-10');
+    expect(parsed.searchParams.get('f')).toBe('live');
+  });
+
+  it('builds a complete author search before the first checkpoint and rejects invalid input', () => {
+    const firstCatchUp = buildXCatchUpSearchUrl('Example_Dev');
+
+    expect(new URL(firstCatchUp!).searchParams.get('q')).toBe('from:example_dev');
+    expect(buildXCatchUpSearchUrl('not-valid!')).toBeNull();
+    expect(buildXCatchUpSearchUrl('example_dev', 'not-a-timestamp')).toBeNull();
   });
 });

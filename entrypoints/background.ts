@@ -8,6 +8,7 @@ import {
   getAccountByHandle,
   getLookups,
   listAccountSummaries,
+  markAccountCaughtUp,
   recordSearch,
   saveAccountContext,
   updateAccount,
@@ -35,6 +36,8 @@ export async function handleRequest(message: ContextoRequest): Promise<ContextoR
 
       case 'contexto:account:update':
         return { ok: true, account: await updateAccount(message.accountId, message.patch) };
+      case 'contexto:account:markCaughtUp':
+        return { ok: true, account: await markAccountCaughtUp(message.accountId) };
       case 'contexto:account:list':
         return { ok: true, accounts: await listAccountSummaries(message.filters) };
       case 'contexto:note:add':

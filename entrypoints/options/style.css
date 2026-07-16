@@ -141,11 +141,23 @@ textarea {
 }
 
 .backup-actions,
+.catch-up-actions,
 .search-actions,
 .chip-row,
 .inline-form {
   display: flex;
   gap: 8px;
+}
+
+.dashboard-link-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #cdd5ce;
+  border-radius: 7px;
+  padding: 8px 11px;
+  color: #0f756d;
+  text-decoration: none;
 }
 
 .backup-actions {
@@ -384,6 +396,18 @@ textarea {
 
 .error-line {
   color: #a42424;
+}
+
+.catch-up-status,
+.catch-up-actions,
+.catch-up-actions + .error-line,
+.catch-up-actions + .status-line {
+  margin: 0;
+}
+
+.catch-up-actions {
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .search-actions {

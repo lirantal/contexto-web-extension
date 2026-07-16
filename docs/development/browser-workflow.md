@@ -49,6 +49,7 @@ Run the relevant rows in both Chrome and Vivaldi when a change touches browser i
 | Unknown and saved accounts on feed hover cards | Correct handle and display name; the compact summary and Edit launcher do not overlap X controls. |
 | Saved-contact post capture | Eligible primary posts show Capture or Bookmarked; optional reminders save without leaving X; quoted/promoted/ambiguous posts do not expose capture. |
 | Saved-contact prior interactions | A valid configured viewer handle shows View our interactions and opens a live two-way X query in a new tab; a missing or invalid viewer handle hides the action without affecting context or bookmarks. |
+| Saved-contact catch-up | Catch up on X opens live author posts since the displayed checkpoint; opening does not advance it; explicit Mark caught up updates it; failed updates preserve the previous date and context. |
 | Dashboard bookmark collection | Multiple bookmarks appear newest first; Open on X uses the canonical post; Remove updates the collection without affecting contact metadata. |
 | Wide and narrow viewports | The editor opens in the Contexto-owned right rail or modal fallback without shifting the hover card. |
 | Hover dismissal and editor interaction | Moving away from the X card, typing, clicking fields or the backdrop, and pressing Escape do not close the editor. |

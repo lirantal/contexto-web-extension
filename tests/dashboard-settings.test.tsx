@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   accounts: [] as Array<Record<string, unknown>>,
   clearTargetHistory: vi.fn(),
   getSettings: vi.fn(),
+  markAccountCaughtUp: vi.fn(),
   removeFolder: vi.fn(),
   removeBookmark: vi.fn(),
   removeTag: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock('@/src/data/repositories', () => ({
   importBackup: vi.fn(),
   listAccountSummaries: vi.fn(),
   listBookmarks: vi.fn().mockResolvedValue([]),
+  markAccountCaughtUp: mocks.markAccountCaughtUp,
   recordSearch: vi.fn(),
   removeBookmark: mocks.removeBookmark,
   removeFolder: mocks.removeFolder,
@@ -48,6 +50,7 @@ describe('dashboard target handle history settings', () => {
     mocks.accounts = [];
     mocks.getSettings.mockResolvedValue({ myXHandle: '@me', lastDashboardView: 'accounts' });
     mocks.clearTargetHistory.mockResolvedValue(undefined);
+    mocks.markAccountCaughtUp.mockResolvedValue(undefined);
   });
 
   it('clears target handle history and confirms the action', async () => {
@@ -88,5 +91,23 @@ describe('dashboard target handle history settings', () => {
 
     expect(mocks.removeTag).toHaveBeenCalledWith('account-1', 'tag-1');
     expect(mocks.removeFolder).toHaveBeenCalledWith('account-1', 'folder-1');
+  });
+
+  it('offers catch-up search and an explicit checkpoint action for the selected account', async () => {
+    mocks.accounts = [{
+      id: 'account-1', platform: 'x', handle: 'founder', normalizedHandle: 'founder',
+      displayName: 'Founder', profileUrl: 'https://x.com/founder', syncState: 'local-only',
+      lastCatchUpAt: '2026-07-10T18:42:00.000Z',
+      createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      tags: [], folders: [],
+    }];
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    const link = await screen.findByRole('link', { name: 'Catch up on X' });
+    expect(new URL(link.getAttribute('href')!).searchParams.get('q'))
+      .toBe('from:founder since:2026-07-10');
+    await user.click(screen.getByRole('button', { name: 'Mark caught up' }));
+    expect(mocks.markAccountCaughtUp).toHaveBeenCalledWith('account-1');
   });
 });

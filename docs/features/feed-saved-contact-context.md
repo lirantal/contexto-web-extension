@@ -12,6 +12,8 @@ When the primary post also has one validated canonical status URL, the panel che
 
 When the saved `myXHandle` setting and author handle are both valid, the panel also shows **View our interactions**. It opens a new tab with X's live results for `(from:viewer to:author) OR (from:author to:viewer)`. Missing, invalid, or unavailable settings hide only this shortcut.
 
+Every saved X author with a valid handle can also show **Catch up on X**. This opens their live posts since the account's explicit catch-up checkpoint, or their complete author search before the first checkpoint. **Mark caught up** is a separate action so opening a search never claims that the results were reviewed.
+
 ## Summary contents
 
 The read-only panel omits empty fields and may show:
@@ -23,6 +25,8 @@ The read-only panel omits empty fields and may show:
 - Latest note.
 
 **Open full context** delegates to the existing Contexto-owned profile editor. **View our interactions** performs outbound navigation only. Opening or reading the compact panel does not write data.
+
+**Catch up on X** also performs outbound navigation only. A catch-up timestamp is written only after explicit **Mark caught up**, and a failed write preserves the prior checkpoint.
 
 ## Lifecycle and privacy
 

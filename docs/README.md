@@ -25,6 +25,7 @@ These documents describe Contexto's current architecture, behavior, development 
 - [X search builder](features/x-search-builder.md) — popup query construction.
 - [Saved-contact feed context](features/feed-saved-contact-context.md) — local relationship context on saved authors in X feeds.
 - [Contact post bookmarks](features/contact-post-bookmarks.md) — capture X posts with reminders and revisit them per contact.
+- [Contact catch-up](features/contact-catch-up.md) — review a contact's X posts since an explicit checkpoint.
 
 ## Decision history
 

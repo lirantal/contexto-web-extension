@@ -151,6 +151,81 @@ describe('ContextoFeedContext', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
+  it('opens posts since the checkpoint and advances it only when explicitly marked', async () => {
+    const user = userEvent.setup();
+    const checkpointed = { ...saved, lastCatchUpAt: '2026-07-10T18:42:00.000Z' };
+    const advanced = { ...checkpointed, lastCatchUpAt: '2026-07-16T10:15:00.000Z' };
+    const send = vi.fn(async (message: ContextoRequest): Promise<ContextoResponse> => {
+      if (message.type === 'contexto:account:lookup') {
+        return { ok: true, lookup: true, lookupAccount: checkpointed };
+      }
+      if (message.type === 'contexto:settings:get') {
+        return { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts' } };
+      }
+      if (message.type === 'contexto:account:markCaughtUp') {
+        return { ok: true, account: advanced };
+      }
+      return { ok: false, error: 'Unexpected request' };
+    });
+    render(<ContextoFeedContext profile={profile} send={send} onEdit={vi.fn()} />);
+
+    await user.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+    const link = screen.getByRole('link', { name: 'Catch up on X' });
+    expect(new URL(link.getAttribute('href')!).searchParams.get('q'))
+      .toBe('from:theo since:2026-07-10');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(send).not.toHaveBeenCalledWith({
+      type: 'contexto:account:markCaughtUp', accountId: 'account_1',
+    });
+    expect(screen.getByText(/Last caught up/).closest('time'))
+      .toHaveAttribute('datetime', checkpointed.lastCatchUpAt);
+
+    await user.click(screen.getByRole('button', { name: 'Mark caught up' }));
+
+    expect(send).toHaveBeenCalledWith({
+      type: 'contexto:account:markCaughtUp', accountId: 'account_1',
+    });
+    expect(await screen.findByText('Catch-up checkpoint updated')).toBeVisible();
+    expect(screen.getByText(/Last caught up/).closest('time'))
+      .toHaveAttribute('datetime', advanced.lastCatchUpAt);
+  });
+
+  it('offers a complete author search before the first catch-up checkpoint', async () => {
+    renderFeed();
+    await userEvent.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+
+    const link = screen.getByRole('link', { name: 'Catch up on X' });
+    expect(new URL(link.getAttribute('href')!).searchParams.get('q')).toBe('from:theo');
+    expect(screen.getByText('No catch-up checkpoint yet')).toBeVisible();
+  });
+
+  it('keeps the previous checkpoint and saved context when marking caught up fails', async () => {
+    const user = userEvent.setup();
+    const checkpointed = { ...saved, lastCatchUpAt: '2026-07-10T18:42:00.000Z' };
+    const send = vi.fn(async (message: ContextoRequest): Promise<ContextoResponse> => {
+      if (message.type === 'contexto:account:lookup') {
+        return { ok: true, lookup: true, lookupAccount: checkpointed };
+      }
+      if (message.type === 'contexto:settings:get') {
+        return { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts' } };
+      }
+      if (message.type === 'contexto:account:markCaughtUp') {
+        return { ok: false, error: 'Checkpoint unavailable' };
+      }
+      return { ok: false, error: 'Unexpected request' };
+    });
+    render(<ContextoFeedContext profile={profile} send={send} onEdit={vi.fn()} />);
+
+    await user.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+    await user.click(screen.getByRole('button', { name: 'Mark caught up' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Checkpoint unavailable');
+    expect(screen.getByText(/Last caught up/).closest('time'))
+      .toHaveAttribute('datetime', checkpointed.lastCatchUpAt);
+    expect(screen.getByText('Conference friend')).toBeVisible();
+  });
+
   it.each([
     ['missing', { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts' } }],
     ['invalid', { ok: true, settings: { myXHandle: 'not-valid!', lastDashboardView: 'accounts' } }],

@@ -6,6 +6,7 @@ import {
   Download,
   ExternalLink,
   FolderPlus,
+  RefreshCw,
   Search,
   Settings,
   Tag,
@@ -22,12 +23,13 @@ import {
   getLookups,
   importBackup,
   listAccountSummaries,
+  markAccountCaughtUp,
   recordSearch,
   removeFolder,
   removeTag,
   updateAccount,
 } from '@/src/data/repositories';
-import { buildXSearchQuery, buildXSearchUrl, labelSearchDirection, normalizeXHandle } from '@/src/shared/platforms/x';
+import { buildXCatchUpSearchUrl, buildXSearchQuery, buildXSearchUrl, labelSearchDirection, normalizeXHandle } from '@/src/shared/platforms/x';
 import { clearTargetHandleHistory, defaultSettings, settingsItem } from '@/src/shared/settings';
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
 import { getAdjacentAccountId } from './account-navigation';
@@ -283,6 +285,10 @@ function AccountDetail({ account, settings }: { account: AccountSummary; setting
   const [keyword, setKeyword] = useState('');
   const [since, setSince] = useState('');
   const [until, setUntil] = useState('');
+  const [markingCaughtUp, setMarkingCaughtUp] = useState(false);
+  const [catchUpError, setCatchUpError] = useState('');
+  const [catchUpSuccess, setCatchUpSuccess] = useState('');
+  const catchUpUrl = buildXCatchUpSearchUrl(account.handle, account.lastCatchUpAt);
 
   useEffect(() => {
     setDraft({
@@ -339,6 +345,20 @@ function AccountDetail({ account, settings }: { account: AccountSummary; setting
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
+  async function markCaughtUp() {
+    setMarkingCaughtUp(true);
+    setCatchUpError('');
+    setCatchUpSuccess('');
+    try {
+      await markAccountCaughtUp(account.id);
+      setCatchUpSuccess('Catch-up checkpoint updated');
+    } catch (error) {
+      setCatchUpError(error instanceof Error ? error.message : 'Could not update catch-up checkpoint');
+    } finally {
+      setMarkingCaughtUp(false);
+    }
+  }
+
   return (
     <div className="detail-grid">
       <header className="profile-heading">
@@ -392,6 +412,28 @@ function AccountDetail({ account, settings }: { account: AccountSummary; setting
         {account.latestNote && <p className="latest-note">{account.latestNote.body}</p>}
         <textarea rows={4} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add context, follow-up ideas, or relationship history" />
         <button onClick={addNoteAndClear}>Add note</button>
+      </section>
+
+      <section className="panel detail-section">
+        <h3><RefreshCw size={16} aria-hidden="true" /> Catch up</h3>
+        {account.lastCatchUpAt && catchUpUrl
+          ? <time dateTime={account.lastCatchUpAt}>
+            Last caught up {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(account.lastCatchUpAt))}
+          </time>
+          : <p className="catch-up-status">No catch-up checkpoint yet.</p>}
+        <div className="catch-up-actions">
+          {catchUpUrl && <a
+            className="dashboard-link-action"
+            href={catchUpUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >Catch up on X <ExternalLink size={14} aria-hidden="true" /></a>}
+          <button type="button" disabled={markingCaughtUp} onClick={markCaughtUp}>
+            {markingCaughtUp ? 'Updating…' : 'Mark caught up'}
+          </button>
+        </div>
+        {catchUpError && <p className="error-line" role="alert">{catchUpError}</p>}
+        {catchUpSuccess && <p className="status-line" aria-live="polite">{catchUpSuccess}</p>}
       </section>
 
       <AccountBookmarks accountId={account.id} />
