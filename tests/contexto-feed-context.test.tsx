@@ -80,6 +80,23 @@ function renderWithSettings(settingsResponse: ContextoResponse | Error) {
   return send;
 }
 
+function renderQuickNote(noteResponse: ContextoResponse | Promise<ContextoResponse>) {
+  const send = vi.fn(async (message: ContextoRequest): Promise<ContextoResponse> => {
+    if (message.type === 'contexto:account:lookup') {
+      return { ok: true, lookup: true, lookupAccount: saved };
+    }
+    if (message.type === 'contexto:settings:get') {
+      return { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts' } };
+    }
+    if (message.type === 'contexto:note:add') {
+      return noteResponse;
+    }
+    return { ok: false, error: 'Unexpected request' };
+  });
+  render(<ContextoFeedContext profile={profile} send={send} onEdit={vi.fn()} />);
+  return send;
+}
+
 describe('ContextoFeedContext', () => {
   it('shows saved context and opens the existing editor from the marker', async () => {
     const user = userEvent.setup();
@@ -133,6 +150,102 @@ describe('ContextoFeedContext', () => {
     await user.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Contexto relationship context' })).not.toBeInTheDocument();
+  });
+
+  it('adds a quick relationship note and refreshes the latest saved context', async () => {
+    const user = userEvent.setup();
+    const updated = {
+      ...saved,
+      latestNote: {
+        id: 'note_2',
+        accountId: saved.id,
+        body: 'Follow up after the launch.',
+        source: 'manual' as const,
+        createdAt: '2026-07-16T12:00:00.000Z',
+        updatedAt: '2026-07-16T12:00:00.000Z',
+      },
+    };
+    const send = renderQuickNote({ ok: true, account: updated });
+
+    await user.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+    expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'contexto:note:add' }));
+    await user.click(screen.getByRole('button', { name: 'Add quick note' }));
+    const note = screen.getByRole('textbox', { name: 'Relationship note' });
+    expect(note).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Save note' })).toBeDisabled();
+
+    await user.type(note, '  Follow up after the launch.  ');
+    await user.click(screen.getByRole('button', { name: 'Save note' }));
+
+    expect(send).toHaveBeenCalledWith({
+      type: 'contexto:note:add',
+      accountId: saved.id,
+      body: '  Follow up after the launch.  ',
+    });
+    expect(await screen.findByText('Note saved')).toBeVisible();
+    expect(screen.getByTestId('contexto-feed-note')).toHaveTextContent('Follow up after the launch.');
+    expect(screen.queryByRole('textbox', { name: 'Relationship note' })).not.toBeInTheDocument();
+  });
+
+  it('preserves a failed quick note for retry and clears drafts on Cancel or panel close', async () => {
+    const user = userEvent.setup();
+    renderQuickNote({ ok: false, error: 'Could not save note' });
+    const marker = await screen.findByRole('button', { name: /Contexto context for Theo/i });
+    await user.click(marker);
+    await user.click(screen.getByRole('button', { name: 'Add quick note' }));
+    const note = screen.getByRole('textbox', { name: 'Relationship note' });
+    await user.type(note, 'Remember the beta feedback');
+    await user.click(screen.getByRole('button', { name: 'Save note' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not save note');
+    expect(note).toHaveValue('Remember the beta feedback');
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole('button', { name: 'Add quick note' }));
+    expect(screen.getByRole('textbox', { name: 'Relationship note' })).toHaveValue('');
+    await user.type(screen.getByRole('textbox', { name: 'Relationship note' }), 'Discard me');
+    await user.click(marker);
+    await user.click(marker);
+    await user.click(screen.getByRole('button', { name: 'Add quick note' }));
+    expect(screen.getByRole('textbox', { name: 'Relationship note' })).toHaveValue('');
+  });
+
+  it('disables the quick-note composer while Save is pending', async () => {
+    let resolveNote!: (response: ContextoResponse) => void;
+    const pendingNote = new Promise<ContextoResponse>((resolve) => { resolveNote = resolve; });
+    const updated = {
+      ...saved,
+      latestNote: {
+        id: 'note_2', accountId: saved.id, body: 'Pending note', source: 'manual' as const,
+        createdAt: '2026-07-16T12:00:00.000Z', updatedAt: '2026-07-16T12:00:00.000Z',
+      },
+    };
+    renderQuickNote(pendingNote);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+    await user.click(screen.getByRole('button', { name: 'Add quick note' }));
+    await user.type(screen.getByRole('textbox', { name: 'Relationship note' }), 'Pending note');
+    await user.click(screen.getByRole('button', { name: 'Save note' }));
+
+    expect(screen.getByRole('button', { name: 'Saving note…' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Relationship note' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    resolveNote({ ok: true, account: updated });
+    expect(await screen.findByText('Note saved')).toBeVisible();
+  });
+
+  it('keeps quick-note and bookmark drafts mutually exclusive', async () => {
+    renderCapturable();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+
+    await user.click(screen.getByRole('button', { name: 'Add quick note' }));
+    expect(screen.queryByRole('button', { name: 'Capture this post' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole('button', { name: 'Capture this post' }));
+    expect(screen.queryByRole('button', { name: 'Add quick note' })).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Why are you saving this? (optional)' }))
+      .toBeVisible();
   });
 
   it('opens a safe two-way X interaction search when my handle is configured', async () => {

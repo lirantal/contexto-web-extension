@@ -1,6 +1,6 @@
 # Feature: Saved-Contact Feed Context
 
-Contexto augments supported X feed posts when the primary author already exists in the local Contexto database. A small Contexto marker appears in the validated author header. Activating it opens a compact, read-only relationship summary with an **Open full context** action.
+Contexto augments supported X feed posts when the primary author already exists in the local Contexto database. A small Contexto marker appears in the validated author header. Activating it opens a compact relationship panel with saved context and explicit actions.
 
 ## Eligibility
 
@@ -14,9 +14,11 @@ When the saved `myXHandle` setting and author handle are both valid, the panel a
 
 Every saved X author with a valid handle can also show **Catch up on X**. This opens their live posts since the account's explicit catch-up checkpoint, or their complete author search before the first checkpoint. **Mark caught up** is a separate action so opening a search never claims that the results were reviewed.
 
+Every saved contact also offers **Add quick note**, independent of whether the surrounding feed item has a valid bookmarkable post. It opens an inline relationship-note composer without creating or linking a bookmark.
+
 ## Summary contents
 
-The read-only panel omits empty fields and may show:
+The saved relationship summary omits empty fields and may show:
 
 - Display name.
 - Role and company.
@@ -28,10 +30,16 @@ The read-only panel omits empty fields and may show:
 
 **Catch up on X** also performs outbound navigation only. A catch-up timestamp is written only after explicit **Mark caught up**, and a failed write preserves the prior checkpoint.
 
+**Add quick note** does not write until a non-empty draft is explicitly saved. During Save its controls are disabled. Success closes the composer, clears the draft, confirms the write, and refreshes the displayed latest note from the authoritative saved account. Failure preserves the draft for retry. **Cancel** or closing the feed panel discards an unsaved quick note.
+
+Quick-note and bookmark composers are mutually exclusive so the compact panel holds at most one unsaved draft.
+
 ## Lifecycle and privacy
 
 Feed posts are transient and may be recycled by X. Contexto tracks the post host plus normalized author identity, removes stale mounts when identity changes, and cleans disconnected mounts. The marker is inserted in normal flow within the validated author header and is isolated in a Shadow DOM host.
 
 The normalized handle is sent for account lookup. Contexto reads its own local settings to build an eligible interaction-search URL; the shortcut does not infer the signed-in identity from X DOM or persist a search-history record. For eligible saved contacts only, Contexto may additionally send the canonical post URL and a bounded top-level text excerpt through the local message boundary after explicit capture. It does not store engagement data, media, quoted content, or the visible set of unknown accounts.
+
+Quick-note text crosses the local content-script/background boundary only after explicit Save and is stored as an ordinary manual account note. It is not coupled to the visible post or its contents.
 
 Feed context does not support bookmark editing, interaction scoring, feed filtering, or content analysis.

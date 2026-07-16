@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const repositories = vi.hoisted(() => ({
+  addNote: vi.fn(),
   captureBookmark: vi.fn(),
   findBookmarkByPost: vi.fn(),
   getAccountByHandle: vi.fn(),
@@ -9,6 +10,7 @@ const repositories = vi.hoisted(() => ({
 }));
 
 vi.mock('@/src/data/repositories', () => ({
+  addNote: repositories.addNote,
   captureBookmark: repositories.captureBookmark,
   findBookmarkByPost: repositories.findBookmarkByPost,
   getAccountByHandle: repositories.getAccountByHandle,
@@ -51,6 +53,18 @@ describe('background account context messages', () => {
       type: 'contexto:account:markCaughtUp', accountId: 'account_1',
     })).resolves.toEqual({ ok: true, account: updated });
     expect(repositories.markAccountCaughtUp).toHaveBeenCalledWith('account_1');
+  });
+
+  it('routes an explicit relationship note and returns refreshed account context', async () => {
+    const updated = { id: 'account_1', latestNote: { body: 'Follow up after launch' } };
+    repositories.addNote.mockResolvedValue(updated);
+
+    await expect(handleRequest({
+      type: 'contexto:note:add',
+      accountId: 'account_1',
+      body: 'Follow up after launch',
+    })).resolves.toEqual({ ok: true, account: updated });
+    expect(repositories.addNote).toHaveBeenCalledWith('account_1', 'Follow up after launch');
   });
 
   it('routes bookmark lookup and capture without creating an account', async () => {

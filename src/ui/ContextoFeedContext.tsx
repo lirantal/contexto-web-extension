@@ -22,6 +22,11 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
   const [saving, setSaving] = useState(false);
   const [bookmarkError, setBookmarkError] = useState('');
   const [bookmarkSuccess, setBookmarkSuccess] = useState('');
+  const [noteComposerOpen, setNoteComposerOpen] = useState(false);
+  const [noteBody, setNoteBody] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteError, setNoteError] = useState('');
+  const [noteSuccess, setNoteSuccess] = useState('');
   const [markingCaughtUp, setMarkingCaughtUp] = useState(false);
   const [catchUpError, setCatchUpError] = useState('');
   const [catchUpSuccess, setCatchUpSuccess] = useState('');
@@ -37,6 +42,11 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
     setReminder('');
     setBookmarkError('');
     setBookmarkSuccess('');
+    setNoteComposerOpen(false);
+    setNoteBody('');
+    setSavingNote(false);
+    setNoteError('');
+    setNoteSuccess('');
     setMarkingCaughtUp(false);
     setCatchUpError('');
     setCatchUpSuccess('');
@@ -82,6 +92,10 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
     setComposerOpen(false);
     setReminder('');
     setBookmarkError('');
+    setNoteComposerOpen(false);
+    setNoteBody('');
+    setNoteError('');
+    setNoteSuccess('');
   }, [open]);
 
   useEffect(() => {
@@ -150,6 +164,41 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
       setSaving(false);
     }
   };
+  const openNoteComposer = () => {
+    setNoteError('');
+    setNoteSuccess('');
+    setNoteComposerOpen(true);
+  };
+  const cancelNoteComposer = () => {
+    setNoteComposerOpen(false);
+    setNoteBody('');
+    setNoteError('');
+  };
+  const saveQuickNote = async () => {
+    if (!noteBody.trim()) return;
+    setSavingNote(true);
+    setNoteError('');
+    setNoteSuccess('');
+    try {
+      const response = await send({
+        type: 'contexto:note:add',
+        accountId: account.id,
+        body: noteBody,
+      });
+      if (response.ok && 'account' in response) {
+        setAccount(response.account);
+        setNoteComposerOpen(false);
+        setNoteBody('');
+        setNoteSuccess('Note saved');
+        return;
+      }
+      setNoteError(!response.ok ? response.error : 'Could not save note');
+    } catch (error) {
+      setNoteError(error instanceof Error ? error.message : 'Could not save note');
+    } finally {
+      setSavingNote(false);
+    }
+  };
   const markCaughtUp = async () => {
     setMarkingCaughtUp(true);
     setCatchUpError('');
@@ -189,7 +238,28 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
       {account.tags.length > 0 && <div className="contexto-feed-values" data-testid="contexto-feed-tags">{account.tags.map((tag) => <span className="chip" key={tag.id}>{tag.name}</span>)}</div>}
       {account.folders.length > 0 && <div className="contexto-feed-values" data-testid="contexto-feed-folders">{account.folders.map((folder) => <span className="chip folder-chip" key={folder.id}>{folder.name}</span>)}</div>}
       {account.latestNote && <p data-testid="contexto-feed-note">{account.latestNote.body}</p>}
-      {bookmarkState === 'available' && !composerOpen && <button type="button" onClick={openComposer}>Capture this post</button>}
+      {!composerOpen && !noteComposerOpen && <button type="button" onClick={openNoteComposer}>Add quick note</button>}
+      {noteComposerOpen && <div className="contexto-feed-note-composer">
+        <label>
+          Relationship note
+          <textarea
+            autoFocus
+            rows={3}
+            value={noteBody}
+            disabled={savingNote}
+            onChange={(event) => setNoteBody(event.target.value)}
+          />
+        </label>
+        {noteError && <p className="contexto-error" role="alert">{noteError}</p>}
+        <div className="contexto-feed-note-actions">
+          <button className="primary-action" type="button" disabled={savingNote || !noteBody.trim()} onClick={saveQuickNote}>
+            {savingNote ? 'Saving note…' : 'Save note'}
+          </button>
+          <button type="button" disabled={savingNote} onClick={cancelNoteComposer}>Cancel</button>
+        </div>
+      </div>}
+      {noteSuccess && <p className="contexto-success" aria-live="polite">{noteSuccess}</p>}
+      {bookmarkState === 'available' && !composerOpen && !noteComposerOpen && <button type="button" onClick={openComposer}>Capture this post</button>}
       {bookmarkState === 'saved' && <button type="button" disabled>Bookmarked</button>}
       {composerOpen && <div className="contexto-feed-bookmark-composer">
         <label>

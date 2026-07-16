@@ -33,6 +33,8 @@ Prior-interaction shortcut tests cover normalized two-way query construction, li
 
 Catch-up tests cover first-use and checkpointed author queries, invalid handles/timestamps, safe new-tab attributes, explicit checkpoint writes, backup preservation, background routing, dashboard/feed controls, and failed-write isolation.
 
+Feed quick-note tests cover no-write opening, autofocus, non-empty saves, pending controls, authoritative latest-note refresh, failed-save draft retention, Cancel/panel-close clearing, bookmark-composer exclusion, and background note routing.
+
 ## Manual browser checks
 
 Synthetic tests cannot reproduce every X or browser lifecycle. Run the matrix in [Browser Development Workflow](development/browser-workflow.md) after changing content-script mounting, X selectors, popup layout, Shadow DOM behavior, or extension lifecycle handling.
