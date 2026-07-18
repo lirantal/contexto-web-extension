@@ -37,4 +37,22 @@ describe('Contexto X surface layout contract', () => {
     const launcher = ruleBody('.contexto-hover-launcher');
     expect(launcher).toContain('width:100%;');
   });
+
+  it('defines a complete light and dark palette for the isolated sidebar search host', () => {
+    const lightHost = ruleBody(':host([data-contexto-surface="sidebar-search"])');
+    expect(lightHost).toContain('--ctx-bg:#fff;');
+    expect(lightHost).toContain('--ctx-text:#0f1419;');
+    expect(lightHost).toContain('--ctx-muted:#536471;');
+    expect(lightHost).toContain('--ctx-border:#eff3f4;');
+    expect(lightHost).toContain('--ctx-accent:#5b3fd6;');
+    expect(lightHost).toContain('--ctx-link:#1d9bf0;');
+
+    const darkHost = ruleBody(':host([data-contexto-surface="sidebar-search"][data-theme="dark"])');
+    expect(darkHost).toContain('--ctx-bg:#000;');
+    expect(darkHost).toContain('--ctx-text:#e7e9ea;');
+    expect(darkHost).toContain('--ctx-muted:#71767b;');
+    expect(darkHost).toContain('--ctx-border:#2f3336;');
+    expect(darkHost).toContain('--ctx-accent:#9b8afb;');
+    expect(darkHost).toContain('--ctx-link:#71c9ff;');
+  });
 });
