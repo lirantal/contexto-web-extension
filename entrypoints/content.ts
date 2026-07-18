@@ -2,7 +2,9 @@ import surfaceCss from '@/src/ui/contexto-profile-surface.css?inline';
 import { createContentRuntimeSender } from '@/src/x/content-runtime-sender';
 import { AccountDraftStore } from '@/src/x/draft-store';
 import { mountContextoSurface, detectXTheme } from '@/src/x/mount-contexto-surface';
+import { mountContextoSidebarSearch } from '@/src/x/mount-contexto-sidebar-search';
 import { createXSurfaceObserver } from '@/src/x/surface-observer';
+import { createXSidebarSearchObserver } from '@/src/x/sidebar-search-observer';
 import { createPageEditorController } from '@/src/x/page-editor-controller';
 
 const drafts = new AccountDraftStore();
@@ -37,8 +39,18 @@ export default defineContentScript({
         openPageEditor: pageEditor.open,
       }),
     });
+    const sidebarSearchObserver = createXSidebarSearchObserver({
+      root: document.body,
+      mount: (nativeForm) => mountContextoSidebarSearch({
+        nativeForm,
+        send,
+        css: surfaceCss,
+        theme: detectXTheme(nativeForm),
+      }),
+    });
     ctx.onInvalidated(() => {
       observer.disconnect();
+      sidebarSearchObserver.disconnect();
       pageEditor.disconnect();
       drafts.clearAll();
     });
