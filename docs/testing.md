@@ -19,6 +19,8 @@ Store observed X markup variants under `tests/fixtures/x/`. Fixtures are minimal
 
 Every fixture must have an assertion that identifies the protected behavior. Include negative assertions where they matter, such as proving that action labels do not become display names or that unrelated page handles are ignored.
 
+The minimal native-search fixture must assert Contexto placement before the native form, preservation of the native input, and cleanup when the native form is replaced or the search is remounted.
+
 Post-bookmark fixtures must prove that the validated primary-author status URL and top-level post text are selected while quoted-post links/text, mismatched handles, ambiguous status links, and promoted posts fail closed.
 
 ## Interaction lifecycle tests

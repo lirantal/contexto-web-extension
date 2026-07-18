@@ -26,6 +26,8 @@ Content-script extraction must:
 - Use deliberate fallbacks and return no profile when identity evidence is inconsistent.
 - Add a minimal fixture and regression test whenever X introduces a newly observed DOM shape.
 
+The sidebar account search mounts only when `input[data-testid="SearchBox_Search_Input"]` is contained by a native `form`; it inserts a Contexto-owned Shadow DOM host before that form and fails closed when the evidence is incomplete.
+
 Bookmark capture additionally requires one unambiguous top-level status link matching the validated primary-author handle. Only top-level `[data-testid="tweetText"]` may become the bounded excerpt; quoted-post links/text, promoted content, reply targets, and nested cards are excluded. Missing post evidence disables capture without removing saved-contact relationship context.
 
 Keep DOM extraction in the X content-script boundary. Shared platform adapters continue to own stable parsing, normalization, and URL construction rules.
