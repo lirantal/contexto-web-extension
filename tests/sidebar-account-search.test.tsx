@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { searchSidebarAccounts } from '@/src/shared/sidebar-account-search';
+import { ContextoSidebarAccountSearch } from '@/src/ui/ContextoSidebarAccountSearch';
 import type { AccountSummary } from '@/src/shared/types';
 
 const account = (handle: string, displayName: string): AccountSummary => ({
@@ -51,5 +53,50 @@ describe('searchSidebarAccounts', () => {
   it('limits results to five by default', () => {
     expect(searchSidebarAccounts(Array.from({ length: 6 }, (_, index) =>
       account(`person${index}`, `Person ${index}`)), 'person')).toHaveLength(5);
+  });
+});
+
+describe('ContextoSidebarAccountSearch', () => {
+  it('shows a fuzzy saved-account match and navigates in the current tab', async () => {
+    const navigate = vi.fn();
+    render(<ContextoSidebarAccountSearch
+      navigate={navigate}
+      send={vi.fn().mockResolvedValue({ ok: true, accounts: [account('liran_tal', 'Liran Tal')] })}
+    />);
+
+    fireEvent.change(await screen.findByLabelText('Search Contexto accounts'), { target: { value: 'lir' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Liran Tal @liran_tal' }));
+
+    expect(navigate).toHaveBeenCalledWith('https://x.com/liran_tal');
+  });
+
+  it('shows loading status and disables the query while saved accounts load', async () => {
+    let resolveAccounts: (response: { ok: true; accounts: AccountSummary[] }) => void;
+    const accounts = new Promise<{ ok: true; accounts: AccountSummary[] }>((resolve) => {
+      resolveAccounts = resolve;
+    });
+    render(<ContextoSidebarAccountSearch send={vi.fn().mockReturnValue(accounts)} />);
+
+    expect(await screen.findByText('Loading saved accounts…')).toBeVisible();
+    expect(screen.getByLabelText('Search Contexto accounts')).toBeDisabled();
+
+    resolveAccounts!({ ok: true, accounts: [] });
+  });
+
+  it('reports an unavailable local index without touching native X search', async () => {
+    render(<ContextoSidebarAccountSearch send={vi.fn().mockRejectedValue(new Error('offline'))} />);
+
+    expect(await screen.findByText('Contexto accounts are unavailable.')).toBeVisible();
+    expect(screen.getByLabelText('Search Contexto accounts')).toBeDisabled();
+  });
+
+  it('shows no results only for an unmatched non-empty query', async () => {
+    render(<ContextoSidebarAccountSearch
+      send={vi.fn().mockResolvedValue({ ok: true, accounts: [account('theo', 'Theo')] })}
+    />);
+
+    fireEvent.change(await screen.findByLabelText('Search Contexto accounts'), { target: { value: 'missing' } });
+
+    await waitFor(() => expect(screen.getByText('No saved accounts found.')).toBeVisible());
   });
 });
