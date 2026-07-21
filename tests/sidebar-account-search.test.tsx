@@ -28,7 +28,15 @@ describe('searchSidebarAccounts', () => {
 
   it('ranks exact and prefix handle matches before display-name matches', () => {
     expect(searchSidebarAccounts(accounts, '@liran').map(({ handle }) => handle))
-      .toEqual(['liran_tal', 'lirandev']);
+      .toEqual(['lirandev', 'liran_tal']);
+  });
+
+  it('uses display name then normalized handle to order equal-score matches', () => {
+    const laterUpdated = { ...account('zoe', 'Same'), updatedAt: '2026-07-19T00:00:00.000Z' };
+    const earlierUpdated = { ...account('amy', 'Same'), updatedAt: '2026-07-18T00:00:00.000Z' };
+
+    expect(searchSidebarAccounts([laterUpdated, earlierUpdated], 'same').map(({ handle }) => handle))
+      .toEqual(['amy', 'zoe']);
   });
 
   it('matches ordered characters and ignores non-X accounts', () => {

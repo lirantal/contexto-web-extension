@@ -42,7 +42,9 @@ export function searchSidebarAccounts(
       return { account, score };
     })
     .filter(({ score }) => Number.isFinite(score))
-    .sort((left, right) => left.score - right.score)
+    .sort((left, right) => left.score - right.score
+      || left.account.displayName.localeCompare(right.account.displayName)
+      || left.account.normalizedHandle.localeCompare(right.account.normalizedHandle))
     .slice(0, limit)
     .map(({ account }) => account);
 }
