@@ -1,5 +1,13 @@
-<aside aria-label="Timeline: Trending now">
-  <form role="search" action="/search">
-    <label>Search<input data-testid="SearchBox_Search_Input" type="text" /></label>
-  </form>
+<aside data-testid="sidebarColumn">
+  <div data-testid="sidebar-stack">
+    <div data-testid="search-shell">
+      <form role="search" action="/search">
+        <label>Search<input data-testid="SearchBox_Search_Input" type="text" /></label>
+      </form>
+    </div>
+    <section data-sidebar-module="news">Today's news</section>
+    <section data-sidebar-module="sports">NFL</section>
+    <section data-sidebar-module="trends">What's happening</section>
+    <section data-sidebar-module="follow">Who to follow</section>
+  </div>
 </aside>
