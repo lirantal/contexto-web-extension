@@ -60,4 +60,16 @@ describe('Contexto X surface layout contract', () => {
     const host = ruleBody(':host([data-contexto-surface="sidebar-search"])');
     expect(host).toContain('margin:12px 0 16px;');
   });
+
+  it('keeps compact metadata labels visible and associated when values wrap', () => {
+    const field = ruleBody('.contexto-metadata-field');
+    expect(field).toContain('display:flex;');
+    expect(field).toContain('flex-wrap:wrap;');
+
+    const label = ruleBody('.contexto-metadata-label');
+    expect(label).toContain('font-weight:650;');
+
+    const value = ruleBody('.contexto-metadata-value');
+    expect(value).toContain('overflow-wrap:anywhere;');
+  });
 });

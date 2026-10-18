@@ -44,9 +44,14 @@ describe('ContextoHoverLauncher', () => {
 
     expect(await screen.findByText('Saved')).toBeVisible();
     expect(screen.getByText('Theo Browne')).toBeVisible();
-    expect(screen.getByText('Developer · Ping Labs')).toBeVisible();
+    expect(screen.getByText('Role:')).toBeVisible();
+    expect(screen.getByText('Developer')).toBeVisible();
+    expect(screen.getByText('Company:')).toBeVisible();
+    expect(screen.getByText('Ping Labs')).toBeVisible();
+    expect(screen.getByText('Tags:')).toBeVisible();
     expect(screen.getByText('Founder')).toBeVisible();
     expect(screen.getByText('Security')).toBeVisible();
+    expect(screen.queryByText('Developer · Ping Labs')).not.toBeInTheDocument();
   });
 
   it('omits empty optional metadata from a saved summary', async () => {
@@ -57,7 +62,11 @@ describe('ContextoHoverLauncher', () => {
     renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: saved }));
 
     expect(await screen.findByText('Theo')).toBeVisible();
-    expect(screen.queryByTestId('contexto-hover-organization')).not.toBeInTheDocument();
+    expect(screen.queryByText('Role:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Company:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tags:')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-hover-role')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-hover-company')).not.toBeInTheDocument();
     expect(screen.queryByTestId('contexto-hover-tags')).not.toBeInTheDocument();
   });
 

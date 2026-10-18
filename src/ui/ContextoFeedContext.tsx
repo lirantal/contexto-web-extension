@@ -120,7 +120,6 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
   if (!account) return null;
 
   const panelId = `contexto-feed-context-${account.id}`;
-  const organization = [account.role, account.company?.name].filter(Boolean).join(' · ');
   const interactionUrl = buildXInteractionSearchUrl(viewerHandle, account.handle);
   const catchUpUrl = buildXCatchUpSearchUrl(account.handle, account.lastCatchUpAt);
   const openEditor = () => {
@@ -238,11 +237,34 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
     >◆ Contexto</button>
     {open && <section ref={panelRef} id={panelId} className="contexto-feed-panel" role="dialog" aria-label="Contexto relationship context">
       <header className="contexto-feed-panel-header"><strong>{account.displayName}</strong><span>Saved context</span></header>
-      {organization && <span data-testid="contexto-feed-organization">{organization}</span>}
-      {account.relationshipSource && <span data-testid="contexto-feed-relationship">{account.relationshipSource}</span>}
-      {account.tags.length > 0 && <div className="contexto-feed-values" data-testid="contexto-feed-tags">{account.tags.map((tag) => <span className="chip" key={tag.id}>{tag.name}</span>)}</div>}
-      {account.folders.length > 0 && <div className="contexto-feed-values" data-testid="contexto-feed-folders">{account.folders.map((folder) => <span className="chip folder-chip" key={folder.id}>{folder.name}</span>)}</div>}
-      {account.latestNote && <p data-testid="contexto-feed-note">{account.latestNote.body}</p>}
+      {account.role && <div className="contexto-metadata-field" data-testid="contexto-feed-role">
+        <span className="contexto-metadata-label">Role:</span>
+        <span className="contexto-metadata-value">{account.role}</span>
+      </div>}
+      {account.company?.name && <div className="contexto-metadata-field" data-testid="contexto-feed-company">
+        <span className="contexto-metadata-label">Company:</span>
+        <span className="contexto-metadata-value">{account.company.name}</span>
+      </div>}
+      {account.relationshipSource && <div className="contexto-metadata-field" data-testid="contexto-feed-relationship">
+        <span className="contexto-metadata-label">How you know them:</span>
+        <span className="contexto-metadata-value">{account.relationshipSource}</span>
+      </div>}
+      {account.tags.length > 0 && <div className="contexto-metadata-field" data-testid="contexto-feed-tags">
+        <span className="contexto-metadata-label">Tags:</span>
+        <div className="contexto-feed-values contexto-metadata-value">
+          {account.tags.map((tag) => <span className="chip" key={tag.id}>{tag.name}</span>)}
+        </div>
+      </div>}
+      {account.folders.length > 0 && <div className="contexto-metadata-field" data-testid="contexto-feed-folders">
+        <span className="contexto-metadata-label">Folders:</span>
+        <div className="contexto-feed-values contexto-metadata-value">
+          {account.folders.map((folder) => <span className="chip folder-chip" key={folder.id}>{folder.name}</span>)}
+        </div>
+      </div>}
+      {account.latestNote && <p className="contexto-metadata-field" data-testid="contexto-feed-note">
+        <span className="contexto-metadata-label">Latest note:</span>
+        <span className="contexto-metadata-value">{account.latestNote.body}</span>
+      </p>}
       {!composerOpen && !noteComposerOpen && <button type="button" onClick={openNoteComposer}>Add quick note</button>}
       {noteComposerOpen && <div className="contexto-feed-note-composer">
         <label>
