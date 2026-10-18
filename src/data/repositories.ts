@@ -571,7 +571,8 @@ export async function getLookups(database = db): Promise<LookupData> {
     const location = account.location?.trim();
     if (!location) continue;
     const normalizedLocation = location.toLocaleLowerCase();
-    if (!locationsByNormalizedName.has(normalizedLocation)) {
+    const existingLocation = locationsByNormalizedName.get(normalizedLocation);
+    if (existingLocation === undefined || location < existingLocation) {
       locationsByNormalizedName.set(normalizedLocation, location);
     }
   }
