@@ -28,9 +28,9 @@ vi.mock('@/src/data/repositories', () => ({
 vi.mock('@/src/shared/settings', () => ({
   defaultSettings: { myXHandle: '', lastDashboardView: 'accounts' },
   defaultPopupSearchState: { targetHandle: '', keyword: '', since: '', until: '' },
-  settingsItem: { getValue: mocks.getSettings, setValue: mocks.setSettings },
-  popupSearchStateItem: { getValue: mocks.getSearchState, setValue: mocks.setSearchState },
-  targetHandleHistoryItem: { getValue: mocks.getHistory },
+  settingsItem: { getValue: mocks.getSettings, setValue: mocks.setSettings, watch: vi.fn(() => () => undefined) },
+  popupSearchStateItem: { getValue: mocks.getSearchState, setValue: mocks.setSearchState, watch: vi.fn(() => () => undefined) },
+  targetHandleHistoryItem: { getValue: mocks.getHistory, watch: vi.fn(() => () => undefined) },
   recordTargetHandleSearch: mocks.recordTarget,
 }));
 

@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const appCss = readFileSync(resolve('entrypoints/popup/App.css'), 'utf8');
+const quickSearchCss = readFileSync(resolve('src/ui/quick-x-search.css'), 'utf8');
 const globalCss = readFileSync(resolve('entrypoints/popup/style.css'), 'utf8');
 
 function ruleBody(css: string, selector: string) {
@@ -22,8 +23,8 @@ describe('popup layout contract', () => {
     expect(shell).toContain('padding: 10px 20px 10px 12px;');
   });
 
-  it('keeps long query previews on one ellipsized line', () => {
-    const preview = ruleBody(appCss, '.search-action small');
+  it('keeps shared long query previews on one ellipsized line', () => {
+    const preview = ruleBody(quickSearchCss, '.contexto-quick-search .search-action small');
 
     expect(preview).toContain('overflow: hidden;');
     expect(preview).toContain('text-overflow: ellipsis;');
