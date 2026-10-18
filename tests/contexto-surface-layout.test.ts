@@ -55,4 +55,9 @@ describe('Contexto X surface layout contract', () => {
     expect(darkHost).toContain('--ctx-accent:#9b8afb;');
     expect(darkHost).toContain('--ctx-link:#71c9ff;');
   });
+
+  it('keeps the sidebar search clear of the viewport edge and native X search', () => {
+    const host = ruleBody(':host([data-contexto-surface="sidebar-search"])');
+    expect(host).toContain('margin:12px 0 16px;');
+  });
 });

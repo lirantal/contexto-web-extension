@@ -1,8 +1,10 @@
+import { settingsItem } from '@/src/shared/settings';
 import surfaceCss from '@/src/ui/contexto-profile-surface.css?inline';
 import { createContentRuntimeSender } from '@/src/x/content-runtime-sender';
 import { AccountDraftStore } from '@/src/x/draft-store';
 import { mountContextoSurface, detectXTheme } from '@/src/x/mount-contexto-surface';
 import { mountContextoSidebarSearch } from '@/src/x/mount-contexto-sidebar-search';
+import { watchXSidebarWidgetSetting } from '@/src/x/sidebar-widget-settings';
 import { createXSurfaceObserver } from '@/src/x/surface-observer';
 import { createXSidebarSearchObserver } from '@/src/x/sidebar-search-observer';
 import { createPageEditorController } from '@/src/x/page-editor-controller';
@@ -48,7 +50,13 @@ export default defineContentScript({
         theme: detectXTheme(nativeForm),
       }),
     });
+    const unwatchSidebarWidgetSetting = watchXSidebarWidgetSetting({
+      getSettings: () => settingsItem.getValue(),
+      watchSettings: (callback) => settingsItem.watch((value) => callback(value)),
+      setShowNativeWidgets: (show) => sidebarSearchObserver.setShowNativeWidgets(show),
+    });
     ctx.onInvalidated(() => {
+      unwatchSidebarWidgetSetting();
       observer.disconnect();
       sidebarSearchObserver.disconnect();
       pageEditor.disconnect();
