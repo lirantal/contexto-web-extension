@@ -26,7 +26,9 @@ Content-script extraction must:
 - Use deliberate fallbacks and return no profile when identity evidence is inconsistent.
 - Add a minimal fixture and regression test whenever X introduces a newly observed DOM shape.
 
-The sidebar account search mounts only when `input[data-testid="SearchBox_Search_Input"]` is contained by a native `form`; it inserts a Contexto-owned Shadow DOM host before that form and fails closed when the evidence is incomplete.
+The sidebar account search mounts only when `input[data-testid="SearchBox_Search_Input"]` is contained by a native `form`; it inserts a Contexto-owned Shadow DOM host before that form and fails closed when this evidence is incomplete.
+
+Native sidebar-widget control additionally requires that form to be contained by `[data-testid="sidebarColumn"]` and resolves only top-level following siblings along the form-to-column ancestor path. Contexto never identifies widgets from localized text and never reparents X-owned nodes. It records original inline display, spacing, and marker state, reapplies the visibility policy after X rerenders, and restores the original state when nodes leave the classified region or the content script disconnects. If the broader column evidence is missing, saved-account search may still mount but unrelated native content remains untouched.
 
 Bookmark capture additionally requires one unambiguous top-level status link matching the validated primary-author handle. Only top-level `[data-testid="tweetText"]` may become the bounded excerpt; quoted-post links/text, promoted content, reply targets, and nested cards are excluded. Missing post evidence disables capture without removing saved-contact relationship context.
 

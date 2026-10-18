@@ -8,6 +8,7 @@ Extension settings use WXT storage over `chrome.storage.local` through `src/shar
 
 - `myXHandle`
 - `lastDashboardView`
+- `showNativeXSidebarWidgets` (defaults to `false`; legacy values are normalized on read)
 
 ## Persistence Expectations
 

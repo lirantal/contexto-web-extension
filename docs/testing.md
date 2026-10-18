@@ -19,7 +19,9 @@ Store observed X markup variants under `tests/fixtures/x/`. Fixtures are minimal
 
 Every fixture must have an assertion that identifies the protected behavior. Include negative assertions where they matter, such as proving that action labels do not become display names or that unrelated page handles are ignored.
 
-The minimal native-search fixture must assert Contexto placement before the native form, preservation of the native input, and cleanup when the native form is replaced or the search is remounted.
+The minimal native-search fixture includes a validated sidebar column, native search form, and representative news, sports, trends, and follow modules. It must assert Contexto placement before the native form, preservation of the native input, and cleanup when the native form is replaced or the search is remounted.
+
+Sidebar-policy tests must cover default hiding, enabled `50vh` spacing on only the first native module, live setting changes, module replacement, exact restoration of prior inline styles and Contexto markers, and fail-closed behavior when the native form is outside a validated sidebar column.
 
 Post-bookmark fixtures must prove that the validated primary-author status URL and top-level post text are selected while quoted-post links/text, mismatched handles, ambiguous status links, and promoted posts fail closed.
 
