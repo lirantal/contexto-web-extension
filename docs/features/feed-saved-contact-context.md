@@ -1,6 +1,6 @@
 # Feature: Saved-Contact Feed Context
 
-Contexto augments supported X feed posts when the primary author already exists in the local Contexto database. A small Contexto marker appears in the validated author header. Activating it opens a compact relationship panel with saved context and explicit actions.
+Contexto augments supported X feed posts when the primary author already exists in the local Contexto database. A small Contexto marker appears in the validated author header. Activating it opens or closes a compact relationship panel with saved context and explicit actions without triggering the enclosing X post's navigation. Intentional links inside the panel retain their own navigation behavior.
 
 ## Eligibility
 

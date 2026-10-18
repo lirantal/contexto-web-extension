@@ -47,6 +47,7 @@ Run the relevant rows in both Chrome and Vivaldi when a change touches browser i
 | Scenario | Expected result |
 | --- | --- |
 | Unknown and saved accounts on feed hover cards | Correct handle and display name; the compact summary and Edit launcher do not overlap X controls. |
+| Saved-contact feed context | The marker opens the compact panel without navigating to the post; intentional panel links still open their documented destinations. |
 | Saved-contact post capture | Eligible primary posts show Capture or Bookmarked; optional reminders save without leaving X; quoted/promoted/ambiguous posts do not expose capture. |
 | Saved-contact prior interactions | A valid configured viewer handle shows View our interactions and opens a live two-way X query in a new tab; a missing or invalid viewer handle hides the action without affecting context or bookmarks. |
 | Saved-contact catch-up | Catch up on X opens live author posts since the displayed checkpoint; opening does not advance it; explicit Mark caught up updates it; failed updates preserve the previous date and context. |

@@ -126,6 +126,11 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
   const openEditor = () => {
     if (markerRef.current) onEdit(profile, markerRef.current);
   };
+  const togglePanel = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen((current) => !current);
+  };
   const openComposer = () => {
     setBookmarkError('');
     setBookmarkSuccess('');
@@ -229,7 +234,7 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
       aria-expanded={open}
       aria-controls={open ? panelId : undefined}
       aria-label={`Contexto context for ${account.displayName}`}
-      onClick={() => setOpen((current) => !current)}
+      onClick={togglePanel}
     >◆ Contexto</button>
     {open && <section ref={panelRef} id={panelId} className="contexto-feed-panel" role="dialog" aria-label="Contexto relationship context">
       <header className="contexto-feed-panel-header"><strong>{account.displayName}</strong><span>Saved context</span></header>

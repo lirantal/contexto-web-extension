@@ -112,6 +112,23 @@ describe('ContextoFeedContext', () => {
     expect(onEdit).toHaveBeenCalledWith(profile, marker);
   });
 
+  it('opens the panel without triggering the enclosing feed post navigation', async () => {
+    const user = userEvent.setup();
+    const navigateToPost = vi.fn();
+    const send = vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: saved });
+
+    render(
+      <article onClick={navigateToPost}>
+        <ContextoFeedContext profile={profile} send={send} onEdit={vi.fn()} />
+      </article>,
+    );
+
+    await user.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+
+    expect(screen.getByRole('dialog', { name: 'Contexto relationship context' })).toBeVisible();
+    expect(navigateToPost).not.toHaveBeenCalled();
+  });
+
   it('omits empty optional metadata and keeps the feed summary read-only', async () => {
     const account = { ...saved, role: undefined, relationshipSource: undefined, company: undefined, tags: [], folders: [], latestNote: undefined, displayName: 'Theo' };
     renderFeed(account);
