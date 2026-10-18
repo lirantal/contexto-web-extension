@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dashboard } from '@/src/ui/Dashboard';
@@ -6,6 +6,7 @@ import { Dashboard } from '@/src/ui/Dashboard';
 const mocks = vi.hoisted(() => ({
   accounts: [] as Array<Record<string, unknown>>,
   clearTargetHistory: vi.fn(),
+  companies: [] as Array<{ id: string; name: string }>,
   locations: [] as string[],
   getSettings: vi.fn(),
   markAccountCaughtUp: vi.fn(),
@@ -19,7 +20,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: vi.fn((_query, dependencies?: unknown[]) => dependencies?.length
     ? mocks.accounts
-    : { companies: [], tags: [], folders: [], locations: mocks.locations }),
+    : { companies: mocks.companies, tags: [], folders: [], locations: mocks.locations }),
 }));
 
 vi.mock('@/src/data/repositories', () => ({
@@ -60,6 +61,7 @@ describe('dashboard target handle history settings', () => {
     HTMLElement.prototype.scrollIntoView = vi.fn();
     vi.clearAllMocks();
     mocks.accounts = [];
+    mocks.companies = [];
     mocks.locations = [];
     mocks.getSettings.mockResolvedValue({ myXHandle: '@me', lastDashboardView: 'accounts' });
     mocks.setSettings.mockResolvedValue(undefined);
@@ -120,6 +122,28 @@ describe('dashboard target handle history settings', () => {
 
     expect(mocks.removeTag).toHaveBeenCalledWith('account-1', 'tag-1');
     expect(mocks.removeFolder).toHaveBeenCalledWith('account-1', 'folder-1');
+  });
+
+  it('uses fuzzy saved-company suggestions when editing account metadata', async () => {
+    mocks.accounts = [{
+      id: 'account-1', platform: 'x', handle: 'founder', normalizedHandle: 'founder',
+      displayName: 'Founder', profileUrl: 'https://x.com/founder', syncState: 'local-only',
+      createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      tags: [], folders: [],
+    }];
+    mocks.companies = [{ id: 'company-1', name: 'OpenAI' }];
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    const details = await screen.findByRole('region', { name: 'Account details' });
+    const company = within(details).getByLabelText('Company');
+    await user.type(company, 'opi');
+    await user.click(within(details).getByRole('option', { name: 'OpenAI' }));
+    await user.click(screen.getByRole('button', { name: 'Save metadata' }));
+
+    expect(mocks.updateAccount).toHaveBeenCalledWith('account-1', expect.objectContaining({
+      companyName: 'OpenAI',
+    }));
   });
 
   it('uses fuzzy saved-location suggestions when editing account metadata', async () => {
