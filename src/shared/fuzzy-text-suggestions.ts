@@ -1,4 +1,4 @@
-function normalizeLocationSearch(value: string): string {
+function normalizeFuzzyText(value: string): string {
   return value.trim().toLocaleLowerCase();
 }
 
@@ -18,7 +18,7 @@ function fuzzyGapCount(candidate: string, query: string): number | undefined {
   return gaps;
 }
 
-function scoreLocation(candidate: string, query: string): number | undefined {
+function scoreFuzzyText(candidate: string, query: string): number | undefined {
   if (candidate === query) return 0;
   if (candidate.startsWith(query)) return 1;
   if (candidate.includes(query)) return 2;
@@ -27,18 +27,18 @@ function scoreLocation(candidate: string, query: string): number | undefined {
   return gaps === undefined ? undefined : 3 + gaps / 1000;
 }
 
-export function rankLocationSuggestions(suggestions: string[], query: string): string[] {
-  const normalizedQuery = normalizeLocationSearch(query);
+export function rankFuzzyTextSuggestions(suggestions: string[], query: string): string[] {
+  const normalizedQuery = normalizeFuzzyText(query);
   if (!normalizedQuery) return [];
 
   return suggestions
-    .map((location) => ({
-      location,
-      score: scoreLocation(normalizeLocationSearch(location), normalizedQuery),
+    .map((suggestion) => ({
+      suggestion,
+      score: scoreFuzzyText(normalizeFuzzyText(suggestion), normalizedQuery),
     }))
-    .filter((candidate): candidate is { location: string; score: number } =>
+    .filter((candidate): candidate is { suggestion: string; score: number } =>
       candidate.score !== undefined)
     .sort((left, right) =>
-      left.score - right.score || left.location.localeCompare(right.location))
-    .map(({ location }) => location);
+      left.score - right.score || left.suggestion.localeCompare(right.suggestion))
+    .map(({ suggestion }) => suggestion);
 }

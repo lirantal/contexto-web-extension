@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { rankLocationSuggestions } from '@/src/shared/location-suggestions';
+import { rankFuzzyTextSuggestions } from '@/src/shared/fuzzy-text-suggestions';
 
-describe('rankLocationSuggestions', () => {
+describe('rankFuzzyTextSuggestions', () => {
   it('returns no suggestions until a query is entered', () => {
-    expect(rankLocationSuggestions(['Berlin'], '   ')).toEqual([]);
+    expect(rankFuzzyTextSuggestions(['Berlin'], '   ')).toEqual([]);
   });
 
   it('ranks exact, prefix, substring, and fuzzy matches in that order', () => {
-    expect(rankLocationSuggestions([
+    expect(rankFuzzyTextSuggestions([
       'B E R L I N',
       'East Berlin',
       'Berliner Platz',
@@ -21,18 +21,18 @@ describe('rankLocationSuggestions', () => {
   });
 
   it('matches query characters in order across a location', () => {
-    expect(rankLocationSuggestions(
+    expect(rankFuzzyTextSuggestions(
       ['San Francisco', 'France', 'Frankfurt', 'Berlin'],
       'sfr',
     )).toEqual(['San Francisco']);
   });
 
   it('rejects fuzzy candidates whose characters are out of order', () => {
-    expect(rankLocationSuggestions(['San Francisco'], 'fsz')).toEqual([]);
+    expect(rankFuzzyTextSuggestions(['San Francisco'], 'fsz')).toEqual([]);
   });
 
   it('uses alphabetical order to break equal scores', () => {
-    expect(rankLocationSuggestions(['San Francisco', 'San Fernando'], 'sf'))
+    expect(rankFuzzyTextSuggestions(['San Francisco', 'San Fernando'], 'sf'))
       .toEqual(['San Fernando', 'San Francisco']);
   });
 });

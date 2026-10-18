@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { rankLocationSuggestions } from '../shared/location-suggestions';
+import { rankFuzzyTextSuggestions } from '../shared/fuzzy-text-suggestions';
 
 export interface LocationComboboxProps {
   value: string;
@@ -20,7 +20,7 @@ export function LocationCombobox({
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const matches = useMemo(
-    () => rankLocationSuggestions(suggestions, value),
+    () => rankFuzzyTextSuggestions(suggestions, value),
     [suggestions, value],
   );
   const hasQuery = Boolean(value.trim());
