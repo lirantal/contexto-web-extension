@@ -48,7 +48,7 @@ describe('hover Edit integration', () => {
         return Promise.resolve({ ok: true, lookup: true, lookupAccount: undefined });
       }
       if (message.type === 'contexto:lookups:list') {
-        return Promise.resolve({ ok: true, lookups: { companies: [], tags: [], folders: [] } });
+        return Promise.resolve({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
       }
       return Promise.resolve({ ok: true });
     }) as ContextoProfileSurfaceProps['send'];

@@ -21,7 +21,7 @@ describe('ContextoProfileSurface', () => {
   it('shows the complete prefilled editor without saving an unknown account', async () => {
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: undefined }
-      : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
     renderSurface(send);
     expect(await screen.findByLabelText('Display name')).toHaveValue('Theo – t3.gg');
     expect(screen.getByLabelText('X handle')).toHaveValue('@theo');
@@ -36,6 +36,34 @@ describe('ContextoProfileSurface', () => {
     expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'contexto:account:saveContext' }));
   });
 
+  it('fuzzy-selects and saves an existing location', async () => {
+    const saved = {
+      id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo',
+      displayName: 'Theo – t3.gg', profileUrl: 'https://x.com/theo',
+      location: 'San Francisco', tags: [], folders: [],
+    };
+    const send = vi.fn()
+      .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
+      .mockResolvedValueOnce({
+        ok: true,
+        lookups: { companies: [], tags: [], folders: [], locations: ['San Francisco'] },
+      })
+      .mockResolvedValueOnce({ ok: true, account: saved });
+
+    renderSurface(send);
+    const location = await screen.findByLabelText('Location');
+    fireEvent.change(location, { target: { value: 'sfr' } });
+    fireEvent.click(screen.getByRole('option', { name: 'San Francisco' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
+
+    await waitFor(() => expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'contexto:account:saveContext',
+      input: expect.objectContaining({
+        metadata: expect.objectContaining({ location: 'San Francisco' }),
+      }),
+    })));
+  });
+
   it('saves distinct tag and folder values and keeps the editor visible', async () => {
     const saved = {
       id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo',
@@ -45,7 +73,7 @@ describe('ContextoProfileSurface', () => {
     };
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
       .mockResolvedValueOnce({ ok: true, account: saved });
     renderSurface(send);
     fireEvent.change(await screen.findByLabelText('Display name'), { target: { value: 'Theo Browne' } });
@@ -71,7 +99,7 @@ describe('ContextoProfileSurface', () => {
   it('retains the editor and exposes retry after a failed save', async () => {
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
       .mockResolvedValue({ ok: false, error: 'Database unavailable' });
     renderSurface(send);
     fireEvent.click(await screen.findByRole('button', { name: 'Save to Contexto' }));
@@ -83,7 +111,7 @@ describe('ContextoProfileSurface', () => {
   it('recovers when the runtime rejects a save request', async () => {
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
       .mockRejectedValueOnce(new Error('Extension unavailable'));
     renderSurface(send);
     fireEvent.click(await screen.findByRole('button', { name: 'Save to Contexto' }));
@@ -96,7 +124,7 @@ describe('ContextoProfileSurface', () => {
     const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', role: 'CTO', tags: [], folders: [] };
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: saved }
-      : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
     const first = render(<ContextoProfileSurface profile={profile} kind="hover-card" send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
     fireEvent.change(await screen.findByLabelText('Role'), { target: { value: 'CEO' } });
     first.unmount();
@@ -112,7 +140,7 @@ describe('ContextoProfileSurface', () => {
         if (lookupAttempts === 1) throw new Error('Lookup unavailable');
         return { ok: true, lookup: true, lookupAccount: undefined };
       }
-      return { ok: true, lookups: { companies: [], tags: [], folders: [] } };
+      return { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } };
     });
     renderSurface(send);
     expect(await screen.findByText('Lookup unavailable')).toBeVisible();
@@ -125,7 +153,7 @@ describe('ContextoProfileSurface', () => {
     const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', role: 'CTO', tags: [], folders: [] };
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: saved }
-      : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
     renderSurface(send);
 
     fireEvent.change(await screen.findByLabelText('Role'), { target: { value: 'CEO' } });
@@ -138,7 +166,7 @@ describe('ContextoProfileSurface', () => {
   it('exposes modal dialog semantics for the fallback editor', async () => {
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: undefined }
-      : { ok: true, lookups: { companies: [], tags: [], folders: [] } });
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
     render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="modal" send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
 
     const dialog = await screen.findByRole('dialog', { name: 'Contexto profile editor' });
@@ -150,7 +178,7 @@ describe('ContextoProfileSurface', () => {
     const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', tags: [], folders: [] };
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
       .mockResolvedValueOnce({ ok: true, account: saved });
     render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="modal" onRequestClose={onRequestClose} send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
 
@@ -164,7 +192,7 @@ describe('ContextoProfileSurface', () => {
     const onRequestClose = vi.fn();
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
       .mockResolvedValueOnce({ ok: false, error: 'Database unavailable' });
     render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="modal" onRequestClose={onRequestClose} send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
 

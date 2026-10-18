@@ -39,6 +39,7 @@ import {
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
 import { getAdjacentAccountId } from './account-navigation';
 import { AccountBookmarks } from './AccountBookmarks';
+import { LocationCombobox } from './LocationCombobox';
 
 const searchDirections: SearchDirection[] = ['me-to-them', 'them-to-me', 'from-profile', 'to-profile', 'mentions'];
 
@@ -270,7 +271,8 @@ export function Dashboard() {
       </section>
 
       <section className="detail-pane" aria-label="Account details">
-        {selected ? <AccountDetail key={selected.id} account={selected} settings={settings} /> : <EmptyDetail />}
+        {selected ? <AccountDetail key={selected.id} account={selected} settings={settings}
+          locationSuggestions={lookups?.locations ?? []} /> : <EmptyDetail />}
       </section>
     </main>
   );
@@ -286,7 +288,15 @@ function EmptyDetail() {
   );
 }
 
-function AccountDetail({ account, settings }: { account: AccountSummary; settings: ContextoSettings }) {
+function AccountDetail({
+  account,
+  settings,
+  locationSuggestions,
+}: {
+  account: AccountSummary;
+  settings: ContextoSettings;
+  locationSuggestions: string[];
+}) {
   const [draft, setDraft] = useState({
     displayName: account.displayName,
     role: account.role ?? '',
@@ -391,7 +401,8 @@ function AccountDetail({ account, settings }: { account: AccountSummary; setting
           <label>Display name<input value={draft.displayName} onChange={(event) => setDraft({ ...draft, displayName: event.target.value })} /></label>
           <label>Role<input value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value })} /></label>
           <label>Company<input value={draft.companyName} onChange={(event) => setDraft({ ...draft, companyName: event.target.value })} /></label>
-          <label>Location<input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} /></label>
+          <LocationCombobox value={draft.location} suggestions={locationSuggestions}
+            onChange={(location) => setDraft({ ...draft, location })} />
           <label>How we know each other<input value={draft.relationshipSource} onChange={(event) => setDraft({ ...draft, relationshipSource: event.target.value })} /></label>
         </div>
         <label>Bio snapshot<textarea rows={3} value={draft.bioSnapshot} onChange={(event) => setDraft({ ...draft, bioSnapshot: event.target.value })} /></label>

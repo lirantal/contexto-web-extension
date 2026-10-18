@@ -15,7 +15,7 @@ describe('page editor controller with the real editor', () => {
     const lookup = new Promise<ContextoResponse>((resolve) => { resolveLookup = resolve; });
     const send = vi.fn((message) => message.type === 'contexto:account:lookup'
       ? lookup
-      : Promise.resolve({ ok: true, lookups: { companies: [], tags: [], folders: [] } } as ContextoResponse));
+      : Promise.resolve({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } } as ContextoResponse));
     const controller = createPageEditorController({
       root: document.body,
       send: send as ContextoProfileSurfaceProps['send'],

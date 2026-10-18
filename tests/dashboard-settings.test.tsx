@@ -6,18 +6,20 @@ import { Dashboard } from '@/src/ui/Dashboard';
 const mocks = vi.hoisted(() => ({
   accounts: [] as Array<Record<string, unknown>>,
   clearTargetHistory: vi.fn(),
+  locations: [] as string[],
   getSettings: vi.fn(),
   markAccountCaughtUp: vi.fn(),
   removeFolder: vi.fn(),
   removeBookmark: vi.fn(),
   removeTag: vi.fn(),
+  updateAccount: vi.fn(),
   setSettings: vi.fn(),
 }));
 
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: vi.fn((_query, dependencies?: unknown[]) => dependencies?.length
     ? mocks.accounts
-    : { companies: [], tags: [], folders: [] }),
+    : { companies: [], tags: [], folders: [], locations: mocks.locations }),
 }));
 
 vi.mock('@/src/data/repositories', () => ({
@@ -35,7 +37,7 @@ vi.mock('@/src/data/repositories', () => ({
   removeBookmark: mocks.removeBookmark,
   removeFolder: mocks.removeFolder,
   removeTag: mocks.removeTag,
-  updateAccount: vi.fn(),
+  updateAccount: mocks.updateAccount,
   updateBookmark: vi.fn(),
 }));
 
@@ -58,6 +60,7 @@ describe('dashboard target handle history settings', () => {
     HTMLElement.prototype.scrollIntoView = vi.fn();
     vi.clearAllMocks();
     mocks.accounts = [];
+    mocks.locations = [];
     mocks.getSettings.mockResolvedValue({ myXHandle: '@me', lastDashboardView: 'accounts' });
     mocks.setSettings.mockResolvedValue(undefined);
     mocks.clearTargetHistory.mockResolvedValue(undefined);
@@ -117,6 +120,27 @@ describe('dashboard target handle history settings', () => {
 
     expect(mocks.removeTag).toHaveBeenCalledWith('account-1', 'tag-1');
     expect(mocks.removeFolder).toHaveBeenCalledWith('account-1', 'folder-1');
+  });
+
+  it('uses fuzzy saved-location suggestions when editing account metadata', async () => {
+    mocks.accounts = [{
+      id: 'account-1', platform: 'x', handle: 'founder', normalizedHandle: 'founder',
+      displayName: 'Founder', profileUrl: 'https://x.com/founder', syncState: 'local-only',
+      createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      tags: [], folders: [],
+    }];
+    mocks.locations = ['San Francisco'];
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    const location = await screen.findByLabelText('Location');
+    await user.type(location, 'sfr');
+    await user.click(screen.getByRole('option', { name: 'San Francisco' }));
+    await user.click(screen.getByRole('button', { name: 'Save metadata' }));
+
+    expect(mocks.updateAccount).toHaveBeenCalledWith('account-1', expect.objectContaining({
+      location: 'San Francisco',
+    }));
   });
 
   it('offers catch-up search and an explicit checkpoint action for the selected account', async () => {

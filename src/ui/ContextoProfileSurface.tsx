@@ -3,6 +3,7 @@ import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
 import type { AccountSummary, LookupData, ProfileSnapshot } from '@/src/shared/types';
 import type { XSurfaceKind } from '@/src/x/extract-profile';
 import { AccountDraftStore, type AccountContextDraft } from '@/src/x/draft-store';
+import { LocationCombobox } from './LocationCombobox';
 import { MultiValueField } from './MultiValueField';
 
 export interface ContextoProfileSurfaceProps {
@@ -105,7 +106,8 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
       <label>Role<input value={draft.metadata.role ?? ''} disabled={saving} onChange={(event) => updateMetadata('role', event.target.value)} /></label>
       <label>Company<input list="contexto-companies" value={draft.metadata.companyName ?? ''} disabled={saving} onChange={(event) => updateMetadata('companyName', event.target.value)} /></label>
       <datalist id="contexto-companies">{lookups.companies.map((company) => <option key={company.id} value={company.name} />)}</datalist>
-      <label>Location<input value={draft.metadata.location ?? ''} disabled={saving} onChange={(event) => updateMetadata('location', event.target.value)} /></label>
+      <LocationCombobox value={draft.metadata.location ?? ''} suggestions={lookups.locations}
+        disabled={saving} onChange={(location) => updateMetadata('location', location)} />
       <label>How you know them<input value={draft.metadata.relationshipSource ?? ''} disabled={saving} onChange={(event) => updateMetadata('relationshipSource', event.target.value)} /></label>
       <MultiValueField label="Tags" values={draft.tagNames} suggestions={lookups.tags.map((tag) => tag.name)} disabled={saving} onChange={(tagNames) => updateDraft({ ...draft, tagNames })} />
       <MultiValueField label="Folders" values={draft.folderNames} suggestions={lookups.folders.map((folder) => folder.name)} disabled={saving} onChange={(folderNames) => updateDraft({ ...draft, folderNames })} />
