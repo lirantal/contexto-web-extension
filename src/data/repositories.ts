@@ -560,16 +560,27 @@ export async function removeFolder(accountId: string, folderId: string, database
 }
 
 export async function getLookups(database = db): Promise<LookupData> {
-  const [companies, tags, folders] = await Promise.all([
+  const [companies, tags, folders, accounts] = await Promise.all([
     database.companies.orderBy('name').toArray(),
     database.tags.orderBy('name').toArray(),
     database.folders.orderBy('name').toArray(),
+    database.accounts.toArray(),
   ]);
+  const locationsByNormalizedName = new Map<string, string>();
+  for (const account of active(accounts)) {
+    const location = account.location?.trim();
+    if (!location) continue;
+    const normalizedLocation = location.toLocaleLowerCase();
+    if (!locationsByNormalizedName.has(normalizedLocation)) {
+      locationsByNormalizedName.set(normalizedLocation, location);
+    }
+  }
 
   return {
     companies: active(companies),
     tags: active(tags),
     folders: active(folders),
+    locations: [...locationsByNormalizedName.values()].sort((left, right) => left.localeCompare(right)),
   };
 }
 

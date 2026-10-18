@@ -14,7 +14,7 @@ export interface ContextoProfileSurfaceProps {
   placement?: 'inline' | 'docked' | 'modal';
 }
 
-const emptyLookups: LookupData = { companies: [], tags: [], folders: [] };
+const emptyLookups: LookupData = { companies: [], tags: [], folders: [], locations: [] };
 
 function draftFor(profile: ProfileSnapshot, account?: AccountSummary): AccountContextDraft {
   return {

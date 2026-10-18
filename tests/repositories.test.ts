@@ -188,6 +188,29 @@ describe('Contexto repositories', () => {
     expect(lookups.folders.map(({ name }) => name)).toContain('Friends');
   });
 
+  it('lists distinct active saved locations as reusable lookups', async () => {
+    const locations = [
+      ['berlin-primary', ' Berlin '],
+      ['berlin-duplicate', 'berlin'],
+      ['san-francisco', 'San Francisco'],
+      ['blank-location', '   '],
+      ['deleted-location', 'London'],
+    ] as const;
+
+    for (const [handle, location] of locations) {
+      const account = await ensureAccountFromProfile(
+        { platform: 'x', handle, displayName: handle, profileUrl: `https://x.com/${handle}` },
+        database,
+      );
+      await database.accounts.update(account.id, {
+        location,
+        ...(handle === 'deleted-location' ? { deletedAt: '2026-07-12T00:00:00.000Z' } : {}),
+      });
+    }
+
+    expect((await getLookups(database)).locations).toEqual(['Berlin', 'San Francisco']);
+  });
+
   it('rolls back assignment removal when change recording fails', async () => {
     const account = await ensureAccountFromProfile(
       { platform: 'x', handle: 'Rollback', displayName: 'Rollback', profileUrl: 'https://x.com/rollback' },

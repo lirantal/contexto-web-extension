@@ -211,6 +211,7 @@ export interface LookupData {
   companies: Company[];
   tags: Tag[];
   folders: Folder[];
+  locations: string[];
 }
 
 interface BackupDataV1 {
