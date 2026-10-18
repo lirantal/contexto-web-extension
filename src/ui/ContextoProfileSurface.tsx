@@ -104,8 +104,9 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
       <label>Display name<input value={draft.metadata.displayName ?? ''} disabled={saving} onChange={(event) => updateMetadata('displayName', event.target.value)} /></label>
       <label>X handle<input value={`@${profile.handle}`} readOnly /></label>
       <label>Role<input value={draft.metadata.role ?? ''} disabled={saving} onChange={(event) => updateMetadata('role', event.target.value)} /></label>
-      <label>Company<input list="contexto-companies" value={draft.metadata.companyName ?? ''} disabled={saving} onChange={(event) => updateMetadata('companyName', event.target.value)} /></label>
-      <datalist id="contexto-companies">{lookups.companies.map((company) => <option key={company.id} value={company.name} />)}</datalist>
+      <FuzzyTextCombobox label="Company" value={draft.metadata.companyName ?? ''}
+        suggestions={lookups.companies.map((company) => company.name)} disabled={saving}
+        onChange={(companyName) => updateMetadata('companyName', companyName)} />
       <FuzzyTextCombobox label="Location" value={draft.metadata.location ?? ''} suggestions={lookups.locations}
         disabled={saving} onChange={(location) => updateMetadata('location', location)} />
       <label>How you know them<input value={draft.metadata.relationshipSource ?? ''} disabled={saving} onChange={(event) => updateMetadata('relationshipSource', event.target.value)} /></label>

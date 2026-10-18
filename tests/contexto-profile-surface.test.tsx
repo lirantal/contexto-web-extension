@@ -36,6 +36,39 @@ describe('ContextoProfileSurface', () => {
     expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'contexto:account:saveContext' }));
   });
 
+  it('fuzzy-selects and saves an existing company', async () => {
+    const saved = {
+      id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo',
+      displayName: 'Theo – t3.gg', profileUrl: 'https://x.com/theo',
+      company: { id: 'company_1', name: 'OpenAI' }, tags: [], folders: [],
+    };
+    const send = vi.fn()
+      .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
+      .mockResolvedValueOnce({
+        ok: true,
+        lookups: {
+          companies: [{ id: 'company_1', name: 'OpenAI' }],
+          tags: [],
+          folders: [],
+          locations: [],
+        },
+      })
+      .mockResolvedValueOnce({ ok: true, account: saved });
+
+    renderSurface(send);
+    const company = await screen.findByLabelText('Company');
+    fireEvent.change(company, { target: { value: 'opi' } });
+    fireEvent.click(screen.getByRole('option', { name: 'OpenAI' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
+
+    await waitFor(() => expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'contexto:account:saveContext',
+      input: expect.objectContaining({
+        metadata: expect.objectContaining({ companyName: 'OpenAI' }),
+      }),
+    })));
+  });
+
   it('fuzzy-selects and saves an existing location', async () => {
     const saved = {
       id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo',
