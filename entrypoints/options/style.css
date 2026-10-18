@@ -303,13 +303,13 @@ textarea {
   gap: 10px;
 }
 
-.location-combobox {
+.fuzzy-text-combobox {
   display: grid;
   gap: 5px;
   min-width: 0;
 }
 
-.location-combobox .value-options {
+.fuzzy-text-combobox .value-options {
   display: grid;
   max-height: 140px;
   overflow: auto;
@@ -317,15 +317,15 @@ textarea {
   border-radius: 7px;
 }
 
-.location-combobox .value-option {
+.fuzzy-text-combobox .value-option {
   border: 0;
   border-radius: 0;
   color: #0f756d;
   text-align: left;
 }
 
-.location-combobox .value-option:hover,
-.location-combobox .value-option.highlighted { background: #e8f3f1; }
+.fuzzy-text-combobox .value-option:hover,
+.fuzzy-text-combobox .value-option.highlighted { background: #e8f3f1; }
 
 .two-columns {
   grid-template-columns: repeat(2, minmax(0, 1fr));

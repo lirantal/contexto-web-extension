@@ -2,17 +2,17 @@ import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { LocationCombobox } from '@/src/ui/LocationCombobox';
+import { FuzzyTextCombobox } from '@/src/ui/FuzzyTextCombobox';
 
 const suggestions = ['Berlin', 'San Fernando', 'San Francisco'];
 
-function Harness({ disabled = false }: { disabled?: boolean }) {
+function Harness({ disabled = false, label = 'Location' }: { disabled?: boolean; label?: string }) {
   const [value, setValue] = useState('');
-  return <LocationCombobox value={value} suggestions={suggestions} onChange={setValue}
+  return <FuzzyTextCombobox label={label} value={value} suggestions={suggestions} onChange={setValue}
     disabled={disabled} />;
 }
 
-describe('LocationCombobox', () => {
+describe('FuzzyTextCombobox', () => {
   it('shows fuzzy matches and selects with wrapping arrow navigation', async () => {
     const user = userEvent.setup();
     render(<Harness />);
@@ -42,6 +42,16 @@ describe('LocationCombobox', () => {
     await user.keyboard('{Enter}');
     expect(input).toHaveValue('San Francisco');
     expect(input).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('uses its configurable label for the combobox', async () => {
+    const user = userEvent.setup();
+    render(<Harness label="Company" />);
+    const input = screen.getByRole('combobox', { name: 'Company' });
+
+    await user.type(input, 'sfr');
+
+    expect(screen.getByRole('option', { name: 'San Francisco' })).toBeVisible();
   });
 
   it('selects a suggestion with the pointer', async () => {

@@ -2,19 +2,21 @@ import React, { useEffect, useId, useMemo, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { rankFuzzyTextSuggestions } from '../shared/fuzzy-text-suggestions';
 
-export interface LocationComboboxProps {
+export interface FuzzyTextComboboxProps {
+  label: string;
   value: string;
   suggestions: string[];
   onChange(value: string): void;
   disabled?: boolean;
 }
 
-export function LocationCombobox({
+export function FuzzyTextCombobox({
+  label,
   value,
   suggestions,
   onChange,
   disabled = false,
-}: LocationComboboxProps) {
+}: FuzzyTextComboboxProps) {
   const inputId = useId();
   const listboxId = useId();
   const [open, setOpen] = useState(false);
@@ -44,8 +46,8 @@ export function LocationCombobox({
     }
   }, [expanded, highlighted, listboxId]);
 
-  function selectLocation(location: string) {
-    onChange(location);
+  function selectSuggestion(suggestion: string) {
+    onChange(suggestion);
     setOpen(false);
     setHighlighted(-1);
   }
@@ -61,7 +63,7 @@ export function LocationCombobox({
       setHighlighted((current) => current > 0 ? current - 1 : matches.length - 1);
     } else if (event.key === 'Enter' && expanded && highlighted >= 0) {
       event.preventDefault();
-      selectLocation(matches[highlighted]);
+      selectSuggestion(matches[highlighted]);
     } else if (event.key === 'Escape' && open) {
       event.preventDefault();
       setOpen(false);
@@ -70,8 +72,8 @@ export function LocationCombobox({
   }
 
   return (
-    <div className="location-combobox">
-      <label htmlFor={inputId}>Location</label>
+    <div className="fuzzy-text-combobox">
+      <label htmlFor={inputId}>{label}</label>
       <input
         id={inputId}
         value={value}
@@ -98,19 +100,19 @@ export function LocationCombobox({
       />
       {expanded && (
         <div className="value-options" id={listboxId} role="listbox">
-          {matches.map((location, index) => (
+          {matches.map((suggestion, index) => (
             <button
               type="button"
               className={index === highlighted ? 'value-option highlighted' : 'value-option'}
               id={`${listboxId}-option-${index}`}
-              key={location.toLocaleLowerCase()}
+              key={suggestion.toLocaleLowerCase()}
               role="option"
               aria-selected={index === highlighted}
               onMouseEnter={() => setHighlighted(index)}
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => selectLocation(location)}
+              onClick={() => selectSuggestion(suggestion)}
             >
-              {location}
+              {suggestion}
             </button>
           ))}
         </div>
