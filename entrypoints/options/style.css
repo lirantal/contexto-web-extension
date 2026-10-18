@@ -133,6 +133,17 @@ textarea {
   font-size: 12px;
 }
 
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4b554d;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.checkbox-field input { width: auto; }
+
 .input-with-icon {
   display: grid;
   grid-template-columns: 20px 1fr;

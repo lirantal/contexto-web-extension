@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   removeFolder: vi.fn(),
   removeBookmark: vi.fn(),
   removeTag: vi.fn(),
+  setSettings: vi.fn(),
 }));
 
 vi.mock('dexie-react-hooks', () => ({
@@ -39,8 +40,16 @@ vi.mock('@/src/data/repositories', () => ({
 }));
 
 vi.mock('@/src/shared/settings', () => ({
-  defaultSettings: { myXHandle: '', lastDashboardView: 'accounts' },
-  settingsItem: { getValue: mocks.getSettings, setValue: vi.fn() },
+  defaultSettings: {
+    myXHandle: '',
+    lastDashboardView: 'accounts',
+    showNativeXSidebarWidgets: false,
+  },
+  normalizeContextoSettings: (value: Record<string, unknown>) => ({
+    showNativeXSidebarWidgets: false,
+    ...value,
+  }),
+  settingsItem: { getValue: mocks.getSettings, setValue: mocks.setSettings },
   clearTargetHandleHistory: mocks.clearTargetHistory,
 }));
 
@@ -50,6 +59,7 @@ describe('dashboard target handle history settings', () => {
     vi.clearAllMocks();
     mocks.accounts = [];
     mocks.getSettings.mockResolvedValue({ myXHandle: '@me', lastDashboardView: 'accounts' });
+    mocks.setSettings.mockResolvedValue(undefined);
     mocks.clearTargetHistory.mockResolvedValue(undefined);
     mocks.markAccountCaughtUp.mockResolvedValue(undefined);
   });
@@ -62,6 +72,21 @@ describe('dashboard target handle history settings', () => {
 
     expect(mocks.clearTargetHistory).toHaveBeenCalledOnce();
     expect(await screen.findByText('Target handle history cleared')).toBeVisible();
+  });
+
+  it('shows X sidebar widgets only when the dashboard toggle is enabled', async () => {
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    const toggle = await screen.findByRole('checkbox', { name: 'Show X sidebar widgets' });
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+
+    expect(mocks.setSettings).toHaveBeenCalledWith({
+      myXHandle: '@me',
+      lastDashboardView: 'accounts',
+      showNativeXSidebarWidgets: true,
+    });
   });
 
   it('immediately removes tag and folder assignments from the selected account', async () => {

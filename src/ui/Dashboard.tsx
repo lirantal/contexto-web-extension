@@ -30,7 +30,12 @@ import {
   updateAccount,
 } from '@/src/data/repositories';
 import { buildXCatchUpSearchUrl, buildXSearchQuery, buildXSearchUrl, labelSearchDirection, normalizeXHandle } from '@/src/shared/platforms/x';
-import { clearTargetHandleHistory, defaultSettings, settingsItem } from '@/src/shared/settings';
+import {
+  clearTargetHandleHistory,
+  defaultSettings,
+  normalizeContextoSettings,
+  settingsItem,
+} from '@/src/shared/settings';
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
 import { getAdjacentAccountId } from './account-navigation';
 import { AccountBookmarks } from './AccountBookmarks';
@@ -57,7 +62,7 @@ export function Dashboard() {
   const selected = useMemo(() => accounts?.find((account) => account.id === selectedId) ?? accounts?.[0], [accounts, selectedId]);
 
   useEffect(() => {
-    settingsItem.getValue().then(setSettings);
+    settingsItem.getValue().then((value) => setSettings(normalizeContextoSettings(value)));
   }, []);
 
   useEffect(() => {
@@ -211,6 +216,17 @@ export function Dashboard() {
             onChange={(event) => saveSettings({ ...settings, myXHandle: event.target.value })}
             placeholder="@your_handle"
           />
+          <label className="checkbox-field">
+            <input
+              type="checkbox"
+              checked={settings.showNativeXSidebarWidgets}
+              onChange={(event) => saveSettings({
+                ...settings,
+                showNativeXSidebarWidgets: event.target.checked,
+              })}
+            />
+            Show X sidebar widgets
+          </label>
           <button className="clear-history-action" onClick={clearTargetHistory}>
             <Trash2 size={16} aria-hidden="true" /> Clear target handle history
           </button>

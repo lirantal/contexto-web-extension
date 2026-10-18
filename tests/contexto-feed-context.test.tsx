@@ -86,7 +86,7 @@ function renderQuickNote(noteResponse: ContextoResponse | Promise<ContextoRespon
       return { ok: true, lookup: true, lookupAccount: saved };
     }
     if (message.type === 'contexto:settings:get') {
-      return { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts' } };
+      return { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts', showNativeXSidebarWidgets: false } };
     }
     if (message.type === 'contexto:note:add') {
       return noteResponse;
@@ -251,7 +251,7 @@ describe('ContextoFeedContext', () => {
   it('opens a safe two-way X interaction search when my handle is configured', async () => {
     renderWithSettings({
       ok: true,
-      settings: { myXHandle: '@Liran_Tal', lastDashboardView: 'accounts' },
+      settings: { myXHandle: '@Liran_Tal', lastDashboardView: 'accounts', showNativeXSidebarWidgets: false },
     });
 
     await userEvent.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
@@ -273,7 +273,7 @@ describe('ContextoFeedContext', () => {
         return { ok: true, lookup: true, lookupAccount: checkpointed };
       }
       if (message.type === 'contexto:settings:get') {
-        return { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts' } };
+        return { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts', showNativeXSidebarWidgets: false } };
       }
       if (message.type === 'contexto:account:markCaughtUp') {
         return { ok: true, account: advanced };
@@ -321,7 +321,7 @@ describe('ContextoFeedContext', () => {
         return { ok: true, lookup: true, lookupAccount: checkpointed };
       }
       if (message.type === 'contexto:settings:get') {
-        return { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts' } };
+        return { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts', showNativeXSidebarWidgets: false } };
       }
       if (message.type === 'contexto:account:markCaughtUp') {
         return { ok: false, error: 'Checkpoint unavailable' };
@@ -340,8 +340,8 @@ describe('ContextoFeedContext', () => {
   });
 
   it.each([
-    ['missing', { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts' } }],
-    ['invalid', { ok: true, settings: { myXHandle: 'not-valid!', lastDashboardView: 'accounts' } }],
+    ['missing', { ok: true, settings: { myXHandle: '', lastDashboardView: 'accounts', showNativeXSidebarWidgets: false } }],
+    ['invalid', { ok: true, settings: { myXHandle: 'not-valid!', lastDashboardView: 'accounts', showNativeXSidebarWidgets: false } }],
     ['unsuccessful', { ok: false, error: 'Settings unavailable' }],
   ] as const)('hides the shortcut for %s settings without hiding saved context', async (_name, response) => {
     cleanup();

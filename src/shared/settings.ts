@@ -8,7 +8,18 @@ import {
 export const defaultSettings: ContextoSettings = {
   myXHandle: '',
   lastDashboardView: 'accounts',
+  showNativeXSidebarWidgets: false,
 };
+
+export function normalizeContextoSettings(
+  value: Partial<ContextoSettings> | null | undefined,
+): ContextoSettings {
+  return {
+    ...defaultSettings,
+    ...value,
+    showNativeXSidebarWidgets: value?.showNativeXSidebarWidgets === true,
+  };
+}
 
 export const settingsItem = storage.defineItem<ContextoSettings>('local:contexto-settings', {
   fallback: defaultSettings,

@@ -197,6 +197,7 @@ export interface AccountContextSaveInput {
 export interface ContextoSettings {
   myXHandle: string;
   lastDashboardView: 'accounts' | 'search' | 'settings';
+  showNativeXSidebarWidgets: boolean;
 }
 
 export interface PopupSearchState {
