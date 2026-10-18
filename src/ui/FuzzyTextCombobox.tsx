@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { rankFuzzyTextSuggestions } from '../shared/fuzzy-text-suggestions';
 
@@ -19,6 +19,7 @@ export function FuzzyTextCombobox({
 }: FuzzyTextComboboxProps) {
   const inputId = useId();
   const listboxId = useId();
+  const listboxRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const matches = useMemo(
@@ -41,10 +42,9 @@ export function FuzzyTextCombobox({
 
   useEffect(() => {
     if (expanded && highlighted >= 0) {
-      document.getElementById(`${listboxId}-option-${highlighted}`)
-        ?.scrollIntoView?.({ block: 'nearest' });
+      listboxRef.current?.children.item(highlighted)?.scrollIntoView?.({ block: 'nearest' });
     }
-  }, [expanded, highlighted, listboxId]);
+  }, [expanded, highlighted]);
 
   function selectSuggestion(suggestion: string) {
     onChange(suggestion);
@@ -99,7 +99,7 @@ export function FuzzyTextCombobox({
         onKeyDown={handleKeyDown}
       />
       {expanded && (
-        <div className="value-options" id={listboxId} role="listbox">
+        <div className="value-options" id={listboxId} ref={listboxRef} role="listbox">
           {matches.map((suggestion, index) => (
             <button
               type="button"
@@ -108,6 +108,7 @@ export function FuzzyTextCombobox({
               key={suggestion.toLocaleLowerCase()}
               role="option"
               aria-selected={index === highlighted}
+              tabIndex={-1}
               onMouseEnter={() => setHighlighted(index)}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => selectSuggestion(suggestion)}

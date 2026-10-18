@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { FuzzyTextCombobox } from '@/src/ui/FuzzyTextCombobox';
 
 const suggestions = ['Berlin', 'San Fernando', 'San Francisco'];
@@ -10,6 +10,14 @@ function Harness({ disabled = false, label = 'Location' }: { disabled?: boolean;
   const [value, setValue] = useState('');
   return <FuzzyTextCombobox label={label} value={value} suggestions={suggestions} onChange={setValue}
     disabled={disabled} />;
+}
+
+function TabHarness() {
+  const [value, setValue] = useState('');
+  return <>
+    <FuzzyTextCombobox label="Company" value={value} suggestions={suggestions} onChange={setValue} />
+    <button type="button">Next field</button>
+  </>;
 }
 
 describe('FuzzyTextCombobox', () => {
@@ -52,6 +60,41 @@ describe('FuzzyTextCombobox', () => {
     await user.type(input, 'sfr');
 
     expect(screen.getByRole('option', { name: 'San Francisco' })).toBeVisible();
+  });
+
+  it('scrolls the active option within a Shadow DOM editor', async () => {
+    const host = document.createElement('div');
+    const shadow = host.attachShadow({ mode: 'open' });
+    const mount = document.createElement('div');
+    shadow.append(mount);
+    document.body.append(host);
+    const view = render(<Harness />, { container: mount });
+    const input = view.getByRole('combobox', { name: 'Location' });
+
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'san' } });
+    const firstOption = view.getByRole('option', { name: 'San Fernando' });
+    firstOption.scrollIntoView = vi.fn();
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+
+    expect(firstOption.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+    view.unmount();
+    host.remove();
+  });
+
+  it('keeps suggestions out of the Tab order', async () => {
+    const user = userEvent.setup();
+    render(<TabHarness />);
+    const input = screen.getByRole('combobox', { name: 'Company' });
+
+    await user.type(input, 'san');
+    for (const option of screen.getAllByRole('option')) {
+      expect(option).toHaveAttribute('tabindex', '-1');
+    }
+
+    await user.tab();
+
+    expect(screen.getByRole('button', { name: 'Next field' })).toHaveFocus();
   });
 
   it('selects a suggestion with the pointer', async () => {
