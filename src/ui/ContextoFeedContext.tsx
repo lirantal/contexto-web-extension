@@ -237,82 +237,111 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
       onClick={togglePanel}
     >◆ Contexto</button>
     {open && <section ref={panelRef} id={panelId} className="contexto-feed-panel" role="dialog" aria-label="Contexto relationship context">
-      <header className="contexto-feed-panel-header"><strong>{account.displayName}</strong><span>Saved context</span></header>
-      {organization && <span data-testid="contexto-feed-organization">{organization}</span>}
-      {account.relationshipSource && <span data-testid="contexto-feed-relationship">{account.relationshipSource}</span>}
-      {account.tags.length > 0 && <div className="contexto-feed-values" data-testid="contexto-feed-tags">{account.tags.map((tag) => <span className="chip" key={tag.id}>{tag.name}</span>)}</div>}
-      {account.folders.length > 0 && <div className="contexto-feed-values" data-testid="contexto-feed-folders">{account.folders.map((folder) => <span className="chip folder-chip" key={folder.id}>{folder.name}</span>)}</div>}
-      {account.latestNote && <p data-testid="contexto-feed-note">{account.latestNote.body}</p>}
-      {!composerOpen && !noteComposerOpen && <button type="button" onClick={openNoteComposer}>Add quick note</button>}
-      {noteComposerOpen && <div className="contexto-feed-note-composer">
-        <label>
-          Relationship note
-          <textarea
-            autoFocus
-            rows={3}
-            value={noteBody}
-            disabled={savingNote}
-            onChange={(event) => setNoteBody(event.target.value)}
-          />
-        </label>
-        {noteError && <p className="contexto-error" role="alert">{noteError}</p>}
-        <div className="contexto-feed-note-actions">
-          <button className="primary-action" type="button" disabled={savingNote || !noteBody.trim()} onClick={saveQuickNote}>
-            {savingNote ? 'Saving note…' : 'Save note'}
-          </button>
-          <button type="button" disabled={savingNote} onClick={cancelNoteComposer}>Cancel</button>
+      <section className="contexto-feed-section contexto-feed-summary" aria-labelledby={`${panelId}-saved`}>
+        <span className="contexto-feed-section-label" id={`${panelId}-saved`}>Saved context</span>
+        <strong>{account.displayName}</strong>
+        {organization && <span data-testid="contexto-feed-organization">{organization}</span>}
+        {account.relationshipSource && <span data-testid="contexto-feed-relationship">{account.relationshipSource}</span>}
+        {account.tags.length > 0 && <div className="contexto-feed-values" data-testid="contexto-feed-tags">{account.tags.map((tag) => <span className="chip" key={tag.id}>{tag.name}</span>)}</div>}
+        {account.folders.length > 0 && <div className="contexto-feed-values" data-testid="contexto-feed-folders">{account.folders.map((folder) => <span className="chip folder-chip" key={folder.id}>{folder.name}</span>)}</div>}
+        {account.latestNote && <p data-testid="contexto-feed-note">{account.latestNote.body}</p>}
+      </section>
+      <section className="contexto-feed-section contexto-feed-local-actions" aria-labelledby={`${panelId}-local`}>
+        <span className="contexto-feed-section-label" id={`${panelId}-local`}>Add to Contexto</span>
+        <div className="contexto-feed-action-row">
+          {!composerOpen && !noteComposerOpen && <button type="button" onClick={openNoteComposer}>Add quick note</button>}
+          {bookmarkState === 'available' && !composerOpen && !noteComposerOpen && <button type="button" onClick={openComposer}>Capture this post</button>}
+          {bookmarkState === 'saved' && <button type="button" disabled>Bookmarked</button>}
         </div>
-      </div>}
-      {noteSuccess && <p className="contexto-success" aria-live="polite">{noteSuccess}</p>}
-      {bookmarkState === 'available' && !composerOpen && !noteComposerOpen && <button type="button" onClick={openComposer}>Capture this post</button>}
-      {bookmarkState === 'saved' && <button type="button" disabled>Bookmarked</button>}
-      {composerOpen && <div className="contexto-feed-bookmark-composer">
-        <label>
-          Why are you saving this? (optional)
-          <textarea
-            autoFocus
-            rows={3}
-            value={reminder}
-            disabled={saving}
-            onChange={(event) => setReminder([...event.target.value].slice(0, 500).join(''))}
-          />
-        </label>
-        {bookmarkError && <p className="contexto-error" role="alert">{bookmarkError}</p>}
-        <div className="contexto-feed-bookmark-actions">
-          <button className="primary-action" type="button" disabled={saving} onClick={saveBookmark}>
-            {saving ? 'Saving…' : 'Save bookmark'}
-          </button>
-          <button type="button" disabled={saving} onClick={cancelComposer}>Cancel</button>
-        </div>
-      </div>}
-      {bookmarkSuccess && <p className="contexto-success" aria-live="polite">{bookmarkSuccess}</p>}
-      {catchUpUrl && <div className="contexto-feed-catch-up">
-        <div>
-          <a
-            className="contexto-feed-interactions"
+        {noteComposerOpen && <div className="contexto-feed-note-composer">
+          <label>
+            Relationship note
+            <textarea
+              autoFocus
+              rows={3}
+              value={noteBody}
+              disabled={savingNote}
+              onChange={(event) => setNoteBody(event.target.value)}
+            />
+          </label>
+          {noteError && <p className="contexto-error" role="alert">{noteError}</p>}
+          <div className="contexto-feed-note-actions">
+            <button className="primary-action" type="button" disabled={savingNote || !noteBody.trim()} onClick={saveQuickNote}>
+              {savingNote ? 'Saving note…' : 'Save note'}
+            </button>
+            <button type="button" disabled={savingNote} onClick={cancelNoteComposer}>Cancel</button>
+          </div>
+        </div>}
+        {noteSuccess && <p className="contexto-success" aria-live="polite">{noteSuccess}</p>}
+        {composerOpen && <div className="contexto-feed-bookmark-composer">
+          <label>
+            Why are you saving this? (optional)
+            <textarea
+              autoFocus
+              rows={3}
+              value={reminder}
+              disabled={saving}
+              onChange={(event) => setReminder([...event.target.value].slice(0, 500).join(''))}
+            />
+          </label>
+          {bookmarkError && <p className="contexto-error" role="alert">{bookmarkError}</p>}
+          <div className="contexto-feed-bookmark-actions">
+            <button className="primary-action" type="button" disabled={saving} onClick={saveBookmark}>
+              {saving ? 'Saving…' : 'Save bookmark'}
+            </button>
+            <button type="button" disabled={saving} onClick={cancelComposer}>Cancel</button>
+          </div>
+        </div>}
+        {bookmarkSuccess && <p className="contexto-success" aria-live="polite">{bookmarkSuccess}</p>}
+      </section>
+      <section className="contexto-feed-section contexto-feed-x-actions" role="group" aria-labelledby={`${panelId}-x`}>
+        <span className="contexto-feed-section-label" id={`${panelId}-x`}>Explore on X</span>
+        <div className="contexto-feed-x-links">
+          {catchUpUrl && <a
+            aria-label="Catch up on X"
+            className="contexto-feed-x-link"
             href={catchUpUrl}
             target="_blank"
             rel="noopener noreferrer"
-          >Catch up on X</a>
-          {account.lastCatchUpAt
-            ? <time dateTime={account.lastCatchUpAt}>
-              Last caught up {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(account.lastCatchUpAt))}
-            </time>
-            : <span>No catch-up checkpoint yet</span>}
+          >
+            <span>
+              Catch up on X
+              <small>Review recent posts</small>
+            </span>
+            <span aria-hidden="true">↗</span>
+          </a>}
+          {interactionUrl && <a
+            aria-label="View our interactions"
+            className="contexto-feed-x-link"
+            href={interactionUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>
+              View our interactions
+              <small>Search your shared conversation</small>
+            </span>
+            <span aria-hidden="true">↗</span>
+          </a>}
         </div>
-        <button type="button" disabled={markingCaughtUp} onClick={markCaughtUp}>
-          {markingCaughtUp ? 'Updating…' : 'Mark caught up'}
-        </button>
-      </div>}
-      {catchUpError && <p className="contexto-error" role="alert">{catchUpError}</p>}
-      {catchUpSuccess && <p className="contexto-success" aria-live="polite">{catchUpSuccess}</p>}
-      {interactionUrl && <a
-        className="contexto-feed-interactions"
-        href={interactionUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-      >View our interactions</a>}
-      <button className="primary-action" type="button" onClick={openEditor}>Open full context</button>
+        {catchUpUrl && <div className="contexto-feed-checkpoint" data-testid="contexto-feed-checkpoint">
+          <div>
+            {account.lastCatchUpAt
+              ? <time dateTime={account.lastCatchUpAt}>
+                Last caught up {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(account.lastCatchUpAt))}
+              </time>
+              : <span>No catch-up checkpoint yet</span>}
+          </div>
+          <button type="button" disabled={markingCaughtUp} onClick={markCaughtUp}>
+            {markingCaughtUp ? 'Updating…' : 'Mark caught up'}
+          </button>
+        </div>}
+        {catchUpError && <p className="contexto-error" role="alert">{catchUpError}</p>}
+        {catchUpSuccess && <p className="contexto-success" aria-live="polite">{catchUpSuccess}</p>}
+      </section>
+      <footer className="contexto-feed-section contexto-feed-footer">
+        <button className="primary-action" type="button" onClick={openEditor}>Open full context</button>
+      </footer>
     </section>}
   </span>;
 }

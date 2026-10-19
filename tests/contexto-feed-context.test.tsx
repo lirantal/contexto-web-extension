@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ContextoFeedContext } from '@/src/ui/ContextoFeedContext';
@@ -104,6 +104,8 @@ describe('ContextoFeedContext', () => {
     const marker = await screen.findByRole('button', { name: /Contexto context for Theo/i });
     expect(marker).toHaveAttribute('aria-expanded', 'false');
     await user.click(marker);
+    expect(screen.getByText('Saved context')).toBeVisible();
+    expect(screen.getByText('Add to Contexto')).toBeVisible();
     expect(screen.getByText('Theo Browne')).toBeVisible();
     expect(screen.getByText('Developer · Ping Labs')).toBeVisible();
     expect(screen.getByText('Conference friend')).toBeVisible();
@@ -279,6 +281,24 @@ describe('ContextoFeedContext', () => {
     expect(url.searchParams.get('f')).toBe('live');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('groups outbound X links together before the catch-up checkpoint', async () => {
+    renderWithSettings({
+      ok: true,
+      settings: { myXHandle: '@liran_tal', lastDashboardView: 'accounts', showNativeXSidebarWidgets: false },
+    });
+
+    await userEvent.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+    const explore = screen.getByRole('group', { name: 'Explore on X' });
+    const links = within(explore).getAllByRole('link');
+    const checkpoint = within(explore).getByTestId('contexto-feed-checkpoint');
+
+    expect(links.map((link) => link.textContent)).toEqual([
+      expect.stringContaining('Catch up on X'),
+      expect.stringContaining('View our interactions'),
+    ]);
+    expect(links[1].compareDocumentPosition(checkpoint) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('opens posts since the checkpoint and advances it only when explicitly marked', async () => {

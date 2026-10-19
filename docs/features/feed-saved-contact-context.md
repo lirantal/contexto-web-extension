@@ -2,6 +2,8 @@
 
 Contexto augments supported X feed posts when the primary author already exists in the local Contexto database. A small Contexto marker appears in the validated author header. Activating it opens or closes a compact relationship panel with saved context and explicit actions without triggering the enclosing X post's navigation. Intentional links inside the panel retain their own navigation behavior.
 
+**Panel organization.** Saved context, local writes, outbound X links, checkpoint controls, and full context are presented as separate groups. Both X links are colocated before the checkpoint row.
+
 ## Eligibility
 
 The feed integration only considers top-level, non-promoted post roots. Identity extraction is scoped to the candidate post and requires a coherent normalized `@handle` plus an exact `/<handle>` profile link in the same author subtree. Quoted-post authors, reply targets, mentions, promoted posts, ambiguous markup, and unknown accounts receive no Contexto UI.

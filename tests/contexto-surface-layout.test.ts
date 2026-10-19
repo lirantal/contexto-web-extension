@@ -60,4 +60,17 @@ describe('Contexto X surface layout contract', () => {
     const host = ruleBody(':host([data-contexto-surface="sidebar-search"])');
     expect(host).toContain('margin:12px 0 16px;');
   });
+
+  it('gives the feed panel readable grouped spacing and obvious X links', () => {
+    const panel = ruleBody('.contexto-feed-panel');
+    expect(panel).toContain('width:320px;');
+    expect(panel).toContain('gap:0;');
+
+    const section = ruleBody('.contexto-feed-section');
+    expect(section).toContain('padding:12px 14px;');
+
+    const xLink = ruleBody('.contexto-feed-x-link');
+    expect(xLink).toContain('text-decoration:underline;');
+    expect(xLink).toContain('min-height:44px;');
+  });
 });
