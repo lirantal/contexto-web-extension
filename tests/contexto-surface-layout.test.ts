@@ -81,6 +81,11 @@ describe('Contexto X surface layout contract', () => {
     expect(focus).toContain('outline-offset:-2px;');
   });
 
+  it('gives every embedded button a 36 pixel minimum target height', () => {
+    const genericButton = css.match(/(?:^|\n)button \{([^}]*)\}/)?.[1] ?? '';
+    expect(genericButton).toContain('min-height:36px;');
+  });
+
   it('gives hover launcher actions a 36 pixel minimum target height', () => {
     const hoverAction = ruleBody('.contexto-hover-launcher button');
     expect(hoverAction).toContain('min-height:36px;');
