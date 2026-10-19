@@ -20,12 +20,54 @@ vi.mock('@/src/data/repositories', () => ({
 
 vi.mock('@/src/shared/settings', () => ({
   settingsItem: { getValue: vi.fn(), setValue: vi.fn() },
+  popupSearchStateItem: { getValue: vi.fn(), setValue: vi.fn() },
+  targetHandleHistoryItem: { getValue: vi.fn(), setValue: vi.fn() },
 }));
 
 import { handleRequest } from '@/entrypoints/background';
 
 describe('background account context messages', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it('opens a validated X search in a new tab', async () => {
+    const openTab = vi.fn().mockResolvedValue({ id: 7 });
+
+    await expect(handleRequest({
+      type: 'contexto:search:open',
+      filters: {
+        viewerHandle: 'me', targetHandle: 'them', keyword: 'security',
+        since: '', until: '', direction: 'from-profile',
+      },
+    }, openTab)).resolves.toEqual({ ok: true });
+
+    expect(openTab).toHaveBeenCalledWith(expect.stringMatching(/^https:\/\/x\.com\/search\?/));
+  });
+
+  it('rejects invalid X search filters without opening a tab', async () => {
+    const openTab = vi.fn();
+
+    await expect(handleRequest({
+      type: 'contexto:search:open',
+      filters: {
+        viewerHandle: '', targetHandle: '', keyword: '',
+        since: '', until: '', direction: 'from-profile',
+      },
+    }, openTab)).resolves.toEqual({ ok: false, error: 'Invalid X search filters' });
+
+    expect(openTab).not.toHaveBeenCalled();
+  });
+
+  it('returns a safe error when the tab opener rejects', async () => {
+    const openTab = vi.fn().mockRejectedValue(new Error('Tabs unavailable'));
+
+    await expect(handleRequest({
+      type: 'contexto:search:open',
+      filters: {
+        viewerHandle: 'me', targetHandle: 'them', keyword: 'security',
+        since: '', until: '', direction: 'from-profile',
+      },
+    }, openTab)).resolves.toEqual({ ok: false, error: 'Tabs unavailable' });
+  });
 
   it('returns a successful isolated read-only lookup result', async () => {
     repositories.getAccountByHandle.mockResolvedValue({ id: 'account_1' });

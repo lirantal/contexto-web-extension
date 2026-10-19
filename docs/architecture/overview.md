@@ -4,7 +4,7 @@ Contexto is a WXT React extension with four user-facing surfaces:
 
 - `entrypoints/content.ts`: content script for `x.com` and `twitter.com`. It observes hover cards, profiles, and feed posts and injects Shadow DOM Contexto surfaces and sends messages to the background service worker.
 - `entrypoints/background.ts`: message/API boundary for content scripts. It owns profile upsert, metadata updates, explicit catch-up checkpoints, notes, contact-post bookmarks, tags, folders, settings, and search-history writes.
-- `entrypoints/popup`: compact quick-search UI for creating X search URLs.
+- `entrypoints/popup`: compact Quick X search UI for creating X search URLs.
 - `entrypoints/options`: full dashboard for account search, metadata editing, filtering, backup, and restore.
 
 The extension keeps domain logic in `src/`:
@@ -14,6 +14,8 @@ The extension keeps domain logic in `src/`:
 - `src/ui`: React components shared by extension pages and content-script UI.
 
 Feed post capture keeps stable and transient concerns separate: the shared X adapter canonicalizes supported status URLs, the X DOM boundary extracts only a validated primary post snapshot, the content UI sends typed bookmark requests, and the background persists through bookmark repositories. Dashboard bookmark review runs in the extension origin and reads the same repositories directly.
+
+Quick X search is one shared, persisted workflow on two surfaces: the toolbar popup and an always-expanded section of Contexto's X right-sidebar workspace. Both instances share the viewer and target handles, keyword, date filters, saved-account suggestions, free-form target entry, target autosuggest history, validation, and validated new-tab launch behavior. Field edits cross the typed background-message boundary as narrow patches; the background serializes each settings, search-state, and target-history promotion stream so concurrent extension surfaces do not erase unrelated fields. The X content script mounts its workspace in a Contexto-owned closed Shadow DOM root immediately before X's validated native search form; the native X form and any separately governed native sidebar widgets stay X-owned.
 
 ## Design Principles
 

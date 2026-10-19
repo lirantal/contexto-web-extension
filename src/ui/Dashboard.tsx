@@ -36,6 +36,7 @@ import {
   normalizeContextoSettings,
   settingsItem,
 } from '@/src/shared/settings';
+import type { ContextoSettingsPersistence } from '@/src/shared/quick-x-search-persistence';
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
 import { getAdjacentAccountId } from './account-navigation';
 import { AccountBookmarks } from './AccountBookmarks';
@@ -43,7 +44,11 @@ import { FuzzyTextCombobox } from './FuzzyTextCombobox';
 
 const searchDirections: SearchDirection[] = ['me-to-them', 'them-to-me', 'from-profile', 'to-profile', 'mentions'];
 
-export function Dashboard() {
+export function Dashboard({
+  settingsPersistence,
+}: {
+  settingsPersistence: ContextoSettingsPersistence;
+}) {
   const [filters, setFilters] = useState<AccountFilters>({});
   const [selectedId, setSelectedId] = useState<string>();
   const [settings, setSettings] = useState<ContextoSettings>(defaultSettings);
@@ -110,9 +115,9 @@ export function Dashboard() {
     activeRowRef.current?.scrollIntoView({ block: 'nearest' });
   }, [selected?.id]);
 
-  async function saveSettings(next: ContextoSettings) {
-    setSettings(next);
-    await settingsItem.setValue(next);
+  async function saveSettings(patch: Partial<ContextoSettings>) {
+    setSettings((current) => ({ ...current, ...patch }));
+    await settingsPersistence.updateSettings(patch);
   }
 
   async function addAccount() {
@@ -214,7 +219,7 @@ export function Dashboard() {
           <input
             id="my-x-handle"
             value={settings.myXHandle}
-            onChange={(event) => saveSettings({ ...settings, myXHandle: event.target.value })}
+            onChange={(event) => saveSettings({ myXHandle: event.target.value })}
             placeholder="@your_handle"
           />
           <label className="checkbox-field">
@@ -222,7 +227,6 @@ export function Dashboard() {
               type="checkbox"
               checked={settings.showNativeXSidebarWidgets}
               onChange={(event) => saveSettings({
-                ...settings,
                 showNativeXSidebarWidgets: event.target.checked,
               })}
             />

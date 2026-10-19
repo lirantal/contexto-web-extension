@@ -22,7 +22,7 @@ These documents describe Contexto's current architecture, behavior, development 
 - [Folders and tags](features/folders-tags.md) — metadata grouping behavior.
 - [Message and profile search](features/message-profile-search.md) — X interaction-search workflows.
 - [Profile metadata](features/profile-metadata.md) — hover, profile, and editor interaction contracts.
-- [X search builder](features/x-search-builder.md) — popup query construction.
+- [X search builder](features/x-search-builder.md) — the shared toolbar-popup and always-expanded X-sidebar search workflow.
 - [Saved-contact feed context](features/feed-saved-contact-context.md) — local relationship context on saved authors in X feeds.
 - [Contact post bookmarks](features/contact-post-bookmarks.md) — capture X posts with reminders and revisit them per contact.
 - [Contact catch-up](features/contact-catch-up.md) — review a contact's X posts since an explicit checkpoint.

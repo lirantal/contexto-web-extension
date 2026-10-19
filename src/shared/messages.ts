@@ -6,11 +6,13 @@ import type {
   Bookmark,
   ContextoSettings,
   LookupData,
+  PopupSearchState,
   ProfileSnapshot,
   RecordId,
   SearchHistory,
   XSearchFilters,
 } from './types';
+import type { TargetHandleHistoryEntry } from './target-handle-suggestions';
 
 export type ContextoRequest =
   | { type: 'contexto:account:ensure'; profile: ProfileSnapshot }
@@ -35,7 +37,10 @@ export type ContextoRequest =
   | { type: 'contexto:lookups:list' }
   | { type: 'contexto:settings:get' }
   | { type: 'contexto:settings:update'; patch: Partial<ContextoSettings> }
-  | { type: 'contexto:search:record'; accountId?: RecordId; filters: XSearchFilters; query: string; url: string };
+  | { type: 'contexto:search-state:update'; patch: Partial<PopupSearchState> }
+  | { type: 'contexto:target-history:promote'; handle: string }
+  | { type: 'contexto:search:record'; accountId?: RecordId; filters: XSearchFilters; query: string; url: string }
+  | { type: 'contexto:search:open'; filters: XSearchFilters };
 
 export type ContextoResponse =
   | { ok: true; account: AccountSummary }
@@ -46,5 +51,7 @@ export type ContextoResponse =
   | { ok: true; lookups: LookupData }
   | { ok: true; settings: ContextoSettings }
   | { ok: true; history: SearchHistory }
+  | { ok: true; searchState: PopupSearchState }
+  | { ok: true; targetHandleHistory: TargetHandleHistoryEntry[] }
   | { ok: true }
   | { ok: false; error: string };
