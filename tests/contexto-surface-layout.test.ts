@@ -64,8 +64,8 @@ describe('Contexto X surface layout contract', () => {
     const host = ruleBody(css, ':host([data-contexto-surface="sidebar-search"])');
     expect(host).toContain('position:relative;');
     expect(host).toContain('flex:none;');
-    expect(host).toContain('margin:12px 0 16px;');
-    expect(host).toContain('max-height:calc(100dvh - 24px);');
+    expect(host).toContain('margin:72px 0 16px;');
+    expect(host).toContain('max-height:calc(100dvh - 84px);');
     expect(host).toContain('overflow:auto;');
     expect(host).toContain('overscroll-behavior:contain;');
   });

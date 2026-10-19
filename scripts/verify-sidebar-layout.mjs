@@ -28,14 +28,16 @@ try {
     };
   });
 
-  for (const theme of ['light', 'dark']) {
-    const fixture = await readFile('tests/fixtures/x/sidebar-constrained-search-shell.html', 'utf8');
+  const cases = ['sidebar-constrained-search-shell', 'sidebar-pinned-native-search']
+    .flatMap((fixtureName) => ['light', 'dark'].map((theme) => ({ fixtureName, theme })));
+  for (const { fixtureName, theme } of cases) {
+    const fixture = await readFile(`tests/fixtures/x/${fixtureName}.html`, 'utf8');
     const page = await context.newPage();
     await page.setViewportSize({ width: 1440, height: 900 });
     await context.route('**/*', (route) => route.fulfill({
       contentType: 'text/html',
       body: `<style>
-        body { margin:0; font-family:Arial,sans-serif; background:${theme === 'dark' ? '#000' : '#fff'}; }
+        body { margin:0; font-family:Arial,sans-serif; color-scheme:${theme}; background:${theme === 'dark' ? '#000' : '#fff'}; }
         main { display:flex; justify-content:flex-end; min-height:200vh; padding-right:24px; }
       </style><main>${fixture}</main>`,
     }));
@@ -100,10 +102,19 @@ try {
       const bounds = await host.boundingBox();
       assert.ok(bounds.y >= 12, 'workspace top must be visible');
       assert.ok(bounds.y + bounds.height <= height - 12 + 1, 'workspace must fit the viewport');
+      if (fixtureName === 'sidebar-pinned-native-search') {
+        const searchShell = await page.locator('[data-testid="search-shell"]').boundingBox();
+        assert.ok(bounds.y >= searchShell.y + searchShell.height + 12,
+          'workspace must start at least 12px below the pinned native search shell');
+      }
       const label = await inShadow(function () {
         return this.querySelector('.contexto-sidebar-search label').getBoundingClientRect().toJSON();
       });
       assert.ok(label.top >= bounds.y && label.bottom <= bounds.y + bounds.height);
+      assert.ok(await page.evaluate(({ x, y }) =>
+        document.elementFromPoint(x, y)?.matches('[data-contexto-surface="sidebar-search"]'),
+      { x: label.left + label.width / 2, y: label.top + label.height / 2 }),
+      'the first label must be unobscured by native X content');
 
       await host.evaluate((element) => { element.scrollTop = element.scrollHeight; });
       const lastAction = await inShadow(function () {
@@ -124,7 +135,7 @@ try {
       await nativeInput.fill('Native X search still works');
       await expect(nativeInput).toHaveValue('Native X search still works');
       await expect(host).toHaveCount(1);
-      console.log(`${theme}, ${height}px: first label visible, last action launches, native search usable (old top ${Math.round(oldTop)}px)`);
+      console.log(`${fixtureName}, ${theme}, ${height}px: first label unobscured, last action launches, native search usable (old top ${Math.round(oldTop)}px)`);
     }
     await page.close();
     await context.unroute('**/*');
