@@ -29,8 +29,9 @@ try {
   });
 
   const cases = ['sidebar-constrained-search-shell', 'sidebar-pinned-native-search']
-    .flatMap((fixtureName) => ['light', 'dark'].map((theme) => ({ fixtureName, theme })));
-  for (const { fixtureName, theme } of cases) {
+    .flatMap((fixtureName) => ['light', 'dark'].flatMap((theme) =>
+      ['/layout_check', '/layout_check/status/123456789'].map((path) => ({ fixtureName, theme, path }))));
+  for (const { fixtureName, theme, path } of cases) {
     const fixture = await readFile(`tests/fixtures/x/${fixtureName}.html`, 'utf8');
     const page = await context.newPage();
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -38,10 +39,10 @@ try {
       contentType: 'text/html',
       body: `<style>
         body { margin:0; font-family:Arial,sans-serif; color-scheme:${theme}; background:${theme === 'dark' ? '#000' : '#fff'}; }
-        main { display:flex; justify-content:flex-end; min-height:200vh; padding-right:24px; }
+        main { display:flex; justify-content:flex-end; min-height:4000px; padding-right:24px; }
       </style><main>${fixture}</main>`,
     }));
-    await page.goto('https://x.com/contexto_layout_check');
+    await page.goto(`https://x.com${path}`);
     const host = page.locator('[data-contexto-surface="sidebar-search"]');
     await host.waitFor();
     await expect(host).toHaveAttribute('data-theme', theme);
@@ -82,6 +83,12 @@ try {
     await expect.poll(() => inShadow(function () {
       return this.querySelector('input[aria-label="My X handle"]').disabled;
     })).toBe(false);
+    await expect.poll(() => inShadow(function () {
+      return this.querySelector('input[role="combobox"]').value;
+    })).toBe('@layout_check');
+    await page.evaluate(() => {
+      window.contextoOriginalHost = document.querySelector('[data-contexto-surface="sidebar-search"]');
+    });
     await inShadow(function () { this.querySelector('input[aria-label="My X handle"]').focus(); });
     await page.keyboard.press('ControlOrMeta+A');
     await page.keyboard.type('layout_viewer');
@@ -116,6 +123,24 @@ try {
       { x: label.left + label.width / 2, y: label.top + label.height / 2 }),
       'the first label must be unobscured by native X content');
 
+      // Scroll both directions with the internal scroll area at the top.
+      for (const scrollY of [480, 1400, 240]) {
+        await page.evaluate((y) => window.scrollTo(0, y), scrollY);
+        await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrollY);
+        await expect.poll(async () => Math.round((await host.boundingBox()).y)).toBe(72);
+        const scrolledBounds = await host.boundingBox();
+        assert.ok(scrolledBounds.y + scrolledBounds.height <= height - 12 + 1,
+          'the sticky workspace must fit the viewport after page scrolling');
+        const firstLabel = await inShadow(function () {
+          return this.querySelector('.contexto-sidebar-search label').getBoundingClientRect().toJSON();
+        });
+        assert.ok(firstLabel.top >= scrolledBounds.y && firstLabel.bottom <= scrolledBounds.y + scrolledBounds.height);
+        assert.ok(await page.evaluate(({ x, y }) =>
+          document.elementFromPoint(x, y)?.matches('[data-contexto-surface="sidebar-search"]'),
+        { x: firstLabel.left + firstLabel.width / 2, y: firstLabel.top + firstLabel.height / 2 }),
+        'the first label must stay unobscured after page scrolling');
+      }
+
       await host.evaluate((element) => { element.scrollTop = element.scrollHeight; });
       const lastAction = await inShadow(function () {
         return this.querySelector('.search-action:last-child').getBoundingClientRect().toJSON();
@@ -135,8 +160,19 @@ try {
       await nativeInput.fill('Native X search still works');
       await expect(nativeInput).toHaveValue('Native X search still works');
       await expect(host).toHaveCount(1);
-      console.log(`${fixtureName}, ${theme}, ${height}px: first label unobscured, last action launches, native search usable (old top ${Math.round(oldTop)}px)`);
+      console.log(`${fixtureName}, ${theme}, ${path}, ${height}px: sticky after scrolling, first label unobscured, last action launches, native search usable (old top ${Math.round(oldTop)}px)`);
     }
+    await page.evaluate(() => history.pushState({}, '', '/layout_next/status/987654321'));
+    await expect.poll(() => inShadow(function () {
+      return this.querySelector('input[role="combobox"]').value;
+    })).toBe('@layout_next');
+    await page.evaluate(() => history.back());
+    await expect.poll(() => inShadow(function () {
+      return this.querySelector('input[role="combobox"]').value;
+    })).toBe('@layout_check');
+    assert.ok(await page.evaluate(() => window.contextoOriginalHost ===
+      document.querySelector('[data-contexto-surface="sidebar-search"]')),
+    'navigation must preserve the mounted workspace');
     await page.close();
     await context.unroute('**/*');
   }

@@ -24,6 +24,25 @@ async function flushMutations() {
 }
 
 describe('X sidebar search observer', () => {
+  it('updates the mounted workspace URL on navigation without remounting', async () => {
+    document.body.innerHTML = nativeSearchFixture;
+    let url = 'https://x.com/alice';
+    const updatePageUrl = vi.fn();
+    const cleanup = Object.assign(vi.fn(), { isConnected: () => true, updatePageUrl });
+    const mount = vi.fn(() => cleanup);
+    const observer = createXSidebarSearchObserver({ root: document.body, mount, currentUrl: () => url });
+    await flushMutations();
+    expect(updatePageUrl).toHaveBeenLastCalledWith(url);
+    url = 'https://x.com/bob/status/123';
+    observer.refresh();
+    await flushMutations();
+    expect(updatePageUrl).toHaveBeenLastCalledWith(url);
+    expect(mount).toHaveBeenCalledOnce();
+    expect(cleanup).not.toHaveBeenCalled();
+    observer.disconnect();
+    expect(cleanup).toHaveBeenCalledOnce();
+  });
+
   it('hides native widgets by default, restores them lower on demand, and reverses every style change', async () => {
     document.body.innerHTML = nativeSearchFixture;
     const modules = Array.from(document.querySelectorAll<HTMLElement>('[data-sidebar-module]'));

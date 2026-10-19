@@ -1,4 +1,4 @@
-import type { XSurfaceCleanup } from './surface-observer';
+import type { XSidebarSearchCleanup } from './mount-contexto-sidebar-search';
 import { resolveXSidebarSearchPlacement } from './sidebar-search-placement';
 
 const nativeWidgetMarker = 'data-contexto-native-sidebar-widget';
@@ -12,11 +12,13 @@ interface NativeWidgetState {
 export function createXSidebarSearchObserver({
   root,
   mount,
+  currentUrl = () => location.href,
 }: {
   root: HTMLElement;
-  mount: (nativeForm: HTMLFormElement) => XSurfaceCleanup;
+  mount: (nativeForm: HTMLFormElement) => XSidebarSearchCleanup;
+  currentUrl?: () => string;
 }) {
-  let cleanup: XSurfaceCleanup | undefined;
+  let cleanup: XSidebarSearchCleanup | undefined;
   let mountedForm: HTMLFormElement | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let showNativeWidgets = false;
@@ -98,6 +100,7 @@ export function createXSidebarSearchObserver({
       mountedForm = form;
       if (form) cleanup = mount(form);
     }
+    cleanup?.updatePageUrl?.(currentUrl());
     syncNativeWidgets(form ? resolveNativeWidgets(form) : []);
   };
 
@@ -110,6 +113,7 @@ export function createXSidebarSearchObserver({
   queue();
 
   return {
+    refresh: queue,
     setShowNativeWidgets(show: boolean) {
       showNativeWidgets = show;
       applyNativeWidgetPolicy();

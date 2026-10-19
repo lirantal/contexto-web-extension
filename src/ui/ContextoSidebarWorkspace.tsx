@@ -1,4 +1,5 @@
 import React from 'react';
+import { parseXSearchTargetUrl } from '@/src/shared/platforms/x';
 import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
 import { createQuickXSearchPersistence } from '@/src/shared/quick-x-search-persistence';
 import type { XSearchFilters } from '@/src/shared/types';
@@ -9,7 +10,8 @@ type Send = (message: ContextoRequest) => Promise<ContextoResponse>;
 
 export function ContextoSidebarWorkspace({
   send,
-}: { send: Send }): React.JSX.Element {
+  pageUrl,
+}: { send: Send; pageUrl?: string }): React.JSX.Element {
   const persistence = React.useMemo(() => createQuickXSearchPersistence(send), [send]);
 
   const loadAccountSuggestions = React.useCallback(async () => {
@@ -40,6 +42,7 @@ export function ContextoSidebarWorkspace({
       <section aria-label="Quick X search">
         <QuickXSearch
           surface="sidebar"
+          pageTargetHandle={pageUrl ? parseXSearchTargetUrl(pageUrl) : undefined}
           loadAccountSuggestions={loadAccountSuggestions}
           launchSearch={launchSearch}
           persistence={persistence}

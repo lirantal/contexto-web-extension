@@ -5,6 +5,8 @@ import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
 import type { XSurfaceCleanup } from './surface-observer';
 import { resolveXSidebarSearchPlacement } from './sidebar-search-placement';
 
+export type XSidebarSearchCleanup = XSurfaceCleanup & { updatePageUrl?: (url: string) => void };
+
 export interface MountContextoSidebarSearchOptions {
   nativeForm: HTMLFormElement;
   send: (message: ContextoRequest) => Promise<ContextoResponse>;
@@ -17,10 +19,10 @@ export function mountContextoSidebarSearch({
   send,
   css,
   theme,
-}: MountContextoSidebarSearchOptions): XSurfaceCleanup {
+}: MountContextoSidebarSearchOptions): XSidebarSearchCleanup {
   const placement = resolveXSidebarSearchPlacement(nativeForm);
   if (!placement) {
-    const cleanup: XSurfaceCleanup = () => {};
+    const cleanup: XSidebarSearchCleanup = () => {};
     cleanup.isConnected = () => false;
     return cleanup;
   }
@@ -36,13 +38,20 @@ export function mountContextoSidebarSearch({
   nativeBranch.before(mountHost);
 
   const root = createRoot(app);
-  flushSync(() => {
-    root.render(<ContextoSidebarWorkspace send={send} />);
+  let pageUrl = location.href;
+  const render = () => flushSync(() => {
+    root.render(<ContextoSidebarWorkspace send={send} pageUrl={pageUrl} />);
   });
+  render();
 
-  const cleanup: XSurfaceCleanup = () => {
+  const cleanup: XSidebarSearchCleanup = () => {
     root.unmount();
     mountHost.remove();
+  };
+  cleanup.updatePageUrl = (url) => {
+    if (pageUrl === url) return;
+    pageUrl = url;
+    render();
   };
   cleanup.isConnected = () => {
     const current = resolveXSidebarSearchPlacement(nativeForm);

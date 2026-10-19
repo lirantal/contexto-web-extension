@@ -62,7 +62,7 @@ function renderQuickSearch(options: Partial<React.ComponentProps<typeof QuickXSe
 
   render(
     <QuickXSearch
-      surface="sidebar"
+      surface={options.surface ?? "sidebar"}
       loadAccountSuggestions={loadAccountSuggestions}
       launchSearch={launchSearch}
       persistence={persistence}
@@ -92,6 +92,51 @@ describe('QuickXSearch', () => {
     mocks.watchSettings.mockReturnValue(mocks.unwatchSettings);
     mocks.watchSearchState.mockReturnValue(mocks.unwatchSearchState);
     mocks.watchHistory.mockReturnValue(mocks.unwatchHistory);
+  });
+
+  it.each(['sidebar', 'popup'] as const)('applies date shortcuts together and allows manual overrides in %s', async (surface) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 19, 0, 15));
+    try {
+      const { launchSearch } = renderQuickSearch({ surface });
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Last 30 days' })).toBeEnabled());
+      for (const [label, since] of [
+        ['Last 30 days', '2026-09-19'],
+        ['Last 90 days', '2026-07-21'],
+        ['Last 12 months', '2025-10-19'],
+      ]) {
+        fireEvent.click(screen.getByRole('button', { name: label }));
+        expect(screen.getByLabelText('Since')).toHaveValue(since);
+        expect(screen.getByLabelText('Until')).toHaveValue('2026-10-19');
+        expect(mocks.updateSearchState).toHaveBeenLastCalledWith({ since, until: '2026-10-19' });
+        expect(screen.getByRole('button', { name: /Posts by other person/ })).toHaveAttribute(
+          'title', 'from:them security since:' + since + ' until:2026-10-19');
+      }
+      expect(mocks.updateSearchState).toHaveBeenCalledTimes(3);
+      expect(screen.getByLabelText('My X handle')).toHaveValue('@me');
+      expect(screen.getByLabelText(/Other person/)).toHaveValue('@them');
+      expect(screen.getByLabelText('Keyword')).toHaveValue('security');
+      expect(launchSearch).not.toHaveBeenCalled();
+      expect(mocks.promoteTargetHandle).not.toHaveBeenCalled();
+      fireEvent.change(screen.getByLabelText('Since'), { target: { value: '2026-10-01' } });
+      expect(screen.getByLabelText('Since')).toHaveValue('2026-10-01');
+      expect(screen.getByLabelText('Until')).toHaveValue('2026-10-19');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('waits for the complete date range to persist before launching', async () => {
+    const write = createDeferred<{ targetHandle: string; keyword: string; since: string; until: string }>();
+    mocks.updateSearchState.mockReturnValue(write.promise);
+    const { launchSearch } = renderQuickSearch();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Last 30 days' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Last 30 days' }));
+    fireEvent.click(screen.getByRole('button', { name: /Posts by other person/ }));
+    expect(launchSearch).not.toHaveBeenCalled();
+    const patch = mocks.updateSearchState.mock.calls[0][0];
+    await act(async () => write.resolve({ targetHandle: '@them', keyword: 'security', ...patch }));
+    await waitFor(() => expect(launchSearch).toHaveBeenCalledWith(expect.objectContaining(patch)));
   });
 
   it('restores each persisted search field', async () => {

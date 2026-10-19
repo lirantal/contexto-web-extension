@@ -80,6 +80,18 @@ export function parseXPostUrl(rawUrl: string): { handle: string; postId: string;
   return { handle, postId, postUrl: `https://x.com/${handle}/status/${postId}` };
 }
 
+// Only profile views and canonical conversation URLs provide search identity.
+export function parseXSearchTargetUrl(rawUrl: string): string | undefined {
+  let url: URL;
+  try { url = new URL(rawUrl); } catch { return undefined; }
+  if (!/^https?:$/.test(url.protocol)) return undefined;
+  const post = parseXPostUrl(rawUrl);
+  if (post) return post.handle;
+  if (!/^\/[A-Za-z0-9_]{1,15}\/?$/.test(url.pathname)) return undefined;
+  const profile = parseXProfileUrl(rawUrl);
+  return profile ? normalizeXHandle(profile.handle) : undefined;
+}
+
 export function buildXSearchQuery(filters: XSearchFilters): string {
   const viewer = filters.viewerHandle ? normalizeXHandle(filters.viewerHandle) : '';
   const target = filters.targetHandle ? normalizeXHandle(filters.targetHandle) : '';

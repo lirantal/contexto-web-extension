@@ -60,6 +60,27 @@
   opacity: 0.55;
 }
 
+.contexto-quick-search .date-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.contexto-quick-search .date-shortcuts button {
+  min-height: 36px;
+  color: var(--ctx-accent);
+  font-size: 12px;
+}
+
+.contexto-quick-search .date-shortcuts button:hover {
+  background: var(--ctx-hover);
+}
+
+.contexto-quick-search .date-shortcuts button:focus-visible {
+  outline: 2px solid var(--ctx-accent);
+  outline-offset: 2px;
+}
+
 .contexto-quick-search .date-row > label {
   flex: 1;
 }

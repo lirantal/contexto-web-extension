@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
+import { xSearchDateRange, type XSearchTimeframe } from '@/src/shared/x-search-date-range';
 import {
   buildXSearchQuery,
   canRunXSearch,
@@ -31,6 +32,7 @@ export interface QuickXSearchProps {
   launchSearch: (filters: XSearchFilters) => Promise<void>;
   persistence: QuickXSearchPersistence;
   surface: 'popup' | 'sidebar';
+  pageTargetHandle?: string;
 }
 
 const actions: Array<{ direction: SearchDirection; label: string }> = [
@@ -38,6 +40,12 @@ const actions: Array<{ direction: SearchDirection; label: string }> = [
   { direction: 'them-to-me', label: 'Posts to me' },
   { direction: 'from-profile', label: 'Posts by other person' },
   { direction: 'mentions', label: 'Mentions of other person' },
+];
+
+const timeframes: Array<{ value: XSearchTimeframe; label: string }> = [
+  { value: '30-days', label: 'Last 30 days' },
+  { value: '90-days', label: 'Last 90 days' },
+  { value: '12-months', label: 'Last 12 months' },
 ];
 
 interface DirtyField {
@@ -102,6 +110,7 @@ export function QuickXSearch({
   launchSearch,
   persistence,
   surface,
+  pageTargetHandle,
 }: QuickXSearchProps): React.JSX.Element {
   const [settings, setSettings] = useState<ContextoSettings>(defaultSettings);
   const [searchState, setSearchState] = useState<PopupSearchState>(defaultPopupSearchState);
@@ -211,20 +220,36 @@ export function QuickXSearch({
     });
   }
 
-  function updateSearchField<Key extends keyof PopupSearchState>(field: Key, value: PopupSearchState[Key]) {
-    const next = withUpdatedField(latestSearchState.current, field, value);
-    if (!next) return;
+  const updateSearchFields = useCallback((patch: Partial<PopupSearchState>) => {
+    const current = latestSearchState.current;
+    const fields = (Object.keys(patch) as Array<keyof PopupSearchState>)
+      .filter((field) => !Object.is(current[field], patch[field]));
+    if (fields.length === 0) return;
 
     searchStateVersion.current += 1;
-    const dirty = markDirtyField(dirtySearchState.current, field, value);
+    const dirty = fields.map((field) => ({
+      field,
+      entry: markDirtyField(dirtySearchState.current, field, patch[field]),
+    }));
+    const next = { ...current, ...patch };
     latestSearchState.current = next;
     setSearchState(next);
-    const write = persistence.updateSearchState({ [field]: value });
+    const write = persistence.updateSearchState(patch);
     pendingSearchStateWrite.current = write;
     void write.catch(() => {
-      forgetDirtyField(dirtySearchState.current, field, dirty);
+      dirty.forEach(({ field, entry }) => forgetDirtyField(dirtySearchState.current, field, entry));
     });
+  }, [persistence]);
+
+  function updateSearchField<Key extends keyof PopupSearchState>(field: Key, value: PopupSearchState[Key]) {
+    updateSearchFields({ [field]: value });
   }
+
+  useEffect(() => {
+    if (surface === 'sidebar' && searchStateReady && pageTargetHandle) {
+      updateSearchFields({ targetHandle: '@' + pageTargetHandle });
+    }
+  }, [surface, searchStateReady, pageTargetHandle, updateSearchFields]);
 
   function filtersFor(
     direction: SearchDirection,
@@ -357,6 +382,18 @@ export function QuickXSearch({
               onChange={(event) => updateSearchField('until', event.target.value)}
             />
           </label>
+        </div>
+        <div className="date-shortcuts" role="group" aria-label="Quick date ranges">
+          {timeframes.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              disabled={!searchStateReady}
+              onClick={() => updateSearchFields(xSearchDateRange(value))}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </section>
 

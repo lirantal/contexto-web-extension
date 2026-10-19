@@ -60,9 +60,10 @@ describe('Contexto X surface layout contract', () => {
     expect(darkHost).toContain('--ctx-hover:#23352e;');
   });
 
-  it('keeps the sidebar workspace in flow and scrollable within the viewport', () => {
+  it('keeps the sidebar workspace sticky below native search and scrollable within the viewport', () => {
     const host = ruleBody(css, ':host([data-contexto-surface="sidebar-search"])');
-    expect(host).toContain('position:relative;');
+    expect(host).toContain('position:sticky;');
+    expect(host).toContain('top:72px;');
     expect(host).toContain('flex:none;');
     expect(host).toContain('margin:72px 0 16px;');
     expect(host).toContain('max-height:calc(100dvh - 84px);');

@@ -101,6 +101,43 @@ describe('ContextoSidebarWorkspace', () => {
     mocks.watchHistory.mockReturnValue(() => undefined);
   });
 
+  it('prefills after saved state loads, follows navigation, and preserves manual edits on the same view', async () => {
+    const user = userEvent.setup();
+    let resolveState!: (state: { targetHandle: string; keyword: string; since: string; until: string }) => void;
+    mocks.getSearchState.mockReturnValue(new Promise((resolve) => { resolveState = resolve; }));
+    const send = vi.fn(async (message: ContextoRequest) => {
+      const persisted = persistenceResponse(message);
+      if (persisted) return persisted;
+      if (message.type === 'contexto:account:list') return { ok: true as const, accounts: [] };
+      return { ok: true as const };
+    });
+    const { rerender } = render(<ContextoSidebarWorkspace send={send} pageUrl="https://x.com/Alice_Dev" />);
+    const target = screen.getByRole('combobox', { name: "Other person's X handle" });
+    expect(target).toBeDisabled();
+    resolveState({ targetHandle: '@old_target', keyword: 'saved keyword', since: '2026-01-01', until: '' });
+    await waitFor(() => expect(target).toHaveValue('@alice_dev'));
+    expect(screen.getByRole('textbox', { name: 'Keyword' })).toHaveValue('saved keyword');
+    expect(screen.getByLabelText('Since')).toHaveValue('2026-01-01');
+    expect(send).toHaveBeenCalledWith({ type: 'contexto:search-state:update', patch: { targetHandle: '@alice_dev' } });
+
+    await user.clear(target);
+    await user.type(target, '@manual');
+    rerender(<ContextoSidebarWorkspace send={send} pageUrl="https://x.com/Alice_Dev" />);
+    expect(target).toHaveValue('@manual');
+
+    rerender(<ContextoSidebarWorkspace send={send} pageUrl="https://x.com/Bob_Dev/status/123" />);
+    await waitFor(() => expect(target).toHaveValue('@bob_dev'));
+    await user.click(screen.getByRole('button', { name: /Posts by other person/ }));
+    expect(send).toHaveBeenCalledWith({ type: 'contexto:search:open', filters: expect.objectContaining({ targetHandle: 'bob_dev' }) });
+    const promotions = send.mock.calls.filter(([message]) => message.type === 'contexto:target-history:promote');
+    expect(promotions).toHaveLength(1);
+
+    rerender(<ContextoSidebarWorkspace send={send} pageUrl="https://x.com/home" />);
+    expect(target).toHaveValue('@bob_dev');
+    rerender(<ContextoSidebarWorkspace send={send} pageUrl="https://x.com/Alice_Dev" />);
+    await waitFor(() => expect(target).toHaveValue('@alice_dev'));
+  });
+
   it('composes account search and Quick X search with saved-account suggestions', async () => {
     const user = userEvent.setup();
     const send = vi.fn(async (message) => {

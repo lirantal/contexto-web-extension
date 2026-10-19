@@ -54,6 +54,7 @@ export default defineContentScript({
         theme: detectXTheme(nativeForm),
       }),
     });
+    ctx.addEventListener(window, 'wxt:locationchange', () => sidebarSearchObserver.refresh());
     const unwatchSidebarWidgetSetting = watchXSidebarWidgetSetting({
       getSettings: () => settingsItem.getValue(),
       watchSettings: (callback) => settingsItem.watch((value) => callback(value)),
