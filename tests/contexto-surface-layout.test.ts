@@ -39,22 +39,24 @@ describe('Contexto X surface layout contract', () => {
     expect(launcher).toContain('width:100%;');
   });
 
-  it('defines a complete light and dark palette for the isolated sidebar search host', () => {
+  it('defines a complete light and dark palette for every isolated X surface', () => {
     const lightHost = ruleBody(css, ':host([data-contexto-surface="sidebar-search"])');
-    expect(lightHost).toContain('--ctx-bg:#fff;');
-    expect(lightHost).toContain('--ctx-text:#0f1419;');
-    expect(lightHost).toContain('--ctx-muted:#536471;');
-    expect(lightHost).toContain('--ctx-border:#eff3f4;');
-    expect(lightHost).toContain('--ctx-accent:#5b3fd6;');
-    expect(lightHost).toContain('--ctx-link:#1d9bf0;');
+    const sharedLightPalette = ruleBody(css, ':host');
+    expect(sharedLightPalette).toContain('--ctx-bg:#f7f8f5;');
+    expect(sharedLightPalette).toContain('--ctx-panel:#fff;');
+    expect(sharedLightPalette).toContain('--ctx-text:#222822;');
+    expect(sharedLightPalette).toContain('--ctx-border:#cdd5ce;');
+    expect(sharedLightPalette).toContain('--ctx-accent:#0f7f76;');
+    expect(sharedLightPalette).toContain('--ctx-hover:#e8f3f1;');
+    expect(lightHost).toContain('color-scheme:light;');
 
-    const darkHost = ruleBody(css, ':host([data-contexto-surface="sidebar-search"][data-theme="dark"])');
-    expect(darkHost).toContain('--ctx-bg:#000;');
-    expect(darkHost).toContain('--ctx-text:#e7e9ea;');
-    expect(darkHost).toContain('--ctx-muted:#71767b;');
-    expect(darkHost).toContain('--ctx-border:#2f3336;');
-    expect(darkHost).toContain('--ctx-accent:#9b8afb;');
-    expect(darkHost).toContain('--ctx-link:#71c9ff;');
+    const darkHost = ruleBody(css, ':host([data-theme="dark"])');
+    expect(darkHost).toContain('--ctx-bg:#111714;');
+    expect(darkHost).toContain('--ctx-panel:#18201c;');
+    expect(darkHost).toContain('--ctx-text:#f1f4f1;');
+    expect(darkHost).toContain('--ctx-border:#435149;');
+    expect(darkHost).toContain('--ctx-accent:#55c7ba;');
+    expect(darkHost).toContain('--ctx-hover:#23352e;');
   });
 
   it('keeps the sidebar search clear of the viewport edge and native X search', () => {
@@ -73,6 +75,25 @@ describe('Contexto X surface layout contract', () => {
     const ownedEditor = ruleBody(css, '.contexto-surface[data-placement="docked"],.contexto-surface[data-placement="modal"]');
     expect(ownedEditor).toContain('container-type:inline-size;');
     expect(css).toContain('@container (min-width:380px) { .contexto-surface:not([data-placement="inline"]) .contexto-field-row { grid-template-columns:repeat(2,minmax(0,1fr)); } }');
+  });
+
+  it('uses the dashboard palette and shared geometry for embedded editors', () => {
+    const surface = css.match(/^[.]contexto-surface [{]([^}]*)[}]/m)?.[1] ?? '';
+    const section = ruleBody(css, '.contexto-form-section');
+    const input = css.match(/^input [{]([^}]*)[}]/m)?.[1] ?? '';
+    const button = css.match(/^button [{]([^}]*)[}]/m)?.[1] ?? '';
+    const chip = ruleBody(css, '.chip');
+    const suggestion = ruleBody(css, `.value-options .value-option:hover,
+.value-options .value-option.highlighted`);
+
+    expect(surface).toContain('background:var(--ctx-bg);');
+    expect(surface).toContain('border-radius:12px;');
+    expect(section).toContain('background:var(--ctx-panel);');
+    expect(input).toContain('border-radius:7px;');
+    expect(button).toContain('border-radius:7px;');
+    expect(chip).toContain('border-radius:7px;');
+    expect(suggestion).toContain('background:var(--ctx-hover);');
+    expect(suggestion).toContain('color:var(--ctx-accent-strong);');
   });
 
   it('makes structured sidebar results visibly keyboard focusable', () => {

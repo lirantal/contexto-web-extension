@@ -13,6 +13,20 @@ function ruleBody(selector: string) {
 }
 
 describe('dashboard metadata layout contract', () => {
+  it('uses the shared Contexto surface color and control radius', () => {
+    const root = ruleBody(':root');
+    const button = ruleBody(`button,
+.file-button`);
+    const chip = ruleBody('.chip');
+    const folder = ruleBody('.folder-chip');
+
+    expect(root).toContain('background: #f7f8f5;');
+    expect(button).toContain('border-radius: 7px;');
+    expect(chip).toContain('border-radius: 7px;');
+    expect(chip).toContain('background: #e8f3f1;');
+    expect(folder).toContain('background: #fff1d4;');
+  });
+
   it('allows long company and latest-note values to shrink and wrap', () => {
     const content = ruleBody('.account-row > .account-row-content');
     expect(content).toContain('min-width: 0;');
