@@ -44,9 +44,14 @@ describe('ContextoHoverLauncher', () => {
 
     expect(await screen.findByText('Saved')).toBeVisible();
     expect(screen.getByText('Theo Browne')).toBeVisible();
-    expect(screen.getByText('Developer · Ping Labs')).toBeVisible();
+    expect(screen.getByText('Role:')).toBeVisible();
+    expect(screen.getByText('Developer')).toBeVisible();
+    expect(screen.getByText('Company:')).toBeVisible();
+    expect(screen.getByText('Ping Labs')).toBeVisible();
+    expect(screen.getByText('Tags:')).toBeVisible();
     expect(screen.getByText('Founder')).toBeVisible();
     expect(screen.getByText('Security')).toBeVisible();
+    expect(screen.queryByText('Developer · Ping Labs')).not.toBeInTheDocument();
   });
 
   it('omits empty optional metadata from a saved summary', async () => {
@@ -57,8 +62,55 @@ describe('ContextoHoverLauncher', () => {
     renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: saved }));
 
     expect(await screen.findByText('Theo')).toBeVisible();
-    expect(screen.queryByTestId('contexto-hover-organization')).not.toBeInTheDocument();
+    expect(screen.queryByText('Role:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Company:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tags:')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-hover-role')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-hover-company')).not.toBeInTheDocument();
     expect(screen.queryByTestId('contexto-hover-tags')).not.toBeInTheDocument();
+  });
+
+  it('omits empty and whitespace-only imported metadata without orphan labels', async () => {
+    const saved = {
+      id: 'account_1', platform: 'x' as const, handle: 'theo', normalizedHandle: 'theo',
+      displayName: 'Theo', profileUrl: 'https://x.com/theo', role: '',
+      company: { id: 'company_1', name: '  ', normalizedName: '', updatedAt: '2026-07-12' },
+      tags: [
+        { id: 'tag_1', name: '', normalizedName: '', updatedAt: '2026-07-12' },
+        { id: 'tag_2', name: '\t', normalizedName: '', updatedAt: '2026-07-12' },
+      ],
+      folders: [],
+    };
+    renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: saved }));
+
+    expect(await screen.findByText('Theo')).toBeVisible();
+    expect(screen.queryByTestId('contexto-hover-role')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-hover-company')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-hover-tags')).not.toBeInTheDocument();
+  });
+
+  it('preserves original nonblank metadata text while filtering blank tag names', async () => {
+    const saved = {
+      id: 'account_1', platform: 'x' as const, handle: 'theo', normalizedHandle: 'theo',
+      displayName: 'Theo', profileUrl: 'https://x.com/theo', role: '  Developer  ',
+      company: { id: 'company_1', name: '  Ping Labs  ', normalizedName: 'ping labs', updatedAt: '2026-07-12' },
+      tags: [
+        { id: 'tag_1', name: ' ', normalizedName: '', updatedAt: '2026-07-12' },
+        { id: 'tag_2', name: '  Security  ', normalizedName: 'security', updatedAt: '2026-07-12' },
+      ],
+      folders: [],
+    };
+    renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: saved }));
+
+    expect(await screen.findByText('Theo')).toBeVisible();
+    expect(screen.getByTestId('contexto-hover-role').querySelector('.contexto-metadata-value')?.textContent)
+      .toBe('  Developer  ');
+    expect(screen.getByTestId('contexto-hover-company').querySelector('.contexto-metadata-value')?.textContent)
+      .toBe('  Ping Labs  ');
+    expect(screen.getByTestId('contexto-hover-tags').querySelector('.contexto-hover-tag')?.textContent)
+      .toBe('  Security  ');
+    expect(screen.getByTestId('contexto-hover-tags').querySelectorAll('.contexto-hover-tag'))
+      .toHaveLength(1);
   });
 
   it('opens on pointer-down without relying on pointerType before X can remove the hover card', async () => {

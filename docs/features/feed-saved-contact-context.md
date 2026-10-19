@@ -20,13 +20,14 @@ Every saved contact also offers **Add quick note**, independent of whether the s
 
 ## Summary contents
 
-The saved relationship summary omits empty fields and may show:
+Every populated saved metadata value has a visible field label. The summary may show:
 
-- Display name.
-- Role and company.
-- Relationship source.
-- Tags and folders.
-- Latest note.
+- `Role` and `Company` as separate fields.
+- `How you know them` for the relationship source.
+- `Tags` and `Folders` before their chip collections.
+- `Latest note` before the saved note text.
+
+The display name remains an unlabeled identity heading. Empty metadata fields and their labels are omitted.
 
 **Open full context** delegates to the existing Contexto-owned profile editor. **View our interactions** performs outbound navigation only. Opening or reading the compact panel does not write data.
 

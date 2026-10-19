@@ -23,3 +23,9 @@ The right-rail or modal editor is owned by Contexto, so it stays mounted when X 
 The full-profile editor is inline and remains visible after Save or Cancel. Save repopulates it from the authoritative account, while Cancel restores persisted values. Unsaved drafts remain memory-only.
 
 The dashboard exposes the same metadata in a larger offline editing view.
+
+## Read-only metadata labels
+
+Compact read-only summaries use visible labels for every saved metadata value they display. The canonical labels are **Role**, **Company**, **How you know them**, **Tags**, **Folders**, and **Latest note**. Empty fields omit both label and value. Display names, X handles, saved state, timestamps, and action/status text retain their existing identity or status presentation.
+
+This convention applies to the X feed panel, X hover summary, dashboard read-only account metadata, and toolbar-popup account suggestions. It does not cause a surface to display metadata that the surface previously omitted.

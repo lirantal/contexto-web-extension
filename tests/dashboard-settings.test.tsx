@@ -146,6 +146,78 @@ describe('dashboard target handle history settings', () => {
     }));
   });
 
+  it('labels read-only company and latest-note metadata', async () => {
+    mocks.accounts = [{
+      id: 'account-1', platform: 'x', handle: 'founder', normalizedHandle: 'founder',
+      displayName: 'Founder', profileUrl: 'https://x.com/founder', syncState: 'local-only',
+      createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      company: {
+        id: 'company-1', name: 'OpenAI', normalizedName: 'openai',
+        createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      },
+      latestNote: {
+        id: 'note-1', accountId: 'account-1', body: 'Follow up after the launch.', source: 'manual',
+        createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      },
+      tags: [], folders: [],
+    }];
+    render(<Dashboard />);
+
+    const accountRow = await screen.findByRole('button', { name: /Founder/ });
+    expect(accountRow).toHaveTextContent('@founder');
+    expect(within(accountRow).getByText('Company:')).toBeVisible();
+    expect(within(accountRow).getByText('OpenAI')).toBeVisible();
+
+    const details = screen.getByRole('region', { name: 'Account details' });
+    expect(within(details).getByText('Latest note:')).toBeVisible();
+    expect(within(details).getByText('Follow up after the launch.')).toBeVisible();
+  });
+
+  it('omits labels for empty read-only company and latest-note metadata', async () => {
+    mocks.accounts = [
+      {
+        id: 'empty-account', platform: 'x', handle: 'empty', normalizedHandle: 'empty',
+        displayName: 'Empty metadata', profileUrl: 'https://x.com/empty', syncState: 'local-only',
+        createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+        company: {
+          id: 'empty-company', name: '', normalizedName: '',
+          createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+        },
+        latestNote: {
+          id: 'empty-note', accountId: 'empty-account', body: '', source: 'manual',
+          createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+        },
+        tags: [], folders: [],
+      },
+      {
+        id: 'whitespace-account', platform: 'x', handle: 'whitespace', normalizedHandle: 'whitespace',
+        displayName: 'Whitespace metadata', profileUrl: 'https://x.com/whitespace', syncState: 'local-only',
+        createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+        company: {
+          id: 'whitespace-company', name: '  ', normalizedName: '',
+          createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+        },
+        latestNote: {
+          id: 'whitespace-note', accountId: 'whitespace-account', body: '  ', source: 'manual',
+          createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+        },
+        tags: [], folders: [],
+      },
+    ];
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    const emptyRow = await screen.findByRole('button', { name: /Empty metadata/ });
+    const details = screen.getByRole('region', { name: 'Account details' });
+    expect(within(emptyRow).queryByText('Company:')).not.toBeInTheDocument();
+    expect(within(details).queryByText('Latest note:')).not.toBeInTheDocument();
+
+    const whitespaceRow = screen.getByRole('button', { name: /Whitespace metadata/ });
+    expect(within(whitespaceRow).queryByText('Company:')).not.toBeInTheDocument();
+    await user.click(whitespaceRow);
+    expect(within(details).queryByText('Latest note:')).not.toBeInTheDocument();
+  });
+
   it('uses fuzzy saved-location suggestions when editing account metadata', async () => {
     mocks.accounts = [{
       id: 'account-1', platform: 'x', handle: 'founder', normalizedHandle: 'founder',

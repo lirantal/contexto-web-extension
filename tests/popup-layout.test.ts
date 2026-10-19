@@ -70,4 +70,14 @@ describe('popup layout contract', () => {
     expect(body).toContain('max-height: 600px;');
     expect(body).toContain('overflow-y: auto;');
   });
+
+  it('allows long company values to shrink and wrap within popup suggestions', () => {
+    const company = ruleBody(comboboxCss, '.target-handle-company');
+    expect(company).toContain('min-width: 0;');
+    expect(company).toContain('white-space: normal;');
+
+    const value = ruleBody(comboboxCss, '.target-handle-company-value');
+    expect(value).toContain('min-width: 0;');
+    expect(value).toContain('overflow-wrap: anywhere;');
+  });
 });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { TargetHandleCombobox } from '@/src/ui/TargetHandleCombobox';
@@ -24,9 +24,9 @@ const suggestions: TargetHandleSuggestion[] = [
   },
 ];
 
-function Harness() {
+function Harness({ availableSuggestions = suggestions }: { availableSuggestions?: TargetHandleSuggestion[] }) {
   const [value, setValue] = useState('');
-  return <TargetHandleCombobox value={value} suggestions={suggestions} onChange={setValue} />;
+  return <TargetHandleCombobox value={value} suggestions={availableSuggestions} onChange={setValue} />;
 }
 
 describe('TargetHandleCombobox', () => {
@@ -38,8 +38,10 @@ describe('TargetHandleCombobox', () => {
     await user.click(input);
     expect(input).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('listbox')).toBeVisible();
-    expect(screen.getByRole('option', { name: /Alice Example/ })).toHaveTextContent('@alice_dev');
-    expect(screen.getByRole('option', { name: /Alice Example/ })).toHaveTextContent('Acme');
+    const option = screen.getByRole('option', { name: /Alice Example/ });
+    expect(option).toHaveTextContent('@alice_dev');
+    expect(within(option).getByText('Company:')).toBeVisible();
+    expect(within(option).getByText('Acme')).toBeVisible();
     expect(screen.getAllByText('Recent')).toHaveLength(2);
 
     await user.type(input, 'pasted free text');
@@ -71,5 +73,28 @@ describe('TargetHandleCombobox', () => {
     await user.click(input);
     await user.click(screen.getByRole('option', { name: /@history_only/ }));
     expect(input).toHaveValue('@history_only');
+  });
+
+  it('omits company labels for empty and whitespace-only suggestion values', async () => {
+    const importedSuggestions: TargetHandleSuggestion[] = [
+      { ...suggestions[0], id: 'empty_company', handle: 'empty_company', companyName: '' },
+      { ...suggestions[0], id: 'blank_company', handle: 'blank_company', companyName: ' \t ' },
+    ];
+    render(<Harness availableSuggestions={importedSuggestions} />);
+
+    await userEvent.click(screen.getByRole('combobox', { name: "Other person's X handle" }));
+
+    for (const option of screen.getAllByRole('option')) {
+      expect(within(option).queryByText('Company:')).not.toBeInTheDocument();
+    }
+  });
+
+  it('preserves the original nonblank company text in a suggestion', async () => {
+    render(<Harness availableSuggestions={[{ ...suggestions[0], companyName: '  Acme  ' }]} />);
+
+    await userEvent.click(screen.getByRole('combobox', { name: "Other person's X handle" }));
+
+    const companyValue = screen.getByRole('option').querySelector('.target-handle-company-value');
+    expect(companyValue?.textContent).toBe('  Acme  ');
   });
 });
