@@ -283,6 +283,7 @@ export function Dashboard({
       <section className="detail-pane" aria-label="Account details">
         {selected ? <AccountDetail key={selected.id} account={selected} settings={settings}
           companySuggestions={lookups?.companies.map((company) => company.name) ?? []}
+          roleSuggestions={lookups?.roles ?? []}
           locationSuggestions={lookups?.locations ?? []} /> : <EmptyDetail />}
       </section>
     </main>
@@ -304,11 +305,13 @@ function AccountDetail({
   settings,
   companySuggestions,
   locationSuggestions,
+  roleSuggestions,
 }: {
   account: AccountSummary;
   settings: ContextoSettings;
   companySuggestions: string[];
   locationSuggestions: string[];
+  roleSuggestions: string[];
 }) {
   const [draft, setDraft] = useState({
     displayName: account.displayName,
@@ -440,7 +443,8 @@ function AccountDetail({
         <h3>Profile metadata</h3>
         <div className="form-grid two-columns">
           <label>Display name<input value={draft.displayName} onChange={(event) => setDraft({ ...draft, displayName: event.target.value })} /></label>
-          <label>Role<input value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value })} /></label>
+          <FuzzyTextCombobox label="Role" value={draft.role} suggestions={roleSuggestions}
+            onChange={(role) => setDraft({ ...draft, role })} />
           <FuzzyTextCombobox label="Company" value={draft.companyName} suggestions={companySuggestions}
             onChange={(companyName) => setDraft({ ...draft, companyName })} />
           <FuzzyTextCombobox label="Location" value={draft.location} suggestions={locationSuggestions}

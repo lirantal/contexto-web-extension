@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   companies: [] as Array<{ id: string; name: string }>,
   deleteAccount: vi.fn(),
   locations: [] as string[],
+  roles: [] as string[],
   getSettings: vi.fn(),
   markAccountCaughtUp: vi.fn(),
   removeFolder: vi.fn(),
@@ -23,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: vi.fn((_query, dependencies?: unknown[]) => dependencies?.length
     ? mocks.accounts
-    : { companies: mocks.companies, tags: [], folders: [], locations: mocks.locations }),
+    : { companies: mocks.companies, tags: [], folders: [], roles: mocks.roles, locations: mocks.locations }),
 }));
 
 vi.mock('@/src/data/repositories', () => ({
@@ -71,6 +72,7 @@ describe('dashboard target handle history settings', () => {
     mocks.accounts = [];
     mocks.companies = [];
     mocks.locations = [];
+    mocks.roles = [];
     mocks.getSettings.mockResolvedValue({ myXHandle: '@me', lastDashboardView: 'accounts' });
     mocks.updateSettings.mockImplementation(async (patch) => ({
       myXHandle: '@me',
@@ -342,6 +344,43 @@ describe('dashboard target handle history settings', () => {
 
     expect(mocks.updateAccount).toHaveBeenCalledWith('account-1', expect.objectContaining({
       location: 'San Francisco',
+    }));
+  });
+
+  it.each(['pointer', 'keyboard', 'free text'])('saves roles using %s in the dashboard', async (interaction) => {
+    mocks.accounts = [{
+      id: 'account-1', platform: 'x', handle: 'founder', normalizedHandle: 'founder',
+      displayName: 'Founder', profileUrl: 'https://x.com/founder', syncState: 'local-only',
+      createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      tags: [], folders: [],
+    }];
+    mocks.roles = ['Founder'];
+    const user = userEvent.setup();
+    renderDashboard();
+
+    const role = await screen.findByRole('combobox', { name: 'Role' });
+    const company = screen.getByLabelText('Company', { selector: 'input' });
+    const metadataGrid = role.closest('.form-grid')!;
+    const companyField = company.closest('.fuzzy-text-combobox');
+    const roleField = role.closest('.fuzzy-text-combobox');
+    const gridItemCount = metadataGrid.children.length;
+
+    expect(companyField?.parentElement).toBe(metadataGrid);
+    expect(roleField?.parentElement).toBe(metadataGrid);
+    await user.type(role, interaction === 'free text' ? 'New role' : 'fdr');
+    if (interaction !== 'free text') {
+      const suggestion = screen.getByRole('option', { name: 'Founder' });
+      expect(roleField).toContainElement(suggestion);
+      expect(Array.from(metadataGrid.children)).not.toContain(suggestion);
+      expect(metadataGrid.children).toHaveLength(gridItemCount);
+
+      if (interaction === 'pointer') await user.click(suggestion);
+      else await user.keyboard('{ArrowDown}{Enter}');
+    } else expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save metadata' }));
+
+    expect(mocks.updateAccount).toHaveBeenCalledWith('account-1', expect.objectContaining({
+      role: interaction === 'free text' ? 'New role' : 'Founder',
     }));
   });
 

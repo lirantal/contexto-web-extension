@@ -218,6 +218,7 @@ export interface LookupData {
   tags: Tag[];
   folders: Folder[];
   locations: string[];
+  roles: string[];
 }
 
 interface BackupDataV1 {

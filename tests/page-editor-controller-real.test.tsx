@@ -15,7 +15,7 @@ describe('page editor controller with the real editor', () => {
     const lookup = new Promise<ContextoResponse>((resolve) => { resolveLookup = resolve; });
     const send = vi.fn((message) => message.type === 'contexto:account:lookup'
       ? lookup
-      : Promise.resolve({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } } as ContextoResponse));
+      : Promise.resolve({ ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } } as ContextoResponse));
     const controller = createPageEditorController({
       root: document.body,
       send: send as ContextoProfileSurfaceProps['send'],
@@ -36,8 +36,8 @@ describe('page editor controller with the real editor', () => {
       expect(shadow.activeElement).toBe(firstControl);
     });
 
-    const role = Array.from(shadow.querySelectorAll('label'))
-      .find((label) => label.textContent?.startsWith('Role'))?.querySelector('input');
+    const roleLabel = Array.from(shadow.querySelectorAll('label')).find((label) => label.textContent === 'Role')!;
+    const role = shadow.getElementById(roleLabel.htmlFor)!;
     role?.focus();
     document.body.append(document.createElement('div'));
     await new Promise((resolve) => setTimeout(resolve, 60));

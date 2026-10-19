@@ -37,7 +37,7 @@ Feed relationship-panel coverage must prove that the marker stays in the validat
 
 Use surface tests for successful Save, failed Save, Cancel, draft retention, and the inline-versus-modal lifecycle distinction. A failed Save must leave the owned editor and draft available; the full-profile inline editor must remain visible after Save or Cancel.
 
-Company- and location-suggestion coverage must include active-account extraction, trimming, blank removal, case-insensitive deduplication, stable ordering, exact/prefix/substring/fuzzy ranking, keyboard and pointer selection, free-text retention, disabled behavior, and successful selection for both fields in both the X editor and dashboard.
+Role-, company-, and location-suggestion coverage must include active-account extraction, trimming, blank removal, case-insensitive deduplication, stable ordering, exact/prefix/substring/fuzzy ranking, keyboard and pointer selection, free-text retention, disabled behavior, and successful selection for all three fields in both the X editor and dashboard.
 
 Autocomplete layout coverage must assert that the dashboard and X editors load the same suggestion styles, including neutral defaults and teal hover/highlight states. Dashboard layout coverage must keep the Location suggestion panel inside its control and verify it overlays beneath the input without adding grid height or shifting Company.
 

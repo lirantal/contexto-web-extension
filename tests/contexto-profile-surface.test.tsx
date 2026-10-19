@@ -22,7 +22,7 @@ describe('ContextoProfileSurface', () => {
   it('groups editor fields by identity, work, and relationship', async () => {
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: undefined }
-      : { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } });
     renderSurface(send);
 
     const editor = await screen.findByRole('region', { name: 'Contexto profile editor' });
@@ -37,7 +37,7 @@ describe('ContextoProfileSurface', () => {
   it('shows the complete prefilled editor without saving an unknown account', async () => {
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: undefined }
-      : { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } });
     renderSurface(send);
     expect(await screen.findByLabelText('Display name')).toHaveValue('Theo – t3.gg');
     expect(screen.getByLabelText('X handle')).toHaveValue('@theo');
@@ -58,7 +58,7 @@ describe('ContextoProfileSurface', () => {
     const send = vi.fn(async (message) => {
       if (message.type === 'contexto:account:lookup') return { ok: true, lookup: true, lookupAccount: saved };
       if (message.type === 'contexto:account:saveContext') return { ok: true, account: { ...saved, website: message.input.metadata.website } };
-      return { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } };
+      return { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } };
     });
     renderSurface(send);
     const website = await screen.findByLabelText('Website');
@@ -89,6 +89,7 @@ describe('ContextoProfileSurface', () => {
           companies: [{ id: 'company_1', name: 'OpenAI' }],
           tags: [],
           folders: [],
+          roles: [],
           locations: [],
         },
       })
@@ -108,6 +109,32 @@ describe('ContextoProfileSurface', () => {
     })));
   });
 
+  it.each(['inline', 'docked', 'modal'] as const)('suggests and saves roles in the %s editor', async (placement) => {
+    const saved = { ...profile, id: 'saved', role: 'Founder', tags: [], folders: [] };
+    const send = vi.fn(async (message) => {
+      if (message.type === 'contexto:account:lookup') return { ok: true, lookup: true, lookupAccount: undefined };
+      if (message.type === 'contexto:account:saveContext') return { ok: true, account: saved };
+      return { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [], roles: ['Founder'] } };
+    });
+    render(<ContextoProfileSurface profile={profile} kind="full-profile" placement={placement}
+      send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
+    const role = await screen.findByRole('combobox', { name: 'Role' });
+    fireEvent.change(role, { target: { value: 'fdr' } });
+    expect(screen.getByRole('option', { name: 'Founder' })).toBeVisible();
+    if (placement === 'modal') {
+      fireEvent.click(screen.getByRole('option', { name: 'Founder' }));
+    } else {
+      fireEvent.keyDown(role, { key: 'ArrowDown' });
+      fireEvent.keyDown(role, { key: 'Enter' });
+    }
+    expect(role).toHaveValue('Founder');
+    fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
+    await waitFor(() => expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'contexto:account:saveContext',
+      input: expect.objectContaining({ metadata: expect.objectContaining({ role: 'Founder' }) }),
+    })));
+  });
+
   it('fuzzy-selects and saves an existing location', async () => {
     const saved = {
       id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo',
@@ -118,7 +145,7 @@ describe('ContextoProfileSurface', () => {
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
       .mockResolvedValueOnce({
         ok: true,
-        lookups: { companies: [], tags: [], folders: [], locations: ['San Francisco'] },
+        lookups: { companies: [], tags: [], folders: [], roles: [], locations: ['San Francisco'] },
       })
       .mockResolvedValueOnce({ ok: true, account: saved });
 
@@ -145,7 +172,7 @@ describe('ContextoProfileSurface', () => {
     };
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } })
       .mockResolvedValueOnce({ ok: true, account: saved });
     renderSurface(send);
     fireEvent.change(await screen.findByLabelText('Display name'), { target: { value: 'Theo Browne' } });
@@ -177,7 +204,7 @@ describe('ContextoProfileSurface', () => {
     };
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } })
       .mockResolvedValueOnce({ ok: true, account: saved });
     const onRequestClose = vi.fn();
     render(<ContextoProfileSurface profile={profile} kind="full-profile" placement={placement}
@@ -210,7 +237,7 @@ describe('ContextoProfileSurface', () => {
       tags: [{ id: 't1', name: 'Founder' }], folders: [{ id: 'f1', name: 'Founder' }] };
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: saved })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } })
       .mockResolvedValueOnce({ ok: true, account: saved });
     renderSurface(send);
     fireEvent.change(await screen.findByLabelText('Tags'), { target: { value: query } });
@@ -226,7 +253,7 @@ describe('ContextoProfileSurface', () => {
     const drafts = new AccountDraftStore();
     const send = vi.fn(async (message) => {
       if (message.type === 'contexto:account:lookup') return { ok: true, lookup: true, lookupAccount: undefined };
-      if (message.type === 'contexto:lookups:list') return { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } };
+      if (message.type === 'contexto:lookups:list') return { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } };
       return { ok: false, error: 'Database unavailable' };
     });
     const props = { profile, kind: 'full-profile' as const, send: send as ContextoProfileSurfaceProps['send'], drafts };
@@ -253,7 +280,7 @@ describe('ContextoProfileSurface', () => {
   it('retains the editor and exposes retry after a failed save', async () => {
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } })
       .mockResolvedValue({ ok: false, error: 'Database unavailable' });
     renderSurface(send);
     fireEvent.click(await screen.findByRole('button', { name: 'Save to Contexto' }));
@@ -265,7 +292,7 @@ describe('ContextoProfileSurface', () => {
   it('recovers when the runtime rejects a save request', async () => {
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } })
       .mockRejectedValueOnce(new Error('Extension unavailable'));
     renderSurface(send);
     fireEvent.click(await screen.findByRole('button', { name: 'Save to Contexto' }));
@@ -278,7 +305,7 @@ describe('ContextoProfileSurface', () => {
     const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', role: 'CTO', tags: [], folders: [] };
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: saved }
-      : { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } });
     const first = render(<ContextoProfileSurface profile={profile} kind="hover-card" send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
     fireEvent.change(await screen.findByLabelText('Role'), { target: { value: 'CEO' } });
     first.unmount();
@@ -294,7 +321,7 @@ describe('ContextoProfileSurface', () => {
         if (lookupAttempts === 1) throw new Error('Lookup unavailable');
         return { ok: true, lookup: true, lookupAccount: undefined };
       }
-      return { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } };
+      return { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } };
     });
     renderSurface(send);
     expect(await screen.findByText('Lookup unavailable')).toBeVisible();
@@ -307,7 +334,7 @@ describe('ContextoProfileSurface', () => {
     const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', role: 'CTO', tags: [], folders: [] };
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: saved }
-      : { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } });
     renderSurface(send);
 
     fireEvent.change(await screen.findByLabelText('Role'), { target: { value: 'CEO' } });
@@ -320,7 +347,7 @@ describe('ContextoProfileSurface', () => {
   it('exposes modal dialog semantics for the fallback editor', async () => {
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: undefined }
-      : { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } });
     render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="modal" send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
 
     const dialog = await screen.findByRole('dialog', { name: 'Contexto profile editor' });
@@ -332,7 +359,7 @@ describe('ContextoProfileSurface', () => {
     const saved = { id: 'account_1', platform: 'x', handle: 'theo', normalizedHandle: 'theo', displayName: 'Theo', profileUrl: 'https://x.com/theo', tags: [], folders: [] };
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } })
       .mockResolvedValueOnce({ ok: true, account: saved });
     render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="modal" onRequestClose={onRequestClose} send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
 
@@ -346,7 +373,7 @@ describe('ContextoProfileSurface', () => {
     const onRequestClose = vi.fn();
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
-      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } })
       .mockResolvedValueOnce({ ok: false, error: 'Database unavailable' });
     render(<ContextoProfileSurface profile={profile} kind="hover-card" placement="modal" onRequestClose={onRequestClose} send={send as ContextoProfileSurfaceProps['send']} drafts={drafts} />);
 

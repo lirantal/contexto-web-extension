@@ -614,22 +614,27 @@ export async function getLookups(database = db): Promise<LookupData> {
     database.folders.orderBy('name').toArray(),
     database.accounts.toArray(),
   ]);
-  const locationsByNormalizedName = new Map<string, string>();
-  for (const account of active(accounts)) {
-    const location = account.location?.trim();
-    if (!location) continue;
-    const normalizedLocation = location.toLocaleLowerCase();
-    const existingLocation = locationsByNormalizedName.get(normalizedLocation);
-    if (existingLocation === undefined || location < existingLocation) {
-      locationsByNormalizedName.set(normalizedLocation, location);
+  const accountsForSuggestions = active(accounts);
+  function distinctValues(field: 'location' | 'role'): string[] {
+    const valuesByNormalizedName = new Map<string, string>();
+    for (const account of accountsForSuggestions) {
+      const value = account[field]?.trim();
+      if (!value) continue;
+      const normalizedValue = value.toLocaleLowerCase();
+      const existingValue = valuesByNormalizedName.get(normalizedValue);
+      if (existingValue === undefined || value < existingValue) {
+        valuesByNormalizedName.set(normalizedValue, value);
+      }
     }
+    return [...valuesByNormalizedName.values()].sort((left, right) => left.localeCompare(right));
   }
 
   return {
     companies: active(companies),
     tags: active(tags),
     folders: active(folders),
-    locations: [...locationsByNormalizedName.values()].sort((left, right) => left.localeCompare(right)),
+    locations: distinctValues('location'),
+    roles: distinctValues('role'),
   };
 }
 

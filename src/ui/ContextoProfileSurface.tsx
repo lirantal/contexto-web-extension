@@ -15,7 +15,7 @@ export interface ContextoProfileSurfaceProps {
   placement?: 'inline' | 'docked' | 'modal';
 }
 
-const emptyLookups: LookupData = { companies: [], tags: [], folders: [], locations: [] };
+const emptyLookups: LookupData = { companies: [], tags: [], folders: [], locations: [], roles: [] };
 
 function draftFor(profile: ProfileSnapshot, account?: AccountSummary): AccountContextDraft {
   return {
@@ -129,7 +129,8 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
       <section className="contexto-form-section" role="group" aria-labelledby="contexto-work-heading">
         <h2 id="contexto-work-heading">Work</h2>
         <div className="contexto-field-row">
-          <label>Role<input value={draft.metadata.role ?? ''} disabled={saving} onChange={(event) => updateMetadata('role', event.target.value)} /></label>
+          <FuzzyTextCombobox label="Role" value={draft.metadata.role ?? ''} suggestions={lookups.roles}
+            disabled={saving} onChange={(role) => updateMetadata('role', role)} />
           <FuzzyTextCombobox label="Company" value={draft.metadata.companyName ?? ''}
             suggestions={lookups.companies.map((company) => company.name)} disabled={saving}
             onChange={(companyName) => updateMetadata('companyName', companyName)} />

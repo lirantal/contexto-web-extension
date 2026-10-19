@@ -251,7 +251,7 @@ describe('Contexto repositories', () => {
     ]));
   });
 
-  it('lists distinct active saved locations as reusable lookups', async () => {
+  it.each(['location', 'role'] as const)('lists distinct active saved %s values as reusable lookups', async (field) => {
     const locations = [
       ['berlin-primary', ' Berlin '],
       ['berlin-duplicate', 'berlin'],
@@ -266,12 +266,12 @@ describe('Contexto repositories', () => {
         database,
       );
       await database.accounts.update(account.id, {
-        location,
+        [field]: location,
         ...(handle === 'deleted-location' ? { deletedAt: '2026-07-12T00:00:00.000Z' } : {}),
       });
     }
 
-    expect((await getLookups(database)).locations).toEqual(['Berlin', 'San Francisco']);
+    expect((await getLookups(database))[field === 'role' ? 'roles' : 'locations']).toEqual(['Berlin', 'San Francisco']);
   });
 
   it('rolls back assignment removal when change recording fails', async () => {

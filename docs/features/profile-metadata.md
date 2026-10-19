@@ -17,9 +17,9 @@ You can enrich an account with:
 - Tags.
 - Folders.
 
-Company and Location remain free-text fields in both the X editor and dashboard. As you type, Contexto fuzzy-matches distinct values already saved on active accounts so you can reuse a canonical spelling; you can still save a new company or location when no suggestion applies.
+Role, Company, and Location remain free-text fields in both the X editor and dashboard. As you type, Contexto fuzzy-matches distinct values already saved on active accounts so you can reuse a canonical spelling; you can still save a new role, company, or location when no suggestion applies.
 
-Company and Location suggestions use one shared neutral and teal style on the dashboard and in X editors. Suggestions appear as an overlay directly below the active input, so opening the list does not resize a paired field row.
+Role, Company, and Location suggestions use one shared neutral and teal style on the dashboard and in X editors. Suggestions appear as an overlay directly below the active input, so opening the list does not resize a paired field row.
 
 Tags and folders are separate multi-value fields with the same interaction model: search existing values, select multiple values, create a new value inline, and remove selections.
 
