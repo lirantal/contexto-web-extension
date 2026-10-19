@@ -48,7 +48,7 @@ button:focus-visible,input:focus-visible { outline:2px solid var(--ctx-accent); 
 .contexto-summary h3,.contexto-summary p { margin:0; }
 .form-actions { flex-wrap:wrap; }
 .contexto-form > .form-actions button { min-height:36px; }
-@media (max-width:360px) { .contexto-field-row { display:grid; grid-template-columns:minmax(0,1fr); } }
+@media (max-width:379px) { .contexto-field-row { display:grid; grid-template-columns:minmax(0,1fr); } }
 @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; transition:none !important; } }
 :host([data-contexto-surface="feed-post"]) { display:inline-block; position:relative; margin-left:6px; vertical-align:middle; z-index:2; }
 .contexto-feed-context { --ctx-bg:#fff; --ctx-text:#0f1419; --ctx-muted:#536471; --ctx-border:#eff3f4; --ctx-accent:#5b3fd6; --ctx-link:#1d9bf0; display:inline-block; color:var(--ctx-text); font-size:12px; }

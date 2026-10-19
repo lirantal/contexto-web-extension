@@ -69,7 +69,7 @@ describe('Contexto X surface layout contract', () => {
     expect(fieldRow).toContain('display:grid;');
     expect(fieldRow).toContain('grid-template-columns:repeat(2,minmax(0,1fr));');
 
-    expect(css).toContain('@media (max-width:360px) { .contexto-field-row { display:grid; grid-template-columns:minmax(0,1fr); } }');
+    expect(css).toContain('@media (max-width:379px) { .contexto-field-row { display:grid; grid-template-columns:minmax(0,1fr); } }');
   });
 
   it('makes structured sidebar results visibly keyboard focusable', () => {
