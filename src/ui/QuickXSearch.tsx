@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import {
   buildXSearchQuery,
@@ -44,31 +44,54 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
   const [searchState, setSearchState] = useState<PopupSearchState>(defaultPopupSearchState);
   const [accountSuggestions, setAccountSuggestions] = useState<TargetAccountSuggestion[]>([]);
   const [targetHistory, setTargetHistory] = useState<TargetHandleHistoryEntry[]>([]);
+  const settingsVersion = useRef(0);
+  const searchStateVersion = useRef(0);
+  const targetHistoryVersion = useRef(0);
 
   useEffect(() => {
     let active = true;
+    const initialSettingsVersion = settingsVersion.current;
+    const initialSearchStateVersion = searchStateVersion.current;
+    const initialTargetHistoryVersion = targetHistoryVersion.current;
 
-    void Promise.allSettled([
-      settingsItem.getValue(),
-      popupSearchStateItem.getValue(),
-      loadAccountSuggestions(),
-      targetHandleHistoryItem.getValue(),
-    ]).then(([settingsResult, searchResult, accountResult, historyResult]) => {
-      if (!active) return;
-      if (settingsResult.status === 'fulfilled') setSettings(settingsResult.value);
-      if (searchResult.status === 'fulfilled') setSearchState(searchResult.value);
-      if (accountResult.status === 'fulfilled') setAccountSuggestions(accountResult.value);
-      if (historyResult.status === 'fulfilled') setTargetHistory(historyResult.value);
+    void Promise.allSettled([settingsItem.getValue()]).then(([result]) => {
+      if (active && settingsVersion.current === initialSettingsVersion && result.status === 'fulfilled') {
+        setSettings(result.value);
+      }
+    });
+    void Promise.allSettled([popupSearchStateItem.getValue()]).then(([result]) => {
+      if (active && searchStateVersion.current === initialSearchStateVersion && result.status === 'fulfilled') {
+        setSearchState(result.value);
+      }
+    });
+    void Promise.allSettled([loadAccountSuggestions()]).then(([result]) => {
+      if (active && result.status === 'fulfilled') {
+        setAccountSuggestions(result.value);
+      }
+    });
+    void Promise.allSettled([targetHandleHistoryItem.getValue()]).then(([result]) => {
+      if (active && targetHistoryVersion.current === initialTargetHistoryVersion && result.status === 'fulfilled') {
+        setTargetHistory(result.value);
+      }
     });
 
     const unwatchSettings = settingsItem.watch((value) => {
-      if (active) setSettings(value);
+      if (active) {
+        settingsVersion.current += 1;
+        setSettings(value);
+      }
     });
     const unwatchSearchState = popupSearchStateItem.watch((value) => {
-      if (active) setSearchState(value);
+      if (active) {
+        searchStateVersion.current += 1;
+        setSearchState(value);
+      }
     });
     const unwatchTargetHistory = targetHandleHistoryItem.watch((value) => {
-      if (active) setTargetHistory(value);
+      if (active) {
+        targetHistoryVersion.current += 1;
+        setTargetHistory(value);
+      }
     });
 
     return () => {
@@ -85,12 +108,14 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
   );
 
   function updateMyHandle(value: string) {
+    settingsVersion.current += 1;
     const next = { ...settings, myXHandle: value };
     setSettings(next);
     void settingsItem.setValue(next);
   }
 
   function updateSearchField<Key extends keyof PopupSearchState>(field: Key, value: PopupSearchState[Key]) {
+    searchStateVersion.current += 1;
     const next = { ...searchState, [field]: value };
     setSearchState(next);
     void popupSearchStateItem.setValue(next);
@@ -123,6 +148,7 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
 
     if (filters.targetHandle) {
       try {
+        targetHistoryVersion.current += 1;
         setTargetHistory(await recordTargetHandleSearch(filters.targetHandle));
       } catch {
         // Launch already succeeded; history remains best-effort.

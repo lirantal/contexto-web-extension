@@ -35,6 +35,14 @@ vi.mock('@/src/shared/settings', () => ({
   recordTargetHandleSearch: mocks.recordTarget,
 }));
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
+
 function renderQuickSearch(options: Partial<React.ComponentProps<typeof QuickXSearch>> = {}) {
   const loadAccountSuggestions = options.loadAccountSuggestions ?? vi.fn().mockResolvedValue([]);
   const defaultLaunchSearch = vi.fn<QuickXSearchProps['launchSearch']>().mockResolvedValue(undefined);
@@ -158,5 +166,33 @@ describe('QuickXSearch', () => {
     expect(screen.getByLabelText('Keyword')).toHaveValue('updated');
     expect(screen.getByLabelText('Since')).toHaveValue('2026-03-01');
     expect(screen.getByLabelText('Until')).toHaveValue('2026-04-01');
+  });
+
+  it("applies startup sources independently without overwriting newer watched values", async () => {
+    const accounts = createDeferred<never[]>();
+    const initialSearchState = createDeferred<{ targetHandle: string; keyword: string; since: string; until: string }>();
+    mocks.getSearchState.mockReturnValue(initialSearchState.promise);
+    renderQuickSearch({ loadAccountSuggestions: vi.fn().mockReturnValue(accounts.promise) });
+
+    await waitFor(() => expect(screen.getByLabelText("My X handle")).toHaveValue("@me"));
+    const callback = mocks.watchSearchState.mock.calls[0][0] as (value: {
+      targetHandle: string;
+      keyword: string;
+      since: string;
+      until: string;
+    }) => void;
+    act(() => {
+      callback({ targetHandle: "@watched", keyword: "newer", since: "2026-03-01", until: "2026-04-01" });
+    });
+
+    expect(screen.getByLabelText("Keyword")).toHaveValue("newer");
+    await act(async () => {
+      initialSearchState.resolve({ targetHandle: "@them", keyword: "security", since: "2026-01-01", until: "2026-02-01" });
+      accounts.resolve([]);
+      await Promise.all([initialSearchState.promise, accounts.promise]);
+    });
+
+    expect(screen.getByLabelText("Keyword")).toHaveValue("newer");
+    expect(screen.getByLabelText(new RegExp("Other person"))).toHaveValue("@watched");
   });
 });
