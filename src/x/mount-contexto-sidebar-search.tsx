@@ -1,6 +1,6 @@
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { ContextoSidebarAccountSearch } from '@/src/ui/ContextoSidebarAccountSearch';
+import { ContextoSidebarWorkspace } from '@/src/ui/ContextoSidebarWorkspace';
 import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
 import type { XSurfaceCleanup } from './surface-observer';
 
@@ -29,7 +29,7 @@ export function mountContextoSidebarSearch({
 
   const root = createRoot(app);
   flushSync(() => {
-    root.render(<ContextoSidebarAccountSearch send={send} />);
+    root.render(<ContextoSidebarWorkspace send={send} />);
   });
 
   const cleanup: XSurfaceCleanup = () => {

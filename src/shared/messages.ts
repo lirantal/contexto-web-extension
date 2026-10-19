@@ -35,7 +35,8 @@ export type ContextoRequest =
   | { type: 'contexto:lookups:list' }
   | { type: 'contexto:settings:get' }
   | { type: 'contexto:settings:update'; patch: Partial<ContextoSettings> }
-  | { type: 'contexto:search:record'; accountId?: RecordId; filters: XSearchFilters; query: string; url: string };
+  | { type: 'contexto:search:record'; accountId?: RecordId; filters: XSearchFilters; query: string; url: string }
+  | { type: 'contexto:search:open'; filters: XSearchFilters };
 
 export type ContextoResponse =
   | { ok: true; account: AccountSummary }

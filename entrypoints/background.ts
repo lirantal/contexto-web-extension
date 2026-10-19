@@ -14,9 +14,15 @@ import {
   updateAccount,
 } from '@/src/data/repositories';
 import { settingsItem } from '@/src/shared/settings';
+import { buildXSearchUrl, canRunXSearch } from '@/src/shared/platforms/x';
 import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
 
-export async function handleRequest(message: ContextoRequest): Promise<ContextoResponse> {
+type OpenTab = (url: string) => Promise<unknown>;
+
+export async function handleRequest(
+  message: ContextoRequest,
+  openTab: OpenTab = (url) => browser.tabs.create({ url }),
+): Promise<ContextoResponse> {
   try {
     switch (message.type) {
       case 'contexto:account:ensure':
@@ -74,6 +80,13 @@ export async function handleRequest(message: ContextoRequest): Promise<ContextoR
       }
       case 'contexto:search:record':
         return { ok: true, history: await recordSearch(message.filters, message.url, message.accountId) };
+      case 'contexto:search:open': {
+        if (!canRunXSearch(message.filters)) {
+          return { ok: false, error: 'Invalid X search filters' };
+        }
+        await openTab(buildXSearchUrl(message.filters));
+        return { ok: true };
+      }
       default:
         return { ok: false, error: 'Unsupported Contexto message' };
     }

@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { detectXTheme, mountContextoSurface } from '@/src/x/mount-contexto-surface';
 import { AccountDraftStore } from '@/src/x/draft-store';
+import { mountContextoSidebarSearch } from '@/src/x/mount-contexto-sidebar-search';
 
 vi.mock('@/src/ui/ContextoProfileSurface', () => ({
   ContextoProfileSurface: () => <div>Full Contexto editor</div>,
@@ -9,6 +10,13 @@ vi.mock('@/src/ui/ContextoProfileSurface', () => ({
 
 vi.mock('@/src/ui/ContextoHoverLauncher', () => ({
   ContextoHoverLauncher: () => <div>Hover Contexto launcher</div>,
+}));
+
+vi.mock('@/src/ui/ContextoSidebarWorkspace', () => ({
+  ContextoSidebarWorkspace: () => <>
+    <section aria-label="Contexto account search">Contexto account search</section>
+    <section aria-label="Quick X search">Quick X search</section>
+  </>,
 }));
 
 describe('mountContextoSurface', () => {
@@ -76,5 +84,29 @@ describe('mountContextoSurface', () => {
     document.body.style.backgroundColor = 'rgb(255, 255, 255)';
     document.body.append(host);
     expect(detectXTheme(host)).toBe('light');
+  });
+});
+
+describe('mountContextoSidebarSearch', () => {
+  it('mounts both sidebar sections in one shadow host and removes it during cleanup', () => {
+    const nativeForm = document.createElement('form');
+    document.body.append(nativeForm);
+
+    const cleanup = mountContextoSidebarSearch({
+      nativeForm,
+      send: vi.fn().mockResolvedValue({ ok: true, accounts: [] }),
+      css: '.contexto-surface{}',
+      theme: 'dark',
+    });
+
+    const mountHost = nativeForm.previousElementSibling as HTMLElement;
+    expect(mountHost).toHaveAttribute('data-contexto-surface', 'sidebar-search');
+    expect(mountHost.shadowRoot).toHaveTextContent('Contexto account search');
+    expect(mountHost.shadowRoot).toHaveTextContent('Quick X search');
+    expect(cleanup.isConnected?.()).toBe(true);
+
+    cleanup();
+
+    expect(document.querySelector('[data-contexto-surface="sidebar-search"]')).toBeNull();
   });
 });
