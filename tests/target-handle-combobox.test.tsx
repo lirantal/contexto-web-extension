@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { TargetHandleCombobox } from '@/src/ui/TargetHandleCombobox';
@@ -38,8 +38,10 @@ describe('TargetHandleCombobox', () => {
     await user.click(input);
     expect(input).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('listbox')).toBeVisible();
-    expect(screen.getByRole('option', { name: /Alice Example/ })).toHaveTextContent('@alice_dev');
-    expect(screen.getByRole('option', { name: /Alice Example/ })).toHaveTextContent('Acme');
+    const option = screen.getByRole('option', { name: /Alice Example/ });
+    expect(option).toHaveTextContent('@alice_dev');
+    expect(within(option).getByText('Company:')).toBeVisible();
+    expect(within(option).getByText('Acme')).toBeVisible();
     expect(screen.getAllByText('Recent')).toHaveLength(2);
 
     await user.type(input, 'pasted free text');

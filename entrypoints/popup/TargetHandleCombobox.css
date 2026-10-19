@@ -73,6 +73,18 @@
   align-items: flex-end;
 }
 
+.target-handle-company {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.target-handle-metadata-label {
+  color: #667066;
+  font-weight: 650;
+}
+
 .target-handle-option-meta .recent-marker {
   color: #0f756d;
   font-weight: 700;
