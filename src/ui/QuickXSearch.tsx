@@ -63,6 +63,15 @@ function reconcileWatchedValue<T extends object>(
   return next;
 }
 
+function withUpdatedField<T extends object, Key extends keyof T>(
+  current: T,
+  field: Key,
+  value: T[Key],
+): T | undefined {
+  if (Object.is(current[field], value)) return undefined;
+  return { ...current, [field]: value };
+}
+
 function markDirtyField<T extends object>(
   dirtyFields: Map<keyof T, DirtyField[]>,
   field: keyof T,
@@ -188,8 +197,10 @@ export function QuickXSearch({
   );
 
   function updateMyHandle(value: string) {
+    const next = withUpdatedField(latestSettings.current, 'myXHandle', value);
+    if (!next) return;
+
     settingsVersion.current += 1;
-    const next = { ...latestSettings.current, myXHandle: value };
     const dirty = markDirtyField(dirtySettings.current, 'myXHandle', value);
     latestSettings.current = next;
     setSettings(next);
@@ -201,8 +212,10 @@ export function QuickXSearch({
   }
 
   function updateSearchField<Key extends keyof PopupSearchState>(field: Key, value: PopupSearchState[Key]) {
+    const next = withUpdatedField(latestSearchState.current, field, value);
+    if (!next) return;
+
     searchStateVersion.current += 1;
-    const next = { ...latestSearchState.current, [field]: value };
     const dirty = markDirtyField(dirtySearchState.current, field, value);
     latestSearchState.current = next;
     setSearchState(next);

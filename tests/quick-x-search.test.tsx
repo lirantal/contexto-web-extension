@@ -114,6 +114,39 @@ describe('QuickXSearch', () => {
     await waitFor(() => expect(mocks.updateSearchState).toHaveBeenCalledWith({ keyword: 'typescript' }));
   });
 
+  it('accepts an external target update after reselecting the unchanged target without a watch echo', async () => {
+    const user = userEvent.setup();
+    renderQuickSearch({
+      loadAccountSuggestions: vi.fn().mockResolvedValue([{
+        id: 'account-them',
+        handle: 'them',
+        displayName: 'Them',
+        updatedAt: '2026-10-19T00:00:00.000Z',
+      }]),
+    });
+    const targetHandle = await screen.findByLabelText(/Other person/);
+    await waitFor(() => expect(targetHandle).toBeEnabled());
+
+    await user.click(targetHandle);
+    await user.click(await screen.findByRole('option', { name: /Them.*@them/i }));
+    await act(async () => Promise.resolve());
+
+    const watchSearchState = mocks.watchSearchState.mock.calls[0][0] as (
+      value: { targetHandle: string; keyword: string; since: string; until: string },
+    ) => void;
+    act(() => {
+      watchSearchState({
+        targetHandle: '@external',
+        keyword: 'security',
+        since: '2026-01-01',
+        until: '2026-02-01',
+      });
+    });
+
+    expect(targetHandle).toHaveValue('@external');
+    expect(mocks.updateSearchState).not.toHaveBeenCalled();
+  });
+
   it('launches before recording the normalized target history', async () => {
     const { launchSearch } = renderQuickSearch();
 
