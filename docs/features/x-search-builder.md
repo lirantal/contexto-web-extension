@@ -6,7 +6,7 @@ Both surfaces are the same persisted workflow. They share the viewer and target 
 
 Editing updates the active form immediately and persists only the changed field through the background service worker. A launch waits for outstanding field patches, while target-history promotion remains a separate best-effort operation after the tab opens successfully.
 
-On X, the builder is hosted in a Contexto-owned closed Shadow DOM root immediately before X's validated native search form. Its styles, both workspace sections, and launch controls stay inside that root and are not exposed through page-level selectors. Contexto mounts only when it can prove that the native search input is inside that form. If that evidence is missing, Contexto fails closed: it does not mount or alter X's native search. X's native search and the separately configured native-sidebar-widget policy remain independent and usable.
+On X, the builder is hosted in a Contexto-owned closed Shadow DOM root immediately before X's validated native search form, with a 72-pixel top margin to keep the workspace clear of the viewport edge. Its styles, both workspace sections, and launch controls stay inside that root and are not exposed through page-level selectors. Contexto mounts only when it can prove that the native search input is inside that form. If that evidence is missing, Contexto fails closed: it does not mount or alter X's native search. X's native search and the separately configured native-sidebar-widget policy remain independent and usable.
 
 The toolbar popup organizes the workflow into three visible groups:
 

@@ -71,7 +71,7 @@ button:focus-visible,input:focus-visible { border-color:var(--ctx-accent); outli
 .contexto-feed-checkpoint button { min-height:36px; }
 .contexto-feed-footer .primary-action { width:100%; min-height:40px; }
 .contexto-feed-x-link:focus-visible { outline:2px solid var(--ctx-accent); outline-offset:2px; }
-:host([data-contexto-surface="sidebar-search"]) { display:block; width:100%; margin:24px 0 16px; color-scheme:light; }
+:host([data-contexto-surface="sidebar-search"]) { display:block; width:100%; margin:72px 0 16px; color-scheme:light; }
 :host([data-contexto-surface="sidebar-search"][data-theme="dark"]) { color-scheme:dark; }
 .contexto-sidebar-search { display:grid; gap:7px; color:var(--ctx-text); }
 .contexto-sidebar-search > p { margin:0; color:var(--ctx-muted); font-size:12px; }
