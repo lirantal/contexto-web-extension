@@ -146,6 +146,33 @@ describe('dashboard target handle history settings', () => {
     }));
   });
 
+  it('labels read-only company and latest-note metadata', async () => {
+    mocks.accounts = [{
+      id: 'account-1', platform: 'x', handle: 'founder', normalizedHandle: 'founder',
+      displayName: 'Founder', profileUrl: 'https://x.com/founder', syncState: 'local-only',
+      createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      company: {
+        id: 'company-1', name: 'OpenAI', normalizedName: 'openai',
+        createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      },
+      latestNote: {
+        id: 'note-1', accountId: 'account-1', body: 'Follow up after the launch.', source: 'manual',
+        createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      },
+      tags: [], folders: [],
+    }];
+    render(<Dashboard />);
+
+    const accountRow = await screen.findByRole('button', { name: /Founder/ });
+    expect(accountRow).toHaveTextContent('@founder');
+    expect(within(accountRow).getByText('Company:')).toBeVisible();
+    expect(within(accountRow).getByText('OpenAI')).toBeVisible();
+
+    const details = screen.getByRole('region', { name: 'Account details' });
+    expect(within(details).getByText('Latest note:')).toBeVisible();
+    expect(within(details).getByText('Follow up after the launch.')).toBeVisible();
+  });
+
   it('uses fuzzy saved-location suggestions when editing account metadata', async () => {
     mocks.accounts = [{
       id: 'account-1', platform: 'x', handle: 'founder', normalizedHandle: 'founder',

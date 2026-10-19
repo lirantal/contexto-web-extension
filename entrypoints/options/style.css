@@ -241,14 +241,13 @@ textarea {
   border-radius: 8px;
 }
 
-.account-row span:last-child {
+.account-row > .account-row-content {
   display: flex;
   min-width: 0;
   flex-direction: column;
 }
 
-.account-row strong,
-.account-row small {
+.account-row strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -256,6 +255,29 @@ textarea {
 
 .account-row small {
   color: #667066;
+}
+
+.account-row-metadata,
+.account-row-company,
+.latest-note {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+.account-row-metadata,
+.latest-note {
+  flex-wrap: wrap;
+}
+
+.account-row-metadata {
+  overflow: visible;
+  white-space: normal;
+}
+
+.metadata-label {
+  color: #667066;
+  font-weight: 650;
 }
 
 .detail-pane {

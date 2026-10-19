@@ -260,9 +260,15 @@ export function Dashboard() {
               aria-current={account.id === selected?.id ? 'true' : undefined}
             >
               <span className="avatar-fallback">{account.displayName.slice(0, 1).toUpperCase()}</span>
-              <span>
+              <span className="account-row-content">
                 <strong>{account.displayName}</strong>
-                <small>@{account.handle} {account.company ? `- ${account.company.name}` : ''}</small>
+                <small className="account-row-metadata">
+                  <span>@{account.handle}</span>
+                  {account.company && <span className="account-row-company">
+                    <span className="metadata-label">Company:</span>
+                    <span>{account.company.name}</span>
+                  </span>}
+                </small>
               </span>
             </button>
           ))}
@@ -440,7 +446,10 @@ function AccountDetail({
 
       <section className="panel detail-section">
         <h3>Notes</h3>
-        {account.latestNote && <p className="latest-note">{account.latestNote.body}</p>}
+        {account.latestNote && <p className="latest-note">
+          <strong className="metadata-label">Latest note:</strong>
+          <span>{account.latestNote.body}</span>
+        </p>}
         <textarea rows={4} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add context, follow-up ideas, or relationship history" />
         <button onClick={addNoteAndClear}>Add note</button>
       </section>
