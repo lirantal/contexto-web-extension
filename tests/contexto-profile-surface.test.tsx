@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ContextoProfileSurface, type ContextoProfileSurfaceProps } from '@/src/ui/ContextoProfileSurface';
 import { AccountDraftStore } from '@/src/x/draft-store';
@@ -18,6 +18,18 @@ function renderSurface(send: ReturnType<typeof vi.fn>) {
 }
 
 describe('ContextoProfileSurface', () => {
+  it('groups editor fields by identity, work, and relationship', async () => {
+    const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
+      ? { ok: true, lookup: true, lookupAccount: undefined }
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } });
+    renderSurface(send);
+
+    const editor = await screen.findByRole('region', { name: 'Contexto profile editor' });
+    expect(within(editor).getByRole('group', { name: 'Identity' })).toContainElement(screen.getByLabelText('Display name'));
+    expect(within(editor).getByRole('group', { name: 'Work' })).toContainElement(screen.getByLabelText('Company'));
+    expect(within(editor).getByRole('group', { name: 'Relationship' })).toContainElement(screen.getByLabelText('Tags'));
+  });
+
   it('shows the complete prefilled editor without saving an unknown account', async () => {
     const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
       ? { ok: true, lookup: true, lookupAccount: undefined }

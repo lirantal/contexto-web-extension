@@ -38,9 +38,16 @@ export function ContextoSidebarAccountSearch({
     {error && <p role="status">Contexto accounts are unavailable.</p>}
     {!error && accounts && query && results.length === 0 && <p role="status">No saved accounts found.</p>}
     {results.length > 0 && <div className="contexto-sidebar-search-results">{results.map((account) =>
-      <button key={account.id} type="button"
+      <button
+        aria-label={`${account.displayName}, @${account.handle}`}
+        key={account.id}
+        type="button"
         onClick={() => navigate(account.profileUrl || `https://x.com/${account.normalizedHandle}`)}>
-        {account.displayName} @{account.handle}
+        <strong className="contexto-sidebar-result-name">{account.displayName}</strong>
+        <span className="contexto-sidebar-result-meta">
+          @{account.handle}{[account.role, account.company?.name].filter(Boolean).length > 0
+            ? ` · ${[account.role, account.company?.name].filter(Boolean).join(' · ')}` : ''}
+        </span>
       </button>)}</div>}
   </section>;
 }

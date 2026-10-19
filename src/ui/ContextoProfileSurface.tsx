@@ -101,17 +101,32 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
   return <section className="contexto-surface" data-surface={kind} data-placement={placement} role={placement === 'modal' ? 'dialog' : 'region'} aria-modal={placement === 'modal' ? true : undefined} aria-label="Contexto profile editor">
     <header className="contexto-header"><strong>◆ Contexto</strong><span className="status-pill">{!account ? 'Not saved' : 'Saved'}</span></header>
     <div className="contexto-form">
-      <label>Display name<input value={draft.metadata.displayName ?? ''} disabled={saving} onChange={(event) => updateMetadata('displayName', event.target.value)} /></label>
-      <label>X handle<input value={`@${profile.handle}`} readOnly /></label>
-      <label>Role<input value={draft.metadata.role ?? ''} disabled={saving} onChange={(event) => updateMetadata('role', event.target.value)} /></label>
-      <FuzzyTextCombobox label="Company" value={draft.metadata.companyName ?? ''}
-        suggestions={lookups.companies.map((company) => company.name)} disabled={saving}
-        onChange={(companyName) => updateMetadata('companyName', companyName)} />
-      <FuzzyTextCombobox label="Location" value={draft.metadata.location ?? ''} suggestions={lookups.locations}
-        disabled={saving} onChange={(location) => updateMetadata('location', location)} />
-      <label>How you know them<input value={draft.metadata.relationshipSource ?? ''} disabled={saving} onChange={(event) => updateMetadata('relationshipSource', event.target.value)} /></label>
-      <MultiValueField label="Tags" values={draft.tagNames} suggestions={lookups.tags.map((tag) => tag.name)} disabled={saving} onChange={(tagNames) => updateDraft({ ...draft, tagNames })} />
-      <MultiValueField label="Folders" values={draft.folderNames} suggestions={lookups.folders.map((folder) => folder.name)} disabled={saving} onChange={(folderNames) => updateDraft({ ...draft, folderNames })} />
+      <fieldset className="contexto-form-section">
+        <legend>Identity</legend>
+        <div className="contexto-field-row">
+          <label>Display name<input value={draft.metadata.displayName ?? ''} disabled={saving} onChange={(event) => updateMetadata('displayName', event.target.value)} /></label>
+          <label>X handle<input value={`@${profile.handle}`} readOnly /></label>
+        </div>
+      </fieldset>
+      <fieldset className="contexto-form-section">
+        <legend>Work</legend>
+        <div className="contexto-field-row">
+          <label>Role<input value={draft.metadata.role ?? ''} disabled={saving} onChange={(event) => updateMetadata('role', event.target.value)} /></label>
+          <FuzzyTextCombobox label="Company" value={draft.metadata.companyName ?? ''}
+            suggestions={lookups.companies.map((company) => company.name)} disabled={saving}
+            onChange={(companyName) => updateMetadata('companyName', companyName)} />
+        </div>
+      </fieldset>
+      <fieldset className="contexto-form-section">
+        <legend>Relationship</legend>
+        <div className="contexto-field-row">
+          <FuzzyTextCombobox label="Location" value={draft.metadata.location ?? ''} suggestions={lookups.locations}
+            disabled={saving} onChange={(location) => updateMetadata('location', location)} />
+          <label>How you know them<input value={draft.metadata.relationshipSource ?? ''} disabled={saving} onChange={(event) => updateMetadata('relationshipSource', event.target.value)} /></label>
+        </div>
+        <MultiValueField label="Tags" values={draft.tagNames} suggestions={lookups.tags.map((tag) => tag.name)} disabled={saving} onChange={(tagNames) => updateDraft({ ...draft, tagNames })} />
+        <MultiValueField label="Folders" values={draft.folderNames} suggestions={lookups.folders.map((folder) => folder.name)} disabled={saving} onChange={(folderNames) => updateDraft({ ...draft, folderNames })} />
+      </fieldset>
       {success && <p className="contexto-success" role="status" aria-live="polite">{success}</p>}
       {error && <p className="contexto-error" role="alert">{error}</p>}
       <div className="form-actions">

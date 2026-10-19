@@ -2,6 +2,8 @@
 
 Contexto integrates directly into X user hover cards and full profile pages. Hover cards show a compact Contexto status and **Edit** launcher without changing the card into a large form. **Edit** opens the complete editor in X's right rail, with a Contexto-owned modal fallback when the rail is unavailable. Full profile pages show the same complete editor inline. The editor prefills the display name, handle, profile URL, avatar URL, bio snapshot, and visible location when available. Opening or editing the form does not write anything; persistence starts only when **Save to Contexto** is selected.
 
+The complete editor groups fields by purpose: **Identity** contains display name and X handle, **Work** contains role and company, and **Relationship** contains location, how you know the person, tags, and folders. Paired fields share a two-column row when space permits and collapse to a single column on narrow surfaces. The hover card remains a compact saved-state summary plus the **Edit** launcher rather than embedding these groups.
+
 You can enrich an account with:
 
 - Role.

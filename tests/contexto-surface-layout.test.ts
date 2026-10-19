@@ -61,6 +61,26 @@ describe('Contexto X surface layout contract', () => {
     expect(host).toContain('margin:12px 0 16px;');
   });
 
+  it('groups editor fields into responsive paired rows', () => {
+    const formSection = ruleBody('.contexto-form-section');
+    expect(formSection).toContain('gap:10px;');
+
+    const fieldRow = ruleBody('.contexto-field-row');
+    expect(fieldRow).toContain('display:grid;');
+    expect(fieldRow).toContain('grid-template-columns:repeat(2,minmax(0,1fr));');
+
+    expect(css).toContain('@media (max-width:360px) { .contexto-field-row { display:grid; grid-template-columns:minmax(0,1fr); } }');
+  });
+
+  it('makes structured sidebar results visibly keyboard focusable', () => {
+    const result = ruleBody('.contexto-sidebar-search-results button');
+    expect(result).toContain('display:grid;');
+
+    const focus = ruleBody('.contexto-sidebar-search-results button:focus-visible');
+    expect(focus).toContain('outline:2px solid var(--ctx-accent);');
+    expect(focus).toContain('outline-offset:-2px;');
+  });
+
   it('gives the feed panel readable grouped spacing and obvious X links', () => {
     const panel = ruleBody('.contexto-feed-panel');
     expect(panel).toContain('width:320px;');

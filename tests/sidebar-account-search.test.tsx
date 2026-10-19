@@ -73,7 +73,9 @@ describe('ContextoSidebarAccountSearch', () => {
     />);
 
     fireEvent.change(await screen.findByLabelText('Search Contexto accounts'), { target: { value: 'lir' } });
-    fireEvent.click(await screen.findByRole('button', { name: 'Liran Tal @liran_tal' }));
+    const result = await screen.findByRole('button', { name: 'Liran Tal, @liran_tal' });
+    expect(result).toHaveTextContent('@liran_tal');
+    fireEvent.click(result);
 
     expect(navigate).toHaveBeenCalledWith('https://x.com/liran_tal');
   });

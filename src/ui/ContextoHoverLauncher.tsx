@@ -64,7 +64,7 @@ export function ContextoHoverLauncher({ profile, send, onEdit }: ContextoHoverLa
   return <section className="contexto-hover-launcher" aria-label="Contexto profile context">
     <div className="contexto-hover-header">
       <strong>◆ Contexto</strong>
-      <span>{state === 'loading' ? 'Loading…' : state === 'saved' ? 'Saved' : 'Not saved'}</span>
+      <span className="contexto-hover-state">{state === 'loading' ? 'Loading…' : state === 'saved' ? 'Saved' : 'Not saved'}</span>
       <button
         ref={buttonRef}
         type="button"
