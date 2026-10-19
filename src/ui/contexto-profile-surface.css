@@ -6,6 +6,7 @@
 :host([data-contexto-page-editor]) .contexto-surface { border:0; }
 :host([data-contexto-page-editor][data-placement="docked"]) .contexto-surface { border-radius:12px; }
 .contexto-surface { box-sizing:border-box; border:1px solid var(--ctx-border); border-radius:12px; background:var(--ctx-bg); color:var(--ctx-text); padding:14px; font-size:14px; line-height:1.35; }
+:host([data-contexto-surface="full-profile"]) { display:block; margin-top:16px; }
 :host([data-contexto-surface="hover-card"]) { display:block; flex:0 0 100%; width:100%; margin:8px 0; }
 .contexto-header,.form-actions,.chip-row { display:flex; gap:8px; }
 .contexto-header { align-items:center; justify-content:space-between; color:var(--ctx-accent); }
