@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const appCss = readFileSync(resolve('entrypoints/popup/App.css'), 'utf8');
 const globalCss = readFileSync(resolve('entrypoints/popup/style.css'), 'utf8');
+const comboboxCss = readFileSync(resolve('entrypoints/popup/TargetHandleCombobox.css'), 'utf8');
 
 function ruleBody(css: string, selector: string) {
   const selectorStart = css.indexOf(`${selector} {`);
@@ -35,5 +36,15 @@ describe('popup layout contract', () => {
 
     expect(body).toContain('max-height: 600px;');
     expect(body).toContain('overflow-y: auto;');
+  });
+
+  it('allows long company values to shrink and wrap within popup suggestions', () => {
+    const company = ruleBody(comboboxCss, '.target-handle-company');
+    expect(company).toContain('min-width: 0;');
+    expect(company).toContain('white-space: normal;');
+
+    const value = ruleBody(comboboxCss, '.target-handle-company-value');
+    expect(value).toContain('min-width: 0;');
+    expect(value).toContain('overflow-wrap: anywhere;');
   });
 });
