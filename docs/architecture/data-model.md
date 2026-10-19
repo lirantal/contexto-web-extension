@@ -15,6 +15,10 @@ The current schema lives in `src/data/db.ts` and is versioned as Dexie version `
 - `backups`: local record of import events and backup metadata.
 - `changeLog`: append-only local mutation log for future sync.
 
+## Account deletion
+
+The dashboard's **Delete account** action is a permanent local delete. It removes the account, its notes, bookmarks (including previously soft-deleted bookmark rows), tag/folder joins, account-linked search history, and related change-log entries in one transaction. Shared companies, tags, and folders are retained because other accounts may use them; only this account's assignments are removed. There is no in-app undo, so export a backup first when recovery may be needed.
+
 ## Indexes
 
 The important uniqueness constraints are:
@@ -29,7 +33,7 @@ The important uniqueness constraints are:
 
 ## Sync Readiness
 
-Every user-edited core record uses stable UUID-based IDs and timestamps. Deletes should remain soft deletes when remote sync is introduced so another client can converge without losing intent.
+Every user-edited core record uses stable UUID-based IDs and timestamps. Most synchronized deletes should remain soft deletes when remote sync is introduced so another client can converge without losing intent. The dashboard account deletion action is the explicit local-data erasure exception and intentionally removes the account-owned rows rather than leaving a tombstone.
 
 Bookmarks remain separate from account notes and from `AccountSummary`. Focused lookup/list operations avoid loading every bookmark during ordinary account searches and feed relationship lookups.
 

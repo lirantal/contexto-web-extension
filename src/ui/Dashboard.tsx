@@ -18,6 +18,7 @@ import {
   addNote,
   assignFolder,
   assignTag,
+  deleteAccount,
   ensureAccountFromProfile,
   exportBackup,
   getLookups,
@@ -327,6 +328,9 @@ function AccountDetail({
   const [markingCaughtUp, setMarkingCaughtUp] = useState(false);
   const [catchUpError, setCatchUpError] = useState('');
   const [catchUpSuccess, setCatchUpSuccess] = useState('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const catchUpUrl = buildXCatchUpSearchUrl(account.handle, account.lastCatchUpAt);
 
   useEffect(() => {
@@ -395,6 +399,17 @@ function AccountDetail({
       setCatchUpError(error instanceof Error ? error.message : 'Could not update catch-up checkpoint');
     } finally {
       setMarkingCaughtUp(false);
+    }
+  }
+
+  async function permanentlyDeleteAccount() {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteAccount(account.id);
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Could not delete account');
+      setDeleting(false);
     }
   }
 
@@ -499,6 +514,30 @@ function AccountDetail({
             );
           })}
         </div>
+      </section>
+
+      <section className="panel detail-section danger-section">
+        <h3><Trash2 size={16} aria-hidden="true" /> Delete account</h3>
+        {!deleteConfirmation ? <>
+          <p>Permanently remove this account and its saved Contexto data.</p>
+          <button type="button" className="danger-action" onClick={() => {
+            setDeleteConfirmation(true);
+            setDeleteError('');
+          }}>
+            <Trash2 size={16} aria-hidden="true" /> Delete account
+          </button>
+        </> : <>
+          <p className="danger-warning">
+            This permanently deletes @{account.handle}, including profile metadata, notes, bookmarks, search history, and tag/folder assignments. Shared company, tag, and folder definitions remain available to other accounts.
+          </p>
+          <div className="delete-actions">
+            <button type="button" disabled={deleting} onClick={() => setDeleteConfirmation(false)}>Cancel</button>
+            <button type="button" className="danger-action" disabled={deleting} onClick={permanentlyDeleteAccount}>
+              <Trash2 size={16} aria-hidden="true" /> {deleting ? 'Deleting…' : `Delete @${account.handle} permanently`}
+            </button>
+          </div>
+          {deleteError && <p className="error-line" role="alert">{deleteError}</p>}
+        </>}
       </section>
     </div>
   );

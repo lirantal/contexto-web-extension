@@ -19,3 +19,7 @@ Search currently matches:
 - Folder names.
 
 Dashboard filters also support narrowing by folder, tag, and company.
+
+## Account deletion
+
+The dashboard account details pane includes **Delete account**. After explicit confirmation, Contexto permanently removes that account's profile metadata, notes, bookmarks, search history, tag/folder assignments, and related local change-log entries in one transaction. Shared company, tag, and folder definitions remain available to other accounts. The action has no in-app undo; export a backup first if the account may need to be recovered.

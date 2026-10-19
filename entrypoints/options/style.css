@@ -198,6 +198,30 @@ textarea {
   color: #0f6f37;
 }
 
+.danger-section {
+  border-color: #e4baba;
+}
+
+.danger-section p {
+  margin: 0;
+}
+
+.danger-warning {
+  color: #7c2525;
+}
+
+.danger-action {
+  border-color: #a42424;
+  background: #a42424;
+  color: #ffffff;
+}
+
+.delete-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .account-list {
   border-right: 1px solid #dde2dc;
   background: #fbfcfb;

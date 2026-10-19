@@ -6,6 +6,7 @@ import {
   assignFolder,
   assignTag,
   captureBookmark,
+  deleteAccount,
   ensureAccountFromProfile,
   exportBackup,
   findBookmarkByPost,
@@ -19,6 +20,7 @@ import {
   removeBookmark,
   removeFolder,
   removeTag,
+  recordSearch,
   resetDatabaseForTests,
   saveAccountContext,
   updateAccount,
@@ -186,6 +188,67 @@ describe('Contexto repositories', () => {
     const lookups = await getLookups(database);
     expect(lookups.tags.map(({ name }) => name)).toContain('founder');
     expect(lookups.folders.map(({ name }) => name)).toContain('Friends');
+  });
+
+  it('permanently deletes account-owned data while retaining shared lookups and other accounts', async () => {
+    const first = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'first', displayName: 'First', profileUrl: 'https://x.com/first' },
+      database,
+    );
+    const second = await ensureAccountFromProfile(
+      { platform: 'x', handle: 'second', displayName: 'Second', profileUrl: 'https://x.com/second' },
+      database,
+    );
+    await updateAccount(first.id, { companyName: 'Shared Co', role: 'Engineer' }, database);
+    await updateAccount(second.id, { companyName: 'Shared Co' }, database);
+    await assignTag(first.id, 'Shared tag', database);
+    await assignTag(second.id, 'Shared tag', database);
+    await assignFolder(first.id, 'Shared folder', database);
+    await assignFolder(second.id, 'Shared folder', database);
+    const firstNote = await addNote(first.id, 'Private note', database);
+    await addNote(second.id, 'Keep this note', database);
+    const firstBookmark = await captureBookmark(first.id, {
+      authorHandle: 'first', postUrl: 'https://x.com/first/status/1', reminder: 'Private reminder',
+    }, database);
+    await captureBookmark(second.id, {
+      authorHandle: 'second', postUrl: 'https://x.com/second/status/2',
+    }, database);
+    await removeBookmark(firstBookmark.id, database);
+    await recordSearch(
+      { viewerHandle: 'me', targetHandle: 'first', direction: 'from-profile' },
+      'https://x.com/search?q=from%3Afirst',
+      first.id,
+      database,
+    );
+    await recordSearch(
+      { viewerHandle: 'me', targetHandle: 'second', direction: 'from-profile' },
+      'https://x.com/search?q=from%3Asecond',
+      second.id,
+      database,
+    );
+
+    await deleteAccount(first.id, database);
+
+    expect(await database.accounts.get(first.id)).toBeUndefined();
+    expect(await getAccountByHandle('x', 'first', database)).toBeUndefined();
+    expect(await database.accountTags.where('accountId').equals(first.id).count()).toBe(0);
+    expect(await database.folderAccounts.where('accountId').equals(first.id).count()).toBe(0);
+    expect(await database.notes.where('accountId').equals(first.id).count()).toBe(0);
+    expect(await database.bookmarks.where('accountId').equals(first.id).count()).toBe(0);
+    expect(await database.searchHistory.where('accountId').equals(first.id).count()).toBe(0);
+    expect((await listAccountSummaries({}, database)).map(({ id }) => id)).toEqual([second.id]);
+    expect((await getAccountByHandle('x', 'second', database))?.tags.map(({ name }) => name)).toEqual(['Shared tag']);
+    expect((await getAccountByHandle('x', 'second', database))?.folders.map(({ name }) => name)).toEqual(['Shared folder']);
+    expect((await getLookups(database)).companies.map(({ name }) => name)).toEqual(['Shared Co']);
+    expect((await getLookups(database)).tags.map(({ name }) => name)).toEqual(['Shared tag']);
+    expect((await getLookups(database)).folders.map(({ name }) => name)).toEqual(['Shared folder']);
+
+    const remainingChanges = await database.changeLog.toArray();
+    expect(remainingChanges).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ entityId: first.id }),
+      expect.objectContaining({ entityId: firstNote.latestNote?.id }),
+      expect.objectContaining({ entityId: firstBookmark.id }),
+    ]));
   });
 
   it('lists distinct active saved locations as reusable lookups', async () => {

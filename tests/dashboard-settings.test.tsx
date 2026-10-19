@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   accounts: [] as Array<Record<string, unknown>>,
   clearTargetHistory: vi.fn(),
   companies: [] as Array<{ id: string; name: string }>,
+  deleteAccount: vi.fn(),
   locations: [] as string[],
   getSettings: vi.fn(),
   markAccountCaughtUp: vi.fn(),
@@ -27,6 +28,7 @@ vi.mock('@/src/data/repositories', () => ({
   addNote: vi.fn(),
   assignFolder: vi.fn(),
   assignTag: vi.fn(),
+  deleteAccount: mocks.deleteAccount,
   ensureAccountFromProfile: vi.fn(),
   exportBackup: vi.fn(),
   getLookups: vi.fn(),
@@ -139,6 +141,27 @@ describe('dashboard target handle history settings', () => {
 
     expect(mocks.removeTag).toHaveBeenCalledWith('account-1', 'tag-1');
     expect(mocks.removeFolder).toHaveBeenCalledWith('account-1', 'folder-1');
+  });
+
+  it('requires explicit confirmation before permanently deleting an account', async () => {
+    mocks.accounts = [{
+      id: 'account-1', platform: 'x', handle: 'founder', normalizedHandle: 'founder',
+      displayName: 'Founder', profileUrl: 'https://x.com/founder', syncState: 'local-only',
+      createdAt: '2026-07-12T00:00:00.000Z', updatedAt: '2026-07-12T00:00:00.000Z',
+      tags: [], folders: [],
+    }];
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await user.click(await screen.findByRole('button', { name: 'Delete account' }));
+    expect(mocks.deleteAccount).not.toHaveBeenCalled();
+    expect(screen.getByText(/This permanently deletes @founder/)).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByRole('button', { name: 'Delete account' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Delete account' }));
+    await user.click(screen.getByRole('button', { name: 'Delete @founder permanently' }));
+    expect(mocks.deleteAccount).toHaveBeenCalledWith('account-1');
   });
 
   it('uses fuzzy saved-company suggestions when editing account metadata', async () => {

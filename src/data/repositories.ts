@@ -493,6 +493,51 @@ export async function removeBookmark(bookmarkId: string, database = db): Promise
   );
 }
 
+export async function deleteAccount(accountId: string, database = db): Promise<void> {
+  await database.transaction(
+    'rw',
+    [
+      database.accounts,
+      database.accountTags,
+      database.folderAccounts,
+      database.notes,
+      database.bookmarks,
+      database.searchHistory,
+      database.changeLog,
+    ],
+    async () => {
+      const account = await database.accounts.get(accountId);
+      if (!account) throw new Error('Account not found');
+
+      const [notes, bookmarks, changes] = await Promise.all([
+        database.notes.where('accountId').equals(accountId).toArray(),
+        database.bookmarks.where('accountId').equals(accountId).toArray(),
+        database.changeLog.toArray(),
+      ]);
+      const noteIds = new Set(notes.map((note) => note.id));
+      const bookmarkIds = new Set(bookmarks.map((bookmark) => bookmark.id));
+      const accountChangeIds = changes
+        .filter((change) => {
+          if (change.entityType === 'account') return change.entityId === accountId;
+          if (change.entityType === 'note') return change.entityId === accountId || noteIds.has(change.entityId);
+          if (change.entityType === 'bookmark') return bookmarkIds.has(change.entityId);
+          return false;
+        })
+        .map((change) => change.id);
+
+      await Promise.all([
+        database.accountTags.where('accountId').equals(accountId).delete(),
+        database.folderAccounts.where('accountId').equals(accountId).delete(),
+        database.notes.where('accountId').equals(accountId).delete(),
+        database.bookmarks.where('accountId').equals(accountId).delete(),
+        database.searchHistory.where('accountId').equals(accountId).delete(),
+        database.changeLog.bulkDelete(accountChangeIds),
+        database.accounts.delete(accountId),
+      ]);
+    },
+  );
+}
+
 export async function assignTag(accountId: string, name: string, database = db): Promise<AccountSummary> {
   const tag = await upsertTagByName(name, database);
   const existing = await database.accountTags.where('[accountId+tagId]').equals([accountId, tag.id]).first();
