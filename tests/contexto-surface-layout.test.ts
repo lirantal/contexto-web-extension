@@ -81,6 +81,22 @@ describe('Contexto X surface layout contract', () => {
     expect(focus).toContain('outline-offset:-2px;');
   });
 
+  it('gives hover launcher actions a 36 pixel minimum target height', () => {
+    const hoverAction = ruleBody('.contexto-hover-launcher button');
+    expect(hoverAction).toContain('min-height:36px;');
+  });
+
+  it('gives profile form actions a 36 pixel minimum target height', () => {
+    const formAction = ruleBody('.contexto-form > .form-actions button');
+    expect(formAction).toContain('min-height:36px;');
+  });
+
+  it('gives chip remove controls a 36 pixel minimum target in both dimensions', () => {
+    const chipRemove = ruleBody('.chip button');
+    expect(chipRemove).toContain('min-width:36px;');
+    expect(chipRemove).toContain('min-height:36px;');
+  });
+
   it('gives the feed panel readable grouped spacing and obvious X links', () => {
     const panel = ruleBody('.contexto-feed-panel');
     expect(panel).toContain('width:320px;');

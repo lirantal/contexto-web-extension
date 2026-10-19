@@ -15,7 +15,7 @@
 :host([data-theme="dark"]) .contexto-hover-launcher { --ctx-bg:#000; --ctx-text:#e7e9ea; --ctx-muted:#71767b; --ctx-border:#2f3336; --ctx-accent:#9b8afb; }
 .contexto-hover-header { display:flex; align-items:center; gap:8px; }
 .contexto-hover-header > strong { margin-right:auto; color:var(--ctx-accent); }
-.contexto-hover-launcher button { min-height:28px; padding:4px 10px; }
+.contexto-hover-launcher button { min-height:36px; padding:4px 10px; }
 .contexto-hover-state { color:var(--ctx-muted); }
 .contexto-hover-summary { display:grid; gap:3px; padding:0 2px 2px; color:var(--ctx-muted); }
 .contexto-hover-name { color:var(--ctx-text); font-size:13px; }
@@ -38,7 +38,7 @@ button:focus-visible,input:focus-visible { outline:2px solid var(--ctx-accent); 
 .chip-row { flex-wrap:wrap; }
 .chip { display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:4px 8px; background:color-mix(in srgb,var(--ctx-accent) 14%,var(--ctx-bg)); color:var(--ctx-accent); font-size:12px; font-weight:650; }
 .folder-chip { background:color-mix(in srgb,#1d9bf0 14%,var(--ctx-bg)); color:#1d78b5; }
-.chip button { border:0; padding:0; background:transparent; color:inherit; }
+.chip button { min-width:36px; min-height:36px; border:0; padding:0; background:transparent; color:inherit; }
 .value-options { display:grid; max-height:140px; overflow:auto; border:1px solid var(--ctx-border); border-radius:9px; }
 .value-options .value-option { border:0; border-radius:0; color:var(--ctx-link); text-align:left; }
 .value-options .value-option:hover,
@@ -47,6 +47,7 @@ button:focus-visible,input:focus-visible { outline:2px solid var(--ctx-accent); 
 .contexto-success { margin:0; color:#18864b; }
 .contexto-summary h3,.contexto-summary p { margin:0; }
 .form-actions { flex-wrap:wrap; }
+.contexto-form > .form-actions button { min-height:36px; }
 @media (max-width:360px) { .contexto-field-row { display:grid; grid-template-columns:minmax(0,1fr); } }
 @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; transition:none !important; } }
 :host([data-contexto-surface="feed-post"]) { display:inline-block; position:relative; margin-left:6px; vertical-align:middle; z-index:2; }
