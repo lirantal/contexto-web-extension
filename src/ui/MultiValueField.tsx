@@ -6,11 +6,18 @@ export interface MultiValueFieldProps {
   suggestions: string[];
   onChange(values: string[]): void;
   disabled?: boolean;
+  query?: string;
+  onQueryChange?(query: string): void;
 }
 
-export function MultiValueField({ label, values, suggestions, onChange, disabled }: MultiValueFieldProps) {
+export function MultiValueField({ label, values, suggestions, onChange, disabled, query: controlledQuery, onQueryChange }: MultiValueFieldProps) {
   const listboxId = useId();
-  const [query, setQuery] = useState('');
+  const [localQuery, setLocalQuery] = useState('');
+  const query = controlledQuery ?? localQuery;
+  function setQuery(value: string) {
+    setLocalQuery(value);
+    onQueryChange?.(value);
+  }
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const normalized = useMemo(() => new Set(values.map((value) => value.toLowerCase())), [values]);

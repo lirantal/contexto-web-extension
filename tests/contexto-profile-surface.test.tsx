@@ -141,6 +141,88 @@ describe('ContextoProfileSurface', () => {
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeVisible();
   });
 
+  it.each(['inline', 'docked', 'modal'] as const)('saves both pending inputs alongside chips in the %s editor', async (placement) => {
+    const saved = {
+      id: 'account_1', platform: 'x', handle: 'theo', displayName: 'Theo',
+      profileUrl: 'https://x.com/theo',
+      tags: [{ id: 't1', name: 'Founder' }, { id: 't2', name: 'speaker' }],
+      folders: [{ id: 'f1', name: 'Friends' }, { id: 'f2', name: 'Conference' }],
+    };
+    const send = vi.fn()
+      .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
+      .mockResolvedValueOnce({ ok: true, account: saved });
+    const onRequestClose = vi.fn();
+    render(<ContextoProfileSurface profile={profile} kind="full-profile" placement={placement}
+      onRequestClose={placement === 'inline' ? undefined : onRequestClose}
+      send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
+    const tags = await screen.findByLabelText('Tags');
+    const folders = screen.getByLabelText('Folders');
+    fireEvent.change(tags, { target: { value: 'Founder' } });
+    fireEvent.keyDown(tags, { key: 'Enter' });
+    fireEvent.change(folders, { target: { value: 'Friends' } });
+    fireEvent.keyDown(folders, { key: 'Enter' });
+    fireEvent.change(tags, { target: { value: '  speaker  ' } });
+    fireEvent.change(folders, { target: { value: '  Conference  ' } });
+    expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'contexto:account:saveContext' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
+    await waitFor(() => expect(send).toHaveBeenCalledWith({
+      type: 'contexto:account:saveContext',
+      input: { profile, metadata: expect.any(Object), tagNames: ['Founder', 'speaker'], folderNames: ['Friends', 'Conference'] },
+    }));
+    await screen.findByText('Saved to Contexto');
+    expect(tags).toHaveValue('');
+    expect(folders).toHaveValue('');
+    expect(screen.getByText('speaker')).toBeVisible();
+    expect(screen.getByText('Conference')).toBeVisible();
+    expect(onRequestClose).toHaveBeenCalledTimes(placement === 'inline' ? 0 : 1);
+  });
+
+  it.each(['  ', '  FOUNDER  '])('ignores blank or duplicate pending values (%j)', async (query) => {
+    const saved = { id: 'a1', handle: 'theo', displayName: 'Theo',
+      tags: [{ id: 't1', name: 'Founder' }], folders: [{ id: 'f1', name: 'Founder' }] };
+    const send = vi.fn()
+      .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: saved })
+      .mockResolvedValueOnce({ ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } })
+      .mockResolvedValueOnce({ ok: true, account: saved });
+    renderSurface(send);
+    fireEvent.change(await screen.findByLabelText('Tags'), { target: { value: query } });
+    fireEvent.change(screen.getByLabelText('Folders'), { target: { value: query } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'contexto:account:saveContext', input: expect.objectContaining({ tagNames: ['Founder'], folderNames: ['Founder'] }),
+    })));
+    await screen.findByText('Saved to Contexto');
+  });
+
+  it('preserves pending inputs through failed save, retry, and remount; Cancel clears them', async () => {
+    const drafts = new AccountDraftStore();
+    const send = vi.fn(async (message) => {
+      if (message.type === 'contexto:account:lookup') return { ok: true, lookup: true, lookupAccount: undefined };
+      if (message.type === 'contexto:lookups:list') return { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } };
+      return { ok: false, error: 'Database unavailable' };
+    });
+    const props = { profile, kind: 'full-profile' as const, send: send as ContextoProfileSurfaceProps['send'], drafts };
+    const first = render(<ContextoProfileSurface {...props} />);
+    fireEvent.change(await screen.findByLabelText('Tags'), { target: { value: 'speaker' } });
+    fireEvent.change(screen.getByLabelText('Folders'), { target: { value: 'Friends' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
+    await screen.findByText('Database unavailable');
+    expect(screen.getByLabelText('Tags')).toHaveValue('speaker');
+    expect(screen.getByLabelText('Folders')).toHaveValue('Friends');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry save' }));
+    await waitFor(() => expect(send.mock.calls.filter(([message]) => message.type === 'contexto:account:saveContext')).toHaveLength(2));
+    await screen.findByText('Database unavailable');
+    first.unmount();
+    render(<ContextoProfileSurface {...props} />);
+    expect(await screen.findByLabelText('Tags')).toHaveValue('speaker');
+    expect(screen.getByLabelText('Folders')).toHaveValue('Friends');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByLabelText('Tags')).toHaveValue('');
+    expect(screen.getByLabelText('Folders')).toHaveValue('');
+    expect(drafts.get(profile.handle)).toBeUndefined();
+  });
+
   it('retains the editor and exposes retry after a failed save', async () => {
     const send = vi.fn()
       .mockResolvedValueOnce({ ok: true, lookup: true, lookupAccount: undefined })

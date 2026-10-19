@@ -1,9 +1,11 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dashboard } from '@/src/ui/Dashboard';
 
 const mocks = vi.hoisted(() => ({
+  assignTag: vi.fn(),
+  assignFolder: vi.fn(),
   accounts: [] as Array<Record<string, unknown>>,
   clearTargetHistory: vi.fn(),
   companies: [] as Array<{ id: string; name: string }>,
@@ -26,8 +28,8 @@ vi.mock('dexie-react-hooks', () => ({
 
 vi.mock('@/src/data/repositories', () => ({
   addNote: vi.fn(),
-  assignFolder: vi.fn(),
-  assignTag: vi.fn(),
+  assignFolder: mocks.assignFolder,
+  assignTag: mocks.assignTag,
   deleteAccount: mocks.deleteAccount,
   ensureAccountFromProfile: vi.fn(),
   exportBackup: vi.fn(),
@@ -141,6 +143,57 @@ describe('dashboard target handle history settings', () => {
 
     expect(mocks.removeTag).toHaveBeenCalledWith('account-1', 'tag-1');
     expect(mocks.removeFolder).toHaveBeenCalledWith('account-1', 'folder-1');
+  });
+
+  it('saves pending tags and folders with metadata without pressing Add', async () => {
+    mocks.accounts = [{
+      id: 'account-1', platform: 'x', handle: 'founder', displayName: 'Founder',
+      profileUrl: 'https://x.com/founder', tags: [], folders: [],
+    }];
+    const user = userEvent.setup();
+    renderDashboard();
+    await user.type(screen.getByPlaceholderText('Add tag'), '  speaker  ');
+    await user.type(screen.getByPlaceholderText('Add folder'), '  Conference follow-up  ');
+    expect(mocks.assignTag).not.toHaveBeenCalled();
+    expect(mocks.assignFolder).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Save metadata' }));
+    await waitFor(() => expect(mocks.assignFolder).toHaveBeenCalledWith('account-1', 'Conference follow-up'));
+    expect(mocks.assignTag).toHaveBeenCalledWith('account-1', 'speaker');
+    expect(screen.getByPlaceholderText('Add tag')).toHaveValue('');
+    expect(screen.getByPlaceholderText('Add folder')).toHaveValue('');
+  });
+
+  it('retains pending dashboard input when saving fails and allows retry', async () => {
+    mocks.accounts = [{
+      id: 'account-1', platform: 'x', handle: 'founder', displayName: 'Founder',
+      profileUrl: 'https://x.com/founder', tags: [], folders: [],
+    }];
+    mocks.assignTag.mockRejectedValueOnce(new Error('Database unavailable'));
+    const user = userEvent.setup();
+    renderDashboard();
+    await user.type(screen.getByPlaceholderText('Add tag'), 'speaker');
+    await user.type(screen.getByPlaceholderText('Add folder'), 'Friends');
+    await user.click(screen.getByRole('button', { name: 'Save metadata' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Database unavailable');
+    expect(screen.getByPlaceholderText('Add tag')).toHaveValue('speaker');
+    expect(screen.getByPlaceholderText('Add folder')).toHaveValue('Friends');
+    await user.click(screen.getByRole('button', { name: 'Save metadata' }));
+    await waitFor(() => expect(screen.getByPlaceholderText('Add folder')).toHaveValue(''));
+  });
+
+  it('ignores whitespace-only dashboard tag and folder inputs on Save', async () => {
+    mocks.accounts = [{
+      id: 'account-1', platform: 'x', handle: 'founder', displayName: 'Founder',
+      profileUrl: 'https://x.com/founder', tags: [], folders: [],
+    }];
+    const user = userEvent.setup();
+    renderDashboard();
+    await user.type(screen.getByPlaceholderText('Add tag'), '  ');
+    await user.type(screen.getByPlaceholderText('Add folder'), '  ');
+    await user.click(screen.getByRole('button', { name: 'Save metadata' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save metadata' })).toBeEnabled());
+    expect(mocks.assignTag).not.toHaveBeenCalled();
+    expect(mocks.assignFolder).not.toHaveBeenCalled();
   });
 
   it('requires explicit confirmation before permanently deleting an account', async () => {

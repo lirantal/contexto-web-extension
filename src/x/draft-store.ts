@@ -1,7 +1,10 @@
 import { normalizeXHandle } from '@/src/shared/platforms/x';
 import type { AccountContextSaveInput } from '@/src/shared/types';
 
-export type AccountContextDraft = Omit<AccountContextSaveInput, 'profile'>;
+export type AccountContextDraft = Omit<AccountContextSaveInput, 'profile'> & {
+  tagQuery?: string;
+  folderQuery?: string;
+};
 
 export class AccountDraftStore {
   private readonly drafts = new Map<string, AccountContextDraft>();

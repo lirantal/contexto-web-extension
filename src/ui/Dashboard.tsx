@@ -321,6 +321,8 @@ function AccountDetail({
   });
   const [note, setNote] = useState('');
   const [tagName, setTagName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [folderName, setFolderName] = useState('');
   const [keyword, setKeyword] = useState('');
   const [since, setSince] = useState('');
@@ -345,18 +347,28 @@ function AccountDetail({
   }, [account.id]);
 
   async function save() {
-    await updateAccount(account.id, draft);
+    setSaving(true);
+    setSaveError('');
+    try {
+      await updateAccount(account.id, draft);
+      await addTagAndClear();
+      await addFolderAndClear();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Could not save metadata');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function addTagAndClear() {
     if (!tagName.trim()) return;
-    await assignTag(account.id, tagName);
+    await assignTag(account.id, tagName.trim());
     setTagName('');
   }
 
   async function addFolderAndClear() {
     if (!folderName.trim()) return;
-    await assignFolder(account.id, folderName);
+    await assignFolder(account.id, folderName.trim());
     setFolderName('');
   }
 
@@ -435,13 +447,14 @@ function AccountDetail({
           <label>How we know each other<input value={draft.relationshipSource} onChange={(event) => setDraft({ ...draft, relationshipSource: event.target.value })} /></label>
         </div>
         <label>Bio snapshot<textarea rows={3} value={draft.bioSnapshot} onChange={(event) => setDraft({ ...draft, bioSnapshot: event.target.value })} /></label>
-        <button className="primary-action" onClick={save}>Save metadata</button>
+        <button className="primary-action" disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save metadata'}</button>
+        {saveError && <p role="alert">{saveError}</p>}
       </section>
 
       <section className="panel detail-section split-section">
         <div>
           <h3><Tag size={16} aria-hidden="true" /> Tags</h3>
-          <div className="inline-form"><input value={tagName} onChange={(event) => setTagName(event.target.value)} placeholder="Add tag" /><button onClick={addTagAndClear}>Add</button></div>
+          <div className="inline-form"><input disabled={saving} value={tagName} onChange={(event) => setTagName(event.target.value)} placeholder="Add tag" /><button disabled={saving} onClick={addTagAndClear}>Add</button></div>
           <div className="chip-row">{account.tags.map((tag) => (
             <span className="chip" key={tag.id}>
               {tag.name}
@@ -452,7 +465,7 @@ function AccountDetail({
         </div>
         <div>
           <h3><FolderPlus size={16} aria-hidden="true" /> Folders</h3>
-          <div className="inline-form"><input value={folderName} onChange={(event) => setFolderName(event.target.value)} placeholder="Add folder" /><button onClick={addFolderAndClear}>Add</button></div>
+          <div className="inline-form"><input disabled={saving} value={folderName} onChange={(event) => setFolderName(event.target.value)} placeholder="Add folder" /><button disabled={saving} onClick={addFolderAndClear}>Add</button></div>
           <div className="chip-row">{account.folders.map((folder) => (
             <span className="chip folder-chip" key={folder.id}>
               {folder.name}

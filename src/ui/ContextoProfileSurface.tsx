@@ -67,14 +67,26 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
     return () => { cancelled = true; };
   }, [profile.handle, profile.profileUrl, send, drafts, lookupAttempt]);
 
-  function updateDraft(next: AccountContextDraft) { setDraft(next); drafts.set(profile.handle, next); }
+  function updateDraft(change: AccountContextDraft | ((current: AccountContextDraft) => AccountContextDraft)) {
+    setDraft((current) => {
+      const next = typeof change === 'function' ? change(current) : change;
+      drafts.set(profile.handle, next);
+      return next;
+    });
+  }
   function updateMetadata(field: keyof AccountContextDraft['metadata'], value: string) {
     updateDraft({ ...draft, metadata: { ...draft.metadata, [field]: value } });
   }
   async function saveContext() {
     setSaving(true); setError(''); setSuccess('');
     try {
-      const response = await send({ type: 'contexto:account:saveContext', input: { profile, ...draft } });
+      const { tagQuery = '', folderQuery = '', ...context } = draft;
+      function includePending(values: string[], query: string) {
+        const value = query.trim();
+        return value && !values.some((existing) => existing.toLowerCase() === value.toLowerCase())
+          ? [...values, value] : values;
+      }
+      const response = await send({ type: 'contexto:account:saveContext', input: { profile, ...context, tagNames: includePending(draft.tagNames, tagQuery), folderNames: includePending(draft.folderNames, folderQuery) } });
       if (response.ok && 'account' in response && response.account) {
         drafts.clear(profile.handle); setAccount(response.account); setDraft(draftFor(profile, response.account)); setSuccess('Saved to Contexto'); onRequestClose?.(); return;
       }
@@ -124,8 +136,8 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
             disabled={saving} onChange={(location) => updateMetadata('location', location)} />
           <label>How you know them<input value={draft.metadata.relationshipSource ?? ''} disabled={saving} onChange={(event) => updateMetadata('relationshipSource', event.target.value)} /></label>
         </div>
-        <MultiValueField label="Tags" values={draft.tagNames} suggestions={lookups.tags.map((tag) => tag.name)} disabled={saving} onChange={(tagNames) => updateDraft({ ...draft, tagNames })} />
-        <MultiValueField label="Folders" values={draft.folderNames} suggestions={lookups.folders.map((folder) => folder.name)} disabled={saving} onChange={(folderNames) => updateDraft({ ...draft, folderNames })} />
+        <MultiValueField label="Tags" query={draft.tagQuery ?? ''} onQueryChange={(tagQuery) => updateDraft((current) => ({ ...current, tagQuery }))} values={draft.tagNames} suggestions={lookups.tags.map((tag) => tag.name)} disabled={saving} onChange={(tagNames) => updateDraft({ ...draft, tagNames })} />
+        <MultiValueField label="Folders" query={draft.folderQuery ?? ''} onQueryChange={(folderQuery) => updateDraft((current) => ({ ...current, folderQuery }))} values={draft.folderNames} suggestions={lookups.folders.map((folder) => folder.name)} disabled={saving} onChange={(folderNames) => updateDraft({ ...draft, folderNames })} />
       </section>
       {success && <p className="contexto-success" role="status" aria-live="polite">{success}</p>}
       {error && <p className="contexto-error" role="alert">{error}</p>}
