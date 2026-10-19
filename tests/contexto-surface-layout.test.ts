@@ -47,6 +47,9 @@ describe('Contexto X surface layout contract', () => {
     expect(lightHost).toContain('--ctx-border:#eff3f4;');
     expect(lightHost).toContain('--ctx-accent:#5b3fd6;');
     expect(lightHost).toContain('--ctx-link:#1d9bf0;');
+    expect(lightHost).toContain('--ctx-label:#536471;');
+    expect(lightHost).toContain('--ctx-subtle-border:#eff3f4;');
+    expect(lightHost).toContain('--ctx-hover:#f7f9f9;');
 
     const darkHost = ruleBody(css, ':host([data-contexto-surface="sidebar-search"][data-theme="dark"])');
     expect(darkHost).toContain('--ctx-bg:#000;');
@@ -55,6 +58,9 @@ describe('Contexto X surface layout contract', () => {
     expect(darkHost).toContain('--ctx-border:#2f3336;');
     expect(darkHost).toContain('--ctx-accent:#9b8afb;');
     expect(darkHost).toContain('--ctx-link:#71c9ff;');
+    expect(darkHost).toContain('--ctx-label:#71767b;');
+    expect(darkHost).toContain('--ctx-subtle-border:#2f3336;');
+    expect(darkHost).toContain('--ctx-hover:#16181c;');
   });
 
   it('keeps the sidebar search clear of the viewport edge and native X search', () => {
@@ -64,6 +70,7 @@ describe('Contexto X surface layout contract', () => {
 
   it('fits the shared Quick X search into the responsive sidebar workspace', () => {
     const sidebarWorkspace = ruleBody(css, '.contexto-sidebar-workspace');
+    const sidebarAccountSearch = ruleBody(css, '.contexto-sidebar-search');
     const sidebarQuickSearch = ruleBody(quickSearchCss, '.contexto-quick-search[data-surface="sidebar"]');
     const sidebarDateRow = ruleBody(quickSearchCss, '.contexto-quick-search[data-surface="sidebar"] .date-row');
     const sidebarDateLabel = ruleBody(quickSearchCss, '.contexto-quick-search[data-surface="sidebar"] .date-row > label');
@@ -71,6 +78,14 @@ describe('Contexto X surface layout contract', () => {
     const actionPreview = ruleBody(quickSearchCss, '.contexto-quick-search .search-action small');
 
     expect(sidebarWorkspace).toContain('display:grid;');
+    expect(sidebarWorkspace).toContain('padding:10px 12px;');
+    expect(sidebarWorkspace).toContain('border:1px solid var(--ctx-border);');
+    expect(sidebarWorkspace).toContain('border-radius:16px;');
+    expect(sidebarWorkspace).toContain('background:var(--ctx-bg);');
+    expect(sidebarAccountSearch).not.toContain('padding:');
+    expect(sidebarAccountSearch).not.toContain('border:');
+    expect(sidebarAccountSearch).not.toContain('border-radius:');
+    expect(sidebarAccountSearch).not.toContain('background:');
     expect(sidebarQuickSearch).toContain('width: 100%;');
     expect(sidebarQuickSearch).toContain('min-width: 0;');
     expect(sidebarQuickSearch).toContain('border-top: 1px solid var(--ctx-border);');
