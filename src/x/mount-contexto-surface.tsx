@@ -51,17 +51,31 @@ export function mountContextoSurface({ surface, send, drafts, css, theme, openPa
   } else {
     surface.host.append(mountHost);
   }
+  // Keep the marker in the author header, but render its panel outside X's
+  // transformed/clipped post subtree and stacking contexts.
+  let panelHost: HTMLDivElement | undefined;
+  let panelContainer: HTMLDivElement | undefined;
+  if (surface.kind === 'feed-post') {
+    panelHost = document.createElement('div');
+    panelHost.dataset.contextoFeedOverlay = '';
+    panelHost.dataset.theme = theme;
+    const panelShadow = panelHost.attachShadow({ mode: 'open' });
+    panelContainer = document.createElement('div');
+    panelShadow.append(style.cloneNode(true), panelContainer);
+    document.body.append(panelHost);
+  }
   const root = createRoot(app);
   flushSync(() => {
     root.render(surface.kind === 'hover-card'
       ? <ContextoHoverLauncher profile={surface.profile} send={send} onEdit={openPageEditor} />
       : surface.kind === 'feed-post'
-        ? <ContextoFeedContext profile={surface.profile} post={surface.post} send={send} onEdit={openPageEditor} />
+        ? <ContextoFeedContext profile={surface.profile} post={surface.post} send={send} onEdit={openPageEditor} panelContainer={panelContainer} />
         : <ContextoProfileSurface profile={surface.profile} kind={surface.kind} send={send} drafts={drafts} />
     );
   });
   const cleanup: XSurfaceCleanup = () => {
     root.unmount();
+    panelHost?.remove();
     mountHost.remove();
   };
   cleanup.isConnected = () => mountHost.isConnected && surface.host.contains(mountHost);

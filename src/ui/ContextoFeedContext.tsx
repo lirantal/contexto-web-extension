@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { buildXCatchUpSearchUrl, buildXInteractionSearchUrl } from '@/src/shared/platforms/x';
 import type { AccountSummary, ProfileSnapshot, XPostSnapshot } from '@/src/shared/types';
 import type { ContextoProfileSurfaceProps } from './ContextoProfileSurface';
@@ -8,11 +9,12 @@ export interface ContextoFeedContextProps {
   post?: XPostSnapshot;
   send: ContextoProfileSurfaceProps['send'];
   onEdit(profile: ProfileSnapshot, returnFocusTarget: HTMLElement): void;
+  panelContainer?: HTMLElement;
 }
 
 type BookmarkState = 'unavailable' | 'loading' | 'available' | 'saved';
 
-export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFeedContextProps) {
+export function ContextoFeedContext({ profile, post, send, onEdit, panelContainer }: ContextoFeedContextProps) {
   const [account, setAccount] = useState<AccountSummary>();
   const [viewerHandle, setViewerHandle] = useState('');
   const [open, setOpen] = useState(false);
@@ -125,7 +127,10 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
   const interactionUrl = buildXInteractionSearchUrl(viewerHandle, account.handle);
   const catchUpUrl = buildXCatchUpSearchUrl(account.handle, account.lastCatchUpAt);
   const openEditor = () => {
-    if (markerRef.current) onEdit(profile, markerRef.current);
+    if (markerRef.current) {
+      setOpen(false);
+      onEdit(profile, markerRef.current);
+    }
   };
   const togglePanel = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -227,17 +232,14 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
     }
   };
 
-  return <span className="contexto-feed-context">
-    <button
-      ref={markerRef}
-      className="contexto-feed-marker"
-      type="button"
-      aria-expanded={open}
-      aria-controls={open ? panelId : undefined}
-      aria-label={`Contexto context for ${account.displayName}`}
-      onClick={togglePanel}
-    >◆ Contexto</button>
-    {open && <section ref={panelRef} id={panelId} className="contexto-feed-panel" role="dialog" aria-label="Contexto relationship context">
+  const panel = open ? <section ref={panelRef} id={panelId} className="contexto-feed-panel" role="dialog" aria-label="Contexto relationship context" onClick={(event) => event.stopPropagation()}>
+      <header className="contexto-feed-panel-header">
+        <strong>Contexto</strong>
+        <button type="button" aria-label="Close Contexto context" onClick={() => {
+          setOpen(false);
+          markerRef.current?.focus();
+        }}>Close</button>
+      </header>
       <section className="contexto-feed-section contexto-feed-summary" aria-labelledby={`${panelId}-saved`}>
         <span className="contexto-feed-section-label" id={`${panelId}-saved`}>Saved context</span>
         <strong>{account.displayName}</strong>
@@ -366,6 +368,19 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
       <footer className="contexto-feed-section contexto-feed-footer">
         <button className="primary-action" type="button" onClick={openEditor}>Open full context</button>
       </footer>
-    </section>}
+    </section> : null;
+
+  return <span className="contexto-feed-context">
+    <button
+      ref={markerRef}
+      className="contexto-feed-marker"
+      type="button"
+      aria-expanded={open}
+      aria-haspopup="dialog"
+      aria-controls={open && !panelContainer ? panelId : undefined}
+      aria-label={`Contexto context for ${account.displayName}`}
+      onClick={togglePanel}
+    >◆ Contexto</button>
+    {panelContainer ? createPortal(panel, panelContainer) : panel}
   </span>;
 }

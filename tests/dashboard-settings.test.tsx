@@ -270,7 +270,7 @@ describe('dashboard target handle history settings', () => {
     renderDashboard();
 
     const location = await screen.findByLabelText('Location');
-    const company = screen.getByLabelText('Company');
+    const company = screen.getByLabelText('Company', { selector: 'input' });
     const metadataGrid = location.closest('.form-grid')!;
     const companyField = company.closest('.fuzzy-text-combobox');
     const locationField = location.closest('.fuzzy-text-combobox');

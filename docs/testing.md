@@ -31,6 +31,8 @@ Post-bookmark fixtures must prove that the validated primary-author status URL a
 
 Use controller tests with composed Shadow DOM events for mounting, focus, and dismissal behavior. Explicitly assert interactions that must not close the editor, including internal clicks, backdrop clicks, and Escape.
 
+Feed relationship-panel coverage must prove that the marker stays in the validated author header while its panel renders in a separate document-body Shadow DOM host, outside post transforms and clipping. Verify matching light/dark styles, viewport bounds and scrolling, composed internal pointer events, composer focus, compact-panel dismissal and draft clearing, handoff to the full editor, and cleanup of both hosts.
+
 Use surface tests for successful Save, failed Save, Cancel, draft retention, and the inline-versus-modal lifecycle distinction. A failed Save must leave the owned editor and draft available; the full-profile inline editor must remain visible after Save or Cancel.
 
 Company- and location-suggestion coverage must include active-account extraction, trimming, blank removal, case-insensitive deduplication, stable ordering, exact/prefix/substring/fuzzy ranking, keyboard and pointer selection, free-text retention, disabled behavior, and successful selection for both fields in both the X editor and dashboard.

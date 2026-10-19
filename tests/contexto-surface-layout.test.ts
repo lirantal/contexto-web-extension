@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const css = readFileSync(resolve('src/ui/contexto-profile-surface.css'), 'utf8');
 const quickSearchCss = readFileSync(resolve('src/ui/quick-x-search.css'), 'utf8');
+const comboboxCss = readFileSync(resolve('src/ui/fuzzy-text-combobox.css'), 'utf8');
 
 function ruleBody(stylesheet: string, selector: string) {
   const start = stylesheet.indexOf(`${selector} {`);
@@ -83,7 +84,7 @@ describe('Contexto X surface layout contract', () => {
     const input = css.match(/^input [{]([^}]*)[}]/m)?.[1] ?? '';
     const button = css.match(/^button [{]([^}]*)[}]/m)?.[1] ?? '';
     const chip = ruleBody(css, '.chip');
-    const suggestion = ruleBody(css, `.value-options .value-option:hover,
+    const suggestion = ruleBody(comboboxCss, `.value-options .value-option:hover,
 .value-options .value-option.highlighted`);
 
     expect(surface).toContain('background:var(--ctx-bg);');
@@ -92,8 +93,8 @@ describe('Contexto X surface layout contract', () => {
     expect(input).toContain('border-radius:7px;');
     expect(button).toContain('border-radius:7px;');
     expect(chip).toContain('border-radius:7px;');
-    expect(suggestion).toContain('background:var(--ctx-hover);');
-    expect(suggestion).toContain('color:var(--ctx-accent-strong);');
+    expect(suggestion).toContain('background: var(--ctx-hover, #e8f3f1);');
+    expect(suggestion).toContain('color: var(--ctx-accent-strong, #0c5e59);');
   });
 
   it('makes structured sidebar results visibly keyboard focusable', () => {
@@ -137,6 +138,19 @@ describe('Contexto X surface layout contract', () => {
     const xLink = ruleBody(css, '.contexto-feed-x-link');
     expect(xLink).toContain('text-decoration:underline;');
     expect(xLink).toContain('min-height:44px;');
+  });
+
+  it('keeps the feed overlay above X posts with an opaque, viewport-bounded panel', () => {
+    const host = ruleBody(css, ':host([data-contexto-feed-overlay])');
+    expect(host).toContain('position:fixed;');
+    expect(host).toContain('z-index:2147483644;');
+    expect(host).toContain('right:16px;');
+    expect(host).toContain('width:min(320px,calc(100vw - 32px));');
+    const panel = ruleBody(css, '.contexto-feed-panel');
+    expect(panel).toContain('background:var(--ctx-bg);');
+    expect(panel).toContain('max-height:calc(100dvh - 24px);');
+    expect(panel).toContain('overflow:auto;');
+    expect(panel).not.toContain('position:absolute;');
   });
 
   it('keeps feed supporting content at least 12 pixels tall', () => {

@@ -2,6 +2,8 @@
 
 Contexto augments supported X feed posts when the primary author already exists in the local Contexto database. A small Contexto marker appears in the validated author header. Activating it opens or closes a compact relationship panel with saved context and explicit actions without triggering the enclosing X post's navigation. Intentional links inside the panel retain their own navigation behavior.
 
+The relationship panel opens at the right edge of the viewport in a separate Contexto-owned Shadow DOM host attached to the document body. Its opaque light/dark surface sits above X's post stacking contexts, outside post clipping and transforms. It fits narrow viewports and scrolls within the available viewport height. **Close**, the marker, an outside pointer click, or Escape dismisses this compact panel; opening **Open full context** dismisses it and hands off to the persistent profile editor, whose Save/Cancel close contract is unchanged.
+
 **Panel organization.** Saved context, local writes, outbound X links, checkpoint controls, and full context are presented as separate groups. Both X links are colocated before the checkpoint row.
 
 ## Eligibility
@@ -40,6 +42,8 @@ Quick-note and bookmark composers are mutually exclusive so the compact panel ho
 ## Lifecycle and privacy
 
 Feed posts are transient and may be recycled by X. Contexto tracks the post host plus normalized author identity, removes stale mounts when identity changes, and cleans disconnected mounts. The marker is inserted in normal flow within the validated author header and is isolated in a Shadow DOM host.
+
+The marker and its separate relationship-panel host are removed together when the post is recycled, disconnected, or the content script is torn down.
 
 The normalized handle is sent for account lookup. Contexto reads its own local settings to build an eligible interaction-search URL; the shortcut does not infer the signed-in identity from X DOM or persist a search-history record. For eligible saved contacts only, Contexto may additionally send the canonical post URL and a bounded top-level text excerpt through the local message boundary after explicit capture. It does not store engagement data, media, quoted content, or the visible set of unknown accounts.
 
