@@ -65,6 +65,7 @@ describe('X sidebar search observer', () => {
     const mount = vi.fn((form: HTMLFormElement) => {
       const host = document.createElement('div');
       host.dataset.contextoSurface = 'sidebar-search';
+      host.innerHTML = '<section aria-label="Contexto account search">Account search</section><section aria-label="Quick X search">Quick X search</section>';
       form.before(host);
       const cleanup = vi.fn(() => host.remove()) as XSurfaceCleanup;
       cleanup.isConnected = () => host.isConnected && form.isConnected;
@@ -76,6 +77,8 @@ describe('X sidebar search observer', () => {
     await flushMutations();
 
     expect(nativeForm.previousElementSibling).toHaveAttribute('data-contexto-surface', 'sidebar-search');
+    expect(document.querySelectorAll('[data-contexto-surface="sidebar-search"]')).toHaveLength(1);
+    expect(nativeForm.previousElementSibling).toHaveTextContent('Account searchQuick X search');
     expect(nativeInput.getAttribute('data-testid')).toBe('SearchBox_Search_Input');
     expect(mount).toHaveBeenCalledTimes(1);
 

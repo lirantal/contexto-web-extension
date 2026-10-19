@@ -1,5 +1,6 @@
 .popup-shell {
   --ctx-surface: #f7f8f5;
+  --ctx-bg: #f7f8f5;
   --ctx-input: #ffffff;
   --ctx-text: #222822;
   --ctx-muted: #667066;
@@ -12,7 +13,7 @@
   width: 400px;
   min-height: 480px;
   padding: 10px 20px 10px 12px;
-  background: var(--ctx-surface);
+  background: var(--ctx-bg);
   color: var(--ctx-text);
 }
 

@@ -1,4 +1,5 @@
 import { settingsItem } from '@/src/shared/settings';
+import quickSearchCss from '@/src/ui/quick-x-search.css?inline';
 import surfaceCss from '@/src/ui/contexto-profile-surface.css?inline';
 import { createContentRuntimeSender } from '@/src/x/content-runtime-sender';
 import { AccountDraftStore } from '@/src/x/draft-store';
@@ -10,6 +11,7 @@ import { createXSidebarSearchObserver } from '@/src/x/sidebar-search-observer';
 import { createPageEditorController } from '@/src/x/page-editor-controller';
 
 const drafts = new AccountDraftStore();
+const sidebarCss = [surfaceCss, quickSearchCss].join("\n");
 
 export default defineContentScript({
   matches: ['https://x.com/*', 'https://twitter.com/*'],
@@ -46,7 +48,7 @@ export default defineContentScript({
       mount: (nativeForm) => mountContextoSidebarSearch({
         nativeForm,
         send,
-        css: surfaceCss,
+        css: sidebarCss,
         theme: detectXTheme(nativeForm),
       }),
     });

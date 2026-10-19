@@ -3,18 +3,19 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const css = readFileSync(resolve('src/ui/contexto-profile-surface.css'), 'utf8');
+const quickSearchCss = readFileSync(resolve('src/ui/quick-x-search.css'), 'utf8');
 
-function ruleBody(selector: string) {
-  const start = css.indexOf(`${selector} {`);
-  expect(start, `Missing CSS rule: ${selector}`).toBeGreaterThanOrEqual(0);
-  const bodyStart = css.indexOf('{', start) + 1;
-  const bodyEnd = css.indexOf('}', bodyStart);
-  return css.slice(bodyStart, bodyEnd);
+function ruleBody(stylesheet: string, selector: string) {
+  const start = stylesheet.indexOf(selector + " {");
+  expect(start, "Missing CSS rule: " + selector).toBeGreaterThanOrEqual(0);
+  const bodyStart = stylesheet.indexOf("{", start) + 1;
+  const bodyEnd = stylesheet.indexOf("}", bodyStart);
+  return stylesheet.slice(bodyStart, bodyEnd);
 }
 
 describe('Contexto X surface layout contract', () => {
   it('keeps the docked editor visible as a fixed Contexto-owned right panel', () => {
-    const panel = ruleBody(':host([data-contexto-page-editor][data-placement="docked"])');
+    const panel = ruleBody(css, ':host([data-contexto-page-editor][data-placement="docked"])');
     expect(panel).toContain('position:fixed;');
     expect(panel).toContain('z-index:2147483645;');
     expect(panel).toContain('top:12px;');
@@ -24,7 +25,7 @@ describe('Contexto X surface layout contract', () => {
   });
 
   it('renders the hover launcher as a full-width in-flow row', () => {
-    const host = ruleBody(':host([data-contexto-surface="hover-card"])');
+    const host = ruleBody(css, ':host([data-contexto-surface="hover-card"])');
     expect(host).toContain('display:block;');
     expect(host).toContain('flex:0 0 100%;');
     expect(host).toContain('width:100%;');
@@ -34,12 +35,12 @@ describe('Contexto X surface layout contract', () => {
     expect(host).not.toContain('right:');
     expect(host).not.toContain('z-index:');
 
-    const launcher = ruleBody('.contexto-hover-launcher');
+    const launcher = ruleBody(css, '.contexto-hover-launcher');
     expect(launcher).toContain('width:100%;');
   });
 
   it('defines a complete light and dark palette for the isolated sidebar search host', () => {
-    const lightHost = ruleBody(':host([data-contexto-surface="sidebar-search"])');
+    const lightHost = ruleBody(css, ':host([data-contexto-surface="sidebar-search"])');
     expect(lightHost).toContain('--ctx-bg:#fff;');
     expect(lightHost).toContain('--ctx-text:#0f1419;');
     expect(lightHost).toContain('--ctx-muted:#536471;');
@@ -47,7 +48,7 @@ describe('Contexto X surface layout contract', () => {
     expect(lightHost).toContain('--ctx-accent:#5b3fd6;');
     expect(lightHost).toContain('--ctx-link:#1d9bf0;');
 
-    const darkHost = ruleBody(':host([data-contexto-surface="sidebar-search"][data-theme="dark"])');
+    const darkHost = ruleBody(css, ':host([data-contexto-surface="sidebar-search"][data-theme="dark"])');
     expect(darkHost).toContain('--ctx-bg:#000;');
     expect(darkHost).toContain('--ctx-text:#e7e9ea;');
     expect(darkHost).toContain('--ctx-muted:#71767b;');
@@ -57,7 +58,30 @@ describe('Contexto X surface layout contract', () => {
   });
 
   it('keeps the sidebar search clear of the viewport edge and native X search', () => {
-    const host = ruleBody(':host([data-contexto-surface="sidebar-search"])');
+    const host = ruleBody(css, ':host([data-contexto-surface="sidebar-search"])');
     expect(host).toContain('margin:12px 0 16px;');
+  });
+
+  it('fits the shared Quick X search into the responsive sidebar workspace', () => {
+    const sidebarWorkspace = ruleBody(css, '.contexto-sidebar-workspace');
+    const sidebarQuickSearch = ruleBody(quickSearchCss, '.contexto-quick-search[data-surface="sidebar"]');
+    const sidebarDateRow = ruleBody(quickSearchCss, '.contexto-quick-search[data-surface="sidebar"] .date-row');
+    const sidebarDateLabel = ruleBody(quickSearchCss, '.contexto-quick-search[data-surface="sidebar"] .date-row > label');
+    const sharedInputs = ruleBody(quickSearchCss, '.contexto-quick-search input');
+    const actionPreview = ruleBody(quickSearchCss, '.contexto-quick-search .search-action small');
+
+    expect(sidebarWorkspace).toContain('display:grid;');
+    expect(sidebarQuickSearch).toContain('width: 100%;');
+    expect(sidebarQuickSearch).toContain('min-width: 0;');
+    expect(sidebarQuickSearch).toContain('border-top: 1px solid var(--ctx-border);');
+    expect(sidebarQuickSearch).toContain('padding-top: 10px;');
+    expect(sidebarQuickSearch).not.toContain('width:400px;');
+    expect(sidebarQuickSearch).not.toContain('min-height:480px;');
+    expect(sidebarDateRow).toContain('flex-wrap: wrap;');
+    expect(sidebarDateLabel).toContain('min-width: 132px;');
+    expect(sharedInputs).toContain('background: var(--ctx-bg);');
+    expect(sharedInputs).toContain('color: var(--ctx-text);');
+    expect(actionPreview).toContain('text-overflow: ellipsis;');
+    expect(actionPreview).toContain('white-space: nowrap;');
   });
 });

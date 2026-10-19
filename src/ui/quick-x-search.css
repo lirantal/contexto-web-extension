@@ -1,12 +1,4 @@
 .contexto-quick-search {
-  --ctx-surface: #f7f8f5;
-  --ctx-text: #222822;
-  --ctx-muted: #667066;
-  --ctx-label: #4b554d;
-  --ctx-border: #cdd5ce;
-  --ctx-subtle-border: #dde2dc;
-  --ctx-accent: #0f7f76;
-  --ctx-hover: #edf7f5;
   color: var(--ctx-text);
 }
 
@@ -48,7 +40,7 @@
 .contexto-quick-search input {
   width: 100%;
   padding: 6px 8px;
-  background: var(--ctx-input, #ffffff);
+  background: var(--ctx-bg);
   color: var(--ctx-text);
 }
 
@@ -58,7 +50,7 @@
   justify-content: center;
   min-height: 32px;
   padding: 6px 8px;
-  background: var(--ctx-input, #ffffff);
+  background: var(--ctx-bg);
   color: var(--ctx-text);
   cursor: pointer;
 }
@@ -187,7 +179,7 @@
   overflow-y: auto;
   border: 1px solid var(--ctx-border);
   border-radius: 7px;
-  background: var(--ctx-input, #ffffff);
+  background: var(--ctx-bg);
   box-shadow: 0 8px 22px rgb(34 40 34 / 18%);
 }
 
@@ -250,4 +242,26 @@
 .contexto-quick-search .target-handle-option-meta .recent-marker {
   color: var(--ctx-accent);
   font-weight: 700;
+}
+
+.contexto-quick-search[data-surface="sidebar"] {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border-top: 1px solid var(--ctx-border);
+  padding-top: 10px;
+}
+
+.contexto-quick-search[data-surface="sidebar"] .quick-search-section {
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.contexto-quick-search[data-surface="sidebar"] .date-row {
+  flex-wrap: wrap;
+}
+
+.contexto-quick-search[data-surface="sidebar"] .date-row > label {
+  flex: 1 1 132px;
+  min-width: 132px;
 }
