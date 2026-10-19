@@ -244,6 +244,7 @@ textarea {
 .account-row > .account-row-content {
   display: flex;
   min-width: 0;
+  flex: 1;
   flex-direction: column;
 }
 
@@ -274,6 +275,10 @@ textarea {
   overflow: visible;
   white-space: normal;
 }
+
+.account-row-company { min-width: 0; flex-wrap: wrap; }
+.account-row-company-value { min-width: 0; flex: 1 1 0; overflow-wrap: anywhere; white-space: normal; }
+.latest-note-value { min-width: 0; flex: 1 1 0; overflow-wrap: anywhere; white-space: normal; }
 
 .metadata-label {
   color: #667066;

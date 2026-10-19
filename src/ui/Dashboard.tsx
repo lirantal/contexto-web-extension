@@ -266,7 +266,7 @@ export function Dashboard() {
                   <span>@{account.handle}</span>
                   {account.company?.name.trim() && <span className="account-row-company">
                     <span className="metadata-label">Company:</span>
-                    <span>{account.company.name}</span>
+                    <span className="account-row-company-value">{account.company.name}</span>
                   </span>}
                 </small>
               </span>
@@ -448,7 +448,7 @@ function AccountDetail({
         <h3>Notes</h3>
         {account.latestNote?.body.trim() && <p className="latest-note">
           <strong className="metadata-label">Latest note:</strong>
-          <span>{account.latestNote.body}</span>
+          <span className="latest-note-value">{account.latestNote.body}</span>
         </p>}
         <textarea rows={4} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add context, follow-up ideas, or relationship history" />
         <button onClick={addNoteAndClear}>Add note</button>

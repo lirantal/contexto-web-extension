@@ -105,9 +105,9 @@ export function TargetHandleCombobox({ value, suggestions, onChange }: TargetHan
                 {suggestion.displayName && <small>@{suggestion.handle}</small>}
               </span>
               <span className="target-handle-option-meta">
-                {suggestion.companyName && <small className="target-handle-company">
+                {suggestion.companyName?.trim() && <small className="target-handle-company">
                   <span className="target-handle-metadata-label">Company:</span>
-                  <span>{suggestion.companyName}</span>
+                  <span className="target-handle-company-value">{suggestion.companyName}</span>
                 </small>}
                 {suggestion.recent && <small className="recent-marker">Recent</small>}
               </span>

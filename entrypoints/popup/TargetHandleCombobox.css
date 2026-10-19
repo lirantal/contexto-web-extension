@@ -51,7 +51,7 @@
 
 .target-handle-option-main strong,
 .target-handle-option-main small,
-.target-handle-option-meta small {
+.target-handle-option-meta .recent-marker {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -75,10 +75,14 @@
 
 .target-handle-company {
   display: flex;
+  min-width: 0;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 3px;
+  white-space: normal;
 }
+
+.target-handle-company-value { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
 
 .target-handle-metadata-label {
   color: #667066;

@@ -51,6 +51,8 @@ export function ContextoHoverLauncher({ profile, send, onEdit }: ContextoHoverLa
     openEditor();
   }
 
+  const tags = account?.tags.filter((tag) => tag.name.trim()) ?? [];
+
   if (state === 'error') {
     return <section className="contexto-hover-launcher" aria-label="Contexto profile context">
       <div className="contexto-hover-header">
@@ -75,18 +77,18 @@ export function ContextoHoverLauncher({ profile, send, onEdit }: ContextoHoverLa
     </div>
     {account && <div className="contexto-hover-summary">
       <strong className="contexto-hover-name">{account.displayName}</strong>
-      {account.role && <div className="contexto-metadata-field" data-testid="contexto-hover-role">
+      {account.role?.trim() && <div className="contexto-metadata-field" data-testid="contexto-hover-role">
         <span className="contexto-metadata-label">Role:</span>
         <span className="contexto-metadata-value">{account.role}</span>
       </div>}
-      {account.company?.name && <div className="contexto-metadata-field" data-testid="contexto-hover-company">
+      {account.company?.name.trim() && <div className="contexto-metadata-field" data-testid="contexto-hover-company">
         <span className="contexto-metadata-label">Company:</span>
         <span className="contexto-metadata-value">{account.company.name}</span>
       </div>}
-      {account.tags.length > 0 && <div className="contexto-metadata-field" data-testid="contexto-hover-tags">
+      {tags.length > 0 && <div className="contexto-metadata-field" data-testid="contexto-hover-tags">
         <span className="contexto-metadata-label">Tags:</span>
         <div className="contexto-hover-tags contexto-metadata-value">
-          {account.tags.map((tag) => <span className="contexto-hover-tag" key={tag.id}>{tag.name}</span>)}
+          {tags.map((tag) => <span className="contexto-hover-tag" key={tag.id}>{tag.name}</span>)}
         </div>
       </div>}
     </div>}

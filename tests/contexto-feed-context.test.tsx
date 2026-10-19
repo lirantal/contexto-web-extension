@@ -154,6 +154,70 @@ describe('ContextoFeedContext', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
+  it('omits empty and whitespace-only imported metadata without orphan labels', async () => {
+    const account: AccountSummary = {
+      ...saved,
+      role: '',
+      relationshipSource: '\t',
+      company: { ...saved.company!, name: '   ' },
+      tags: [
+        { ...saved.tags[0], id: 'tag_empty', name: '' },
+        { ...saved.tags[0], id: 'tag_whitespace', name: ' \n ' },
+      ],
+      folders: [
+        { ...saved.folders[0], id: 'folder_empty', name: '' },
+        { ...saved.folders[0], id: 'folder_whitespace', name: '\t' },
+      ],
+      latestNote: { ...saved.latestNote!, body: '  ' },
+    };
+    renderFeed(account);
+
+    await userEvent.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+
+    expect(screen.queryByTestId('contexto-feed-role')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-feed-company')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-feed-relationship')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-feed-tags')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-feed-folders')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-feed-note')).not.toBeInTheDocument();
+  });
+
+  it('preserves original nonblank metadata text while filtering blank collection names', async () => {
+    const account: AccountSummary = {
+      ...saved,
+      role: '  Developer  ',
+      relationshipSource: '  Conference friend  ',
+      company: { ...saved.company!, name: '  Ping Labs  ' },
+      tags: [
+        { ...saved.tags[0], id: 'tag_blank', name: '   ' },
+        { ...saved.tags[0], id: 'tag_meaningful', name: '  Security  ' },
+      ],
+      folders: [
+        { ...saved.folders[0], id: 'folder_blank', name: '' },
+        { ...saved.folders[0], id: 'folder_meaningful', name: '  DevRel friends  ' },
+      ],
+      latestNote: { ...saved.latestNote!, body: '  Follow up soon.  ' },
+    };
+    renderFeed(account);
+
+    await userEvent.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+
+    expect(within(screen.getByTestId('contexto-feed-role')).getByText('Developer').textContent)
+      .toBe('  Developer  ');
+    expect(within(screen.getByTestId('contexto-feed-company')).getByText('Ping Labs').textContent)
+      .toBe('  Ping Labs  ');
+    expect(within(screen.getByTestId('contexto-feed-relationship')).getByText('Conference friend').textContent)
+      .toBe('  Conference friend  ');
+    expect(within(screen.getByTestId('contexto-feed-tags')).getByText('Security').textContent)
+      .toBe('  Security  ');
+    expect(screen.getByTestId('contexto-feed-tags').querySelectorAll('.chip')).toHaveLength(1);
+    expect(within(screen.getByTestId('contexto-feed-folders')).getByText('DevRel friends').textContent)
+      .toBe('  DevRel friends  ');
+    expect(screen.getByTestId('contexto-feed-folders').querySelectorAll('.folder-chip')).toHaveLength(1);
+    expect(within(screen.getByTestId('contexto-feed-note')).getByText('Follow up soon.').textContent)
+      .toBe('  Follow up soon.  ');
+  });
+
   it('renders no UI for unsaved or failed local lookups', async () => {
     cleanup();
     const { send } = renderFeed(null);

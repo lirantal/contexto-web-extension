@@ -46,17 +46,18 @@ Run the relevant rows in both Chrome and Vivaldi when a change touches browser i
 
 | Scenario | Expected result |
 | --- | --- |
-| Unknown and saved accounts on feed hover cards | Correct handle and display name; the compact summary and Edit launcher do not overlap X controls. |
-| Saved-contact feed context | The marker opens the compact panel without navigating to the post; intentional panel links still open their documented destinations. |
+| Unknown and saved accounts on feed hover cards | Correct handle and display name; populated Role, Company, and Tags use their canonical labels; empty values are omitted; long values wrap without overlapping X controls or the Edit launcher. |
+| Saved-contact feed context | The marker opens the compact panel without navigating to the post; populated Role, Company, How you know them, Tags, Folders, and Latest note use canonical labels; empty values and blank chips are omitted; long values wrap; intentional panel links still work. |
 | Saved-contact post capture | Eligible primary posts show Capture or Bookmarked; optional reminders save without leaving X; quoted/promoted/ambiguous posts do not expose capture. |
 | Saved-contact prior interactions | A valid configured viewer handle shows View our interactions and opens a live two-way X query in a new tab; a missing or invalid viewer handle hides the action without affecting context or bookmarks. |
 | Saved-contact catch-up | Catch up on X opens live author posts since the displayed checkpoint; opening does not advance it; explicit Mark caught up updates it; failed updates preserve the previous date and context. |
 | Saved-contact quick note | Add quick note opens an inline focused composer; empty drafts cannot save; success refreshes Latest note; failure preserves the draft; Cancel or panel close clears it; bookmark and note composers do not appear together. |
+| Dashboard account metadata | Account rows show Company: and Notes show Latest note: only for populated values; empty values are omitted; long unbroken values wrap within the compact list and detail pane. |
 | Dashboard bookmark collection | Multiple bookmarks appear newest first; reminder edits accept text or an empty value; failed saves retain the draft; Mark handled preserves the source and exposes Reopen; Open on X remains canonical; Remove updates the collection without affecting contact metadata. |
 | Wide and narrow viewports | The editor opens in the Contexto-owned right rail or modal fallback without shifting the hover card. |
 | Hover dismissal and editor interaction | Moving away from the X card, typing, clicking fields or the backdrop, and pressing Escape do not close the editor. |
 | Save, failed Save, and Cancel | Successful Save and explicit Cancel close the owned editor; failed Save stays open with the draft intact. |
 | Full profile page | The inline editor remains visible and shows authoritative saved values. |
 | X right-sidebar account search | A Contexto search field appears with visible top/bottom spacing directly above X's usable native search; exact, prefix, and fuzzy saved-X matches show up to five results; selecting a result navigates the current tab; native news, sports, trends, and follow modules are hidden by default; enabling **Show X sidebar widgets** in the dashboard restores them live around mid-viewport in their original order; disabling it hides them again; resize, navigation, rerenders, and extension invalidation leave one Contexto field and restore X-owned inline state during cleanup. |
-| Toolbar popup | Popup content and search controls render at the expected extension width. |
+| Toolbar popup | Popup content and search controls render at the expected extension width; populated suggestion companies use Company:, empty values are omitted, and long unbroken company values wrap within the result. |
 | Extension reload and navigation | Reloaded content scripts remount cleanly without relying on an invalidated extension context. |
