@@ -89,6 +89,10 @@ button:focus-visible,input:focus-visible { border-color:var(--ctx-accent); outli
 .contexto-metadata-label { color:var(--ctx-muted); font-weight:650; }
 .contexto-metadata-value { min-width:0; color:var(--ctx-text); overflow-wrap:anywhere; }
 .contexto-feed-values { display:flex; flex-wrap:wrap; gap:4px; }
+.contexto-feed-groupings-editor { display:grid; gap:10px; min-width:0; }
+.contexto-feed-groupings-editor .multi-value-field { min-width:0; }
+.contexto-feed-groupings-editor .chip { max-width:100%; overflow-wrap:anywhere; }
+.contexto-feed-groupings-editor .chip button { flex-shrink:0; }
 
 .contexto-sidebar-workspace { display:grid; gap:7px; box-sizing:border-box; min-width:0; padding:10px 12px; border:1px solid var(--ctx-border); border-radius:16px; background:var(--ctx-bg); color:var(--ctx-text); }
 .contexto-sidebar-workspace > section { min-width:0; }

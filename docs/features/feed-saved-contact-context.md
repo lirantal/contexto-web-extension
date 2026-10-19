@@ -31,13 +31,15 @@ Every populated saved metadata value has a visible field label. The summary may 
 
 The display name remains an unlabeled identity heading. Empty metadata fields and their labels are omitted.
 
+**Edit tags and folders** is always available in Saved context, including when neither field has any assignments. It replaces the read-only grouping chips with the shared Tags and Folders multi-select controls. Search existing values, select suggestions, create new values with Enter, or remove chips. **Save tags and folders** also includes non-empty text still in either input, saves only grouping assignments, and refreshes the summary without closing the panel. Other contact metadata is preserved. Controls are disabled while saving; a failed save retains the draft for retry. **Cancel** restores the summary, and closing the panel discards unsaved grouping edits. Suggestions are optional: if loading them fails, free-text creation remains available.
+
 **Open full context** delegates to the existing Contexto-owned profile editor. **View our interactions** performs outbound navigation only. Opening or reading the compact panel does not write data.
 
 **Catch up on X** also performs outbound navigation only. A catch-up timestamp is written only after explicit **Mark caught up**, and a failed write preserves the prior checkpoint.
 
 **Add quick note** does not write until a non-empty draft is explicitly saved. During Save its controls are disabled. Success closes the composer, clears the draft, confirms the write, and refreshes the displayed latest note from the authoritative saved account. Failure preserves the draft for retry. **Cancel** or closing the feed panel discards an unsaved quick note.
 
-Quick-note and bookmark composers are mutually exclusive so the compact panel holds at most one unsaved draft.
+Quick-note and bookmark composers are mutually exclusive. Tags and folders use a separate draft in Saved context; closing the panel discards all unsaved drafts.
 
 ## Lifecycle and privacy
 

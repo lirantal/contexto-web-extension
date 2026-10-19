@@ -281,6 +281,29 @@ function validateAccountContextSave(input: AccountContextSaveInput): AccountCont
   };
 }
 
+export async function saveAccountGroupings(
+  accountId: string,
+  tagNames: string[],
+  folderNames: string[],
+  database = db,
+): Promise<AccountSummary> {
+  if (!Array.isArray(tagNames) || !Array.isArray(folderNames)
+    || !tagNames.every((name) => typeof name === 'string')
+    || !folderNames.every((name) => typeof name === 'string')) {
+    throw new Error('Tags and folders must be lists of names');
+  }
+  return database.transaction('rw', [database.accounts, database.tags, database.accountTags,
+    database.folders, database.folderAccounts, database.changeLog, database.companies, database.notes], async () => {
+    const account = await database.accounts.get(accountId);
+    if (!account || account.deletedAt) throw new Error('Account not found');
+    await syncAccountTags(accountId, tagNames, database);
+    await syncAccountFolders(accountId, folderNames, database);
+    await database.accounts.update(accountId, { updatedAt: nowIso(), syncState: 'pending-sync' });
+    await recordChange(database, 'account', accountId, 'update');
+    return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+  });
+}
+
 export async function saveAccountContext(input: AccountContextSaveInput, database = db): Promise<AccountSummary> {
   input = validateAccountContextSave(input);
   return database.transaction(

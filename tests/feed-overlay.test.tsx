@@ -69,6 +69,15 @@ describe('feed relationship overlay', () => {
       expect(overlayRoot.queryByRole('dialog')).toBeNull();
 
       fireEvent.click(marker);
+      fireEvent.click(overlayRoot.getByRole('button', { name: 'Edit tags and folders' }));
+      const tagsInput = overlayRoot.getByRole('combobox', { name: 'Tags' });
+      expect(overlay.shadowRoot?.activeElement).toBe(tagsInput);
+      fireEvent.pointerDown(tagsInput, { composed: true });
+      fireEvent.change(tagsInput, { target: { value: 'Unsaved tag' } });
+      expect(overlayRoot.getByRole('dialog')).toBeInTheDocument();
+      fireEvent.click(overlayRoot.getByRole('button', { name: 'Cancel' }));
+      expect(overlayRoot.queryByRole('combobox', { name: 'Tags' })).toBeNull();
+      expect(overlayRoot.getByRole('dialog')).toBeInTheDocument();
       fireEvent.click(overlayRoot.getByRole('button', { name: 'Open full context' }));
       expect(onEdit).toHaveBeenCalledWith(profile, marker);
       expect(overlayRoot.queryByRole('dialog')).toBeNull();

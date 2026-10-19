@@ -7,6 +7,7 @@ const repositories = vi.hoisted(() => ({
   getAccountByHandle: vi.fn(),
   markAccountCaughtUp: vi.fn(),
   saveAccountContext: vi.fn(),
+  saveAccountGroupings: vi.fn(),
 }));
 
 vi.mock('@/src/data/repositories', () => ({
@@ -16,6 +17,7 @@ vi.mock('@/src/data/repositories', () => ({
   getAccountByHandle: repositories.getAccountByHandle,
   markAccountCaughtUp: repositories.markAccountCaughtUp,
   saveAccountContext: repositories.saveAccountContext,
+  saveAccountGroupings: repositories.saveAccountGroupings,
 }));
 
 vi.mock('@/src/shared/settings', () => ({
@@ -85,6 +87,16 @@ describe('background account context messages', () => {
     repositories.saveAccountContext.mockResolvedValue({ id: 'account_1', tags: [], folders: [] });
     await handleRequest({ type: 'contexto:account:saveContext', input });
     expect(repositories.saveAccountContext).toHaveBeenCalledWith(input);
+  });
+
+  it('routes only tag and folder assignments to the grouping save', async () => {
+    const updated = { id: 'account_1', tags: [], folders: [] };
+    repositories.saveAccountGroupings.mockResolvedValue(updated);
+    await expect(handleRequest({
+      type: 'contexto:account:saveGroupings', accountId: 'account_1', tagNames: ['Security'], folderNames: ['Friends'],
+    })).resolves.toEqual({ ok: true, account: updated });
+    expect(repositories.saveAccountGroupings).toHaveBeenCalledWith('account_1', ['Security'], ['Friends']);
+    expect(repositories.saveAccountContext).not.toHaveBeenCalled();
   });
 
   it('routes an explicit catch-up checkpoint without accepting a caller timestamp', async () => {

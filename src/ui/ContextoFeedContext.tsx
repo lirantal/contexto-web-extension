@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { buildXCatchUpSearchUrl, buildXInteractionSearchUrl } from '@/src/shared/platforms/x';
 import type { AccountSummary, ProfileSnapshot, XPostSnapshot } from '@/src/shared/types';
 import type { ContextoProfileSurfaceProps } from './ContextoProfileSurface';
+import { FeedGroupingsEditor } from './FeedGroupingsEditor';
 
 export interface ContextoFeedContextProps {
   profile: ProfileSnapshot;
@@ -18,6 +19,8 @@ export function ContextoFeedContext({ profile, post, send, onEdit, panelContaine
   const [account, setAccount] = useState<AccountSummary>();
   const [viewerHandle, setViewerHandle] = useState('');
   const [open, setOpen] = useState(false);
+  const [editingGroupings, setEditingGroupings] = useState(false);
+  const [groupingsSuccess, setGroupingsSuccess] = useState('');
   const [bookmarkState, setBookmarkState] = useState<BookmarkState>('unavailable');
   const [composerOpen, setComposerOpen] = useState(false);
   const [reminder, setReminder] = useState('');
@@ -39,6 +42,8 @@ export function ContextoFeedContext({ profile, post, send, onEdit, panelContaine
     let cancelled = false;
     setAccount(undefined);
     setOpen(false);
+    setEditingGroupings(false);
+    setGroupingsSuccess('');
     setBookmarkState(post ? 'loading' : 'unavailable');
     setComposerOpen(false);
     setReminder('');
@@ -91,6 +96,8 @@ export function ContextoFeedContext({ profile, post, send, onEdit, panelContaine
 
   useEffect(() => {
     if (open) return;
+    setEditingGroupings(false);
+    setGroupingsSuccess('');
     setComposerOpen(false);
     setReminder('');
     setBookmarkError('');
@@ -255,13 +262,13 @@ export function ContextoFeedContext({ profile, post, send, onEdit, panelContaine
           <span className="contexto-metadata-label">How you know them:</span>
           <span className="contexto-metadata-value">{account.relationshipSource}</span>
         </div>}
-        {tags.length > 0 && <div className="contexto-metadata-field" data-testid="contexto-feed-tags">
+        {!editingGroupings && tags.length > 0 && <div className="contexto-metadata-field" data-testid="contexto-feed-tags">
           <span className="contexto-metadata-label">Tags:</span>
           <div className="contexto-feed-values contexto-metadata-value">
             {tags.map((tag) => <span className="chip" key={tag.id}>{tag.name}</span>)}
           </div>
         </div>}
-        {folders.length > 0 && <div className="contexto-metadata-field" data-testid="contexto-feed-folders">
+        {!editingGroupings && folders.length > 0 && <div className="contexto-metadata-field" data-testid="contexto-feed-folders">
           <span className="contexto-metadata-label">Folders:</span>
           <div className="contexto-feed-values contexto-metadata-value">
             {folders.map((folder) => <span className="chip folder-chip" key={folder.id}>{folder.name}</span>)}
@@ -271,6 +278,18 @@ export function ContextoFeedContext({ profile, post, send, onEdit, panelContaine
           <span className="contexto-metadata-label">Latest note:</span>
           <span className="contexto-metadata-value">{account.latestNote.body}</span>
         </p>}
+        {editingGroupings ? <FeedGroupingsEditor account={account} send={send}
+          onSaved={(updated) => {
+            setAccount(updated);
+            setEditingGroupings(false);
+            setGroupingsSuccess('Tags and folders saved');
+          }}
+          onCancel={() => setEditingGroupings(false)}
+        /> : <button type="button" onClick={() => {
+          setGroupingsSuccess('');
+          setEditingGroupings(true);
+        }}>Edit tags and folders</button>}
+        {groupingsSuccess && <p className="contexto-success" aria-live="polite">{groupingsSuccess}</p>}
       </section>
       <section className="contexto-feed-section contexto-feed-local-actions" aria-labelledby={`${panelId}-local`}>
         <span className="contexto-feed-section-label" id={`${panelId}-local`}>Add to Contexto</span>

@@ -11,3 +11,5 @@ The MVP supports creating, assigning, and removing tag/folder assignments from b
 Saving context in any X editor or selecting **Save metadata** in the dashboard also saves non-empty text still in the Tags and Folders inputs, even if it has not been added as a chip. Pending values are trimmed and existing assignments are reused without duplicates. Failed saves retain unsaved input for retry; Cancel in an X editor discards pending input along with the rest of the draft.
 
 Rename and global delete management can be added as follow-up dashboard actions.
+
+The saved-contact feed badge popup also supports **Edit tags and folders** without opening the full editor. Its explicit **Save tags and folders** writes assignments only, includes pending input, and keeps the popup open. Cancel or panel dismissal discards unsaved grouping edits. See [Saved-contact feed context](feed-saved-contact-context.md).

@@ -49,6 +49,8 @@ Catch-up tests cover first-use and checkpointed author queries, invalid handles/
 
 Feed quick-note tests cover no-write opening, autofocus, non-empty saves, pending controls, authoritative latest-note refresh, failed-save draft retention, Cancel/panel-close clearing, bookmark-composer exclusion, and background note routing.
 
+Feed grouping-editor tests cover existing assignments, empty fields, suggestion selection, free-text creation when suggestions fail, removal, pending-input saves, authoritative summary refresh, failed-save draft retention, disabled pending controls, Cancel/panel-close clearing, and stale response isolation. Repository and background coverage verify assignment-only saves, deduplication, preserved contact metadata and shared definitions, and invalid or missing-account rejection.
+
 ## Manual browser checks
 
 Synthetic tests cannot reproduce every X or browser lifecycle. Run the matrix in [Browser Development Workflow](development/browser-workflow.md) while signed in to X in both Chrome and Vivaldi after changing content-script mounting, X selectors, popup layout, Shadow DOM behavior, or extension lifecycle handling. For Quick X search, this includes light and dark themes; saved-account suggestions and free-form targets; target-present and targetless searches; successful and failed launches; popup/sidebar state restoration; X rerenders; and extension reload.

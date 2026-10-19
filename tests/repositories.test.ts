@@ -23,6 +23,7 @@ import {
   recordSearch,
   resetDatabaseForTests,
   saveAccountContext,
+  saveAccountGroupings,
   updateAccount,
   updateBookmark,
 } from '@/src/data/repositories';
@@ -34,6 +35,48 @@ afterEach(async () => {
 });
 
 describe('Contexto repositories', () => {
+  it('saves grouping assignments without changing identity or relationship metadata', async () => {
+    const account = await ensureAccountFromProfile({ platform: 'x', handle: 'dev', displayName: 'Custom name',
+      profileUrl: 'https://x.com/dev', website: 'https://example.com', bioSnapshot: 'Saved bio' }, database);
+    await updateAccount(account.id, { role: 'Engineer', relationshipSource: 'Conference', companyName: 'Example' }, database);
+    await assignTag(account.id, 'Old tag', database);
+    await assignFolder(account.id, 'Old folder', database);
+    const updated = await saveAccountGroupings(account.id, [' Security ', 'security'], [' Friends ', 'friends'], database);
+    expect(updated).toMatchObject({ displayName: 'Custom name', role: 'Engineer', relationshipSource: 'Conference',
+      website: 'https://example.com', bioSnapshot: 'Saved bio', company: { name: 'Example' } });
+    expect(updated.tags.map((tag) => tag.name)).toEqual(['security']);
+    expect(updated.folders.map((folder) => folder.name)).toEqual(['friends']);
+    const cleared = await saveAccountGroupings(account.id, [], [], database);
+    expect(cleared.tags).toEqual([]);
+    expect(cleared.folders).toEqual([]);
+    expect((await getLookups(database)).tags.map((tag) => tag.name)).toContain('Old tag');
+    expect((await getLookups(database)).folders.map((folder) => folder.name)).toContain('Old folder');
+  });
+
+  it('rejects missing accounts and invalid grouping values without creating shared values', async () => {
+    await expect(saveAccountGroupings('missing', ['New tag'], ['New folder'], database)).rejects.toThrow('Account not found');
+    await expect(saveAccountGroupings('missing', [123] as unknown as string[], [], database)).rejects.toThrow('lists of names');
+    expect(await database.tags.count()).toBe(0);
+    expect(await database.folders.count()).toBe(0);
+  });
+
+  it('rolls back tag edits when a folder write fails and rejects deleted accounts', async () => {
+    const account = await ensureAccountFromProfile({ platform: 'x', handle: 'dev', profileUrl: 'https://x.com/dev' }, database);
+    await assignTag(account.id, 'Original', database);
+    const write = vi.spyOn(database.folderAccounts, 'add').mockRejectedValueOnce(new Error('Folder write failed'));
+    try {
+      await expect(saveAccountGroupings(account.id, ['Replacement'], ['Friends'], database)).rejects.toThrow('Folder write failed');
+    } finally {
+      write.mockRestore();
+    }
+    const preserved = await getAccountByHandle('x', 'dev', database);
+    expect(preserved?.tags.map((tag) => tag.name)).toEqual(['Original']);
+    expect(preserved?.folders).toEqual([]);
+    expect(await database.tags.where('normalizedName').equals('replacement').count()).toBe(0);
+    await database.accounts.update(account.id, { deletedAt: '2026-10-19T00:00:00.000Z' });
+    await expect(saveAccountGroupings(account.id, [], [], database)).rejects.toThrow('Account not found');
+  });
+
   it('creates and enriches accounts from profile snapshots', async () => {
     const account = await ensureAccountFromProfile(
       {

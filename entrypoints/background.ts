@@ -11,6 +11,7 @@ import {
   markAccountCaughtUp,
   recordSearch,
   saveAccountContext,
+  saveAccountGroupings,
   updateAccount,
 } from '@/src/data/repositories';
 import {
@@ -88,6 +89,8 @@ export function createBackgroundRequestHandler(
 
         case 'contexto:account:update':
           return { ok: true, account: await updateAccount(message.accountId, message.patch) };
+        case 'contexto:account:saveGroupings':
+          return { ok: true, account: await saveAccountGroupings(message.accountId, message.tagNames, message.folderNames) };
         case 'contexto:account:markCaughtUp':
           return { ok: true, account: await markAccountCaughtUp(message.accountId) };
         case 'contexto:account:list':
