@@ -142,7 +142,11 @@ export function ContextoFeedContext({ profile, post, send, onEdit, panelContaine
   const togglePanel = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    setOpen((current) => !current);
+    if (!open) {
+      setGroupingsSuccess('');
+      setEditingGroupings(true);
+    }
+    setOpen(!open);
   };
   const openComposer = () => {
     setBookmarkError('');
