@@ -59,7 +59,7 @@ describe('Contexto X surface layout contract', () => {
 
   it('keeps the sidebar search clear of the viewport edge and native X search', () => {
     const host = ruleBody(css, ':host([data-contexto-surface="sidebar-search"])');
-    expect(host).toContain('margin:12px 0 16px;');
+    expect(host).toContain('margin:24px 0 16px;');
   });
 
   it('stacks inline editor fields and pairs owned editor fields only in containers at least 380 pixels wide', () => {
