@@ -144,6 +144,7 @@ export async function ensureAccountFromProfile(profile: ProfileSnapshot, databas
       profileUrl: profile.profileUrl,
       avatarUrl: profile.avatarUrl || existing.avatarUrl,
       bioSnapshot: profile.bioSnapshot || existing.bioSnapshot,
+      website: profile.website || existing.website,
       location: profile.location || existing.location,
       updatedAt: timestamp,
       deletedAt: undefined,
@@ -163,6 +164,7 @@ export async function ensureAccountFromProfile(profile: ProfileSnapshot, databas
     profileUrl: profile.profileUrl,
     avatarUrl: profile.avatarUrl,
     bioSnapshot: profile.bioSnapshot,
+    website: profile.website,
     location: profile.location,
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -191,6 +193,7 @@ export async function updateAccount(accountId: string, input: AccountUpdateInput
   if (input.role !== undefined) patch.role = input.role.trim();
   if (input.location !== undefined) patch.location = input.location.trim();
   if (input.relationshipSource !== undefined) patch.relationshipSource = input.relationshipSource.trim();
+  if (input.website !== undefined) patch.website = input.website.trim();
   if (input.bioSnapshot !== undefined) patch.bioSnapshot = input.bioSnapshot.trim();
   if (input.companyId !== undefined) patch.companyId = input.companyId;
   if (input.companyName !== undefined && !input.companyName.trim()) patch.companyId = undefined;

@@ -41,6 +41,26 @@ function readDisplayName(surface: HTMLElement, handle: string): string | undefin
   return readNameBeforeHandle(identityLink ?? surface.querySelector('[data-testid="UserName"]') ?? surface, handle);
 }
 
+// X wraps the profile website in t.co; prefer a complete visible URL when available.
+function readWebsite(surface: HTMLElement): string | undefined {
+  const anchor = [...surface.querySelectorAll<HTMLAnchorElement>('a[data-testid="UserUrl"][href]')]
+    .find((node) => !node.closest('article,[data-testid="tweet"],[data-testid="UserDescription"]'));
+  if (!anchor) return undefined;
+  function httpUrl(value: string | null | undefined): URL | undefined {
+    if (!value || /[\s…]/.test(value) || value.includes('...')) return undefined;
+    try {
+      const url = new URL(/^[a-z][a-z\d+.-]*:/i.test(value) ? value : `https://${value}`);
+      return /^https?:$/.test(url.protocol) && url.hostname.includes('.') && !url.username && !url.password ? url : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  const target = httpUrl(anchor.getAttribute('href'));
+  if (!target) return undefined;
+  if (target.hostname !== 't.co') return target.href;
+  return (httpUrl(compactText(anchor.getAttribute('title'))) ?? httpUrl(compactText(anchor.textContent)) ?? target).href;
+}
+
 function snapshot(surface: HTMLElement, profileUrl: string, identityHandle?: string): ProfileSnapshot | null {
   const parsed = parseXProfileUrl(profileUrl);
   if (!parsed) return null;
@@ -51,6 +71,7 @@ function snapshot(surface: HTMLElement, profileUrl: string, identityHandle?: str
     displayName: readDisplayName(surface, handle) ?? handle,
     avatarUrl: surface.querySelector<HTMLImageElement>('img[src*="profile_images"]')?.src,
     bioSnapshot: compactText(surface.querySelector('[data-testid="UserDescription"]')?.textContent),
+    website: readWebsite(surface),
     location: compactText(surface.querySelector('[data-testid="UserLocation"]')?.textContent),
     capturedAt: new Date().toISOString(),
   };

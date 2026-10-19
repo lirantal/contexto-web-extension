@@ -9,6 +9,27 @@ const hoverCardActionBeforeIdentity = readFileSync(
 );
 
 describe('X surface profile extraction', () => {
+  it('captures the complete visible website behind the profile t.co link', () => {
+    document.body.innerHTML = readFileSync(resolve('tests/fixtures/x/profile-shortened-website.html'), 'utf8');
+    const root = document.querySelector<HTMLElement>('main')!;
+    expect(extractFullProfile(root, 'https://x.com/exampledev')).toMatchObject({ website: 'https://arize.com/', location: 'Berkeley, CA' });
+    root.querySelector('[data-testid="UserUrl"]')!.remove();
+    expect(extractFullProfile(root, 'https://x.com/exampledev')?.website).toBeUndefined();
+  });
+
+  it.each([
+    ['https://example.com/path', 'example.com/…', 'https://example.com/path'],
+    ['https://t.co/short', 'example.com/…', 'https://t.co/short'],
+    ['javascript:alert(1)', 'example.com', undefined],
+    ['https://t.co/short', 'javascript:alert(1)', 'https://t.co/short'],
+  ])('handles website href %s and label %s', (href, label, website) => {
+    const root = document.createElement('div');
+    root.innerHTML = '<a href="/exampledev"><span>Example</span><span>@exampledev</span></a><a data-testid="UserUrl"></a>';
+    const link = root.querySelector('[data-testid="UserUrl"]')!;
+    link.setAttribute('href', href);
+    link.textContent = label;
+    expect(extractHoverCardProfile(root)?.website).toBe(website);
+  });
   it('extracts only the hovered account from its dialog', () => {
     document.body.innerHTML = `
       <a href="/wrong"><span>Wrong</span><span>@wrong</span></a>

@@ -24,6 +24,7 @@ Content-script extraction must:
 - Read the display name from the matching identity subtree before the matching `@handle`.
 - Exclude text inside buttons and elements with `role="button"` so action copy such as `Following` cannot become account metadata.
 - Use deliberate fallbacks and return no profile when identity evidence is inconsistent.
+- Capture website metadata from scoped `a[data-testid="UserUrl"]` outside posts and bio-text links; prefer complete HTTP(S) website evidence over X’s shortened link without resolving redirects. See [Profile metadata](../features/profile-metadata.md).
 - Add a minimal fixture and regression test whenever X introduces a newly observed DOM shape.
 
 The right-sidebar workspace, including saved-account search and the always-expanded Quick X search builder, requires `input[data-testid="SearchBox_Search_Input"]` inside a native `form` within `[data-testid="sidebarColumn"]`. Search inputs outside that column are ignored. A Contexto-owned host with a closed Shadow DOM root is inserted directly into the column, immediately before its top-level native branch containing the form. Never insert the workspace beside the form inside X's search shell: fixed heights, centering, clipping, transforms, and sticky offsets on those ancestors can move a tall form above the viewport regardless of its margin.

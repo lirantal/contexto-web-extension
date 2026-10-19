@@ -612,6 +612,7 @@ describe('Contexto repositories', () => {
         displayName: 'X Display Name',
         profileUrl: 'https://x.com/exampledev',
         avatarUrl: 'https://example.com/avatar.png',
+        website: 'https://arize.com/',
       },
       metadata: {
         displayName: 'Saved Name',
@@ -624,7 +625,7 @@ describe('Contexto repositories', () => {
       folderNames: ['Friends', 'Speakers'],
     }, database);
 
-    expect(first).toMatchObject({ displayName: 'Saved Name', role: 'CTO' });
+    expect(first).toMatchObject({ displayName: 'Saved Name', role: 'CTO', website: 'https://arize.com/' });
     expect(first.tags.map(({ name }) => name).sort()).toEqual(['Founder', 'Security']);
     expect(first.folders.map(({ name }) => name).sort()).toEqual(['Friends', 'Speakers']);
 
@@ -647,6 +648,9 @@ describe('Contexto repositories', () => {
     }, database);
 
     expect(second.displayName).toBe('Saved Name');
+    expect(second.website).toBe('https://arize.com/');
+    expect((await updateAccount(second.id, { website: ' https://example.com/ ' }, database)).website).toBe('https://example.com/');
+    expect((await updateAccount(second.id, { website: '' }, database)).website).toBe('');
     expect(second.tags.map(({ name }) => name)).toEqual(['Founder']);
     expect(second.folders.map(({ name }) => name)).toEqual(['Speakers']);
   });

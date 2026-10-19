@@ -17,6 +17,7 @@ export interface Account extends TimestampedRecord {
   profileUrl: string;
   avatarUrl?: string;
   bioSnapshot?: string;
+  website?: string;
   role?: string;
   companyId?: RecordId;
   location?: string;
@@ -150,6 +151,7 @@ export interface ProfileSnapshot {
   profileUrl: string;
   avatarUrl?: string;
   bioSnapshot?: string;
+  website?: string;
   location?: string;
   capturedAt?: string;
 }
@@ -185,6 +187,7 @@ export interface AccountUpdateInput {
   location?: string;
   relationshipSource?: string;
   bioSnapshot?: string;
+  website?: string;
 }
 
 export interface AccountContextSaveInput {

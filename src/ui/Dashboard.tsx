@@ -316,6 +316,7 @@ function AccountDetail({
     role: account.role ?? '',
     companyName: account.company?.name ?? '',
     location: account.location ?? '',
+    website: account.website ?? '',
     relationshipSource: account.relationshipSource ?? '',
     bioSnapshot: account.bioSnapshot ?? '',
   });
@@ -341,6 +342,7 @@ function AccountDetail({
       role: account.role ?? '',
       companyName: account.company?.name ?? '',
       location: account.location ?? '',
+      website: account.website ?? '',
       relationshipSource: account.relationshipSource ?? '',
       bioSnapshot: account.bioSnapshot ?? '',
     });
@@ -444,6 +446,7 @@ function AccountDetail({
             onChange={(companyName) => setDraft({ ...draft, companyName })} />
           <FuzzyTextCombobox label="Location" value={draft.location} suggestions={locationSuggestions}
             onChange={(location) => setDraft({ ...draft, location })} />
+          <label>Website<input value={draft.website} onChange={(event) => setDraft({ ...draft, website: event.target.value })} /></label>
           <label>How we know each other<input value={draft.relationshipSource} onChange={(event) => setDraft({ ...draft, relationshipSource: event.target.value })} /></label>
         </div>
         <label>Bio snapshot<textarea rows={3} value={draft.bioSnapshot} onChange={(event) => setDraft({ ...draft, bioSnapshot: event.target.value })} /></label>

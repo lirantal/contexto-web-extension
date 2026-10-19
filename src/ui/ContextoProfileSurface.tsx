@@ -22,6 +22,7 @@ function draftFor(profile: ProfileSnapshot, account?: AccountSummary): AccountCo
     metadata: {
       displayName: account?.displayName ?? profile.displayName ?? profile.handle,
       role: account?.role ?? '',
+      website: account?.website ?? profile.website ?? '',
       companyName: account?.company?.name ?? '', location: account?.location ?? profile.location ?? '',
       relationshipSource: account?.relationshipSource ?? '',
     },
@@ -119,6 +120,11 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
           <label>Display name<input value={draft.metadata.displayName ?? ''} disabled={saving} onChange={(event) => updateMetadata('displayName', event.target.value)} /></label>
           <label>X handle<input value={`@${profile.handle}`} readOnly /></label>
         </div>
+        <div className="contexto-field-row">
+          <FuzzyTextCombobox label="Location" value={draft.metadata.location ?? ''} suggestions={lookups.locations}
+            disabled={saving} onChange={(location) => updateMetadata('location', location)} />
+          <label>Website<input value={draft.metadata.website ?? ''} disabled={saving} onChange={(event) => updateMetadata('website', event.target.value)} /></label>
+        </div>
       </section>
       <section className="contexto-form-section" role="group" aria-labelledby="contexto-work-heading">
         <h2 id="contexto-work-heading">Work</h2>
@@ -132,8 +138,6 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
       <section className="contexto-form-section" role="group" aria-labelledby="contexto-relationship-heading">
         <h2 id="contexto-relationship-heading">Relationship</h2>
         <div className="contexto-field-row">
-          <FuzzyTextCombobox label="Location" value={draft.metadata.location ?? ''} suggestions={lookups.locations}
-            disabled={saving} onChange={(location) => updateMetadata('location', location)} />
           <label>How you know them<input value={draft.metadata.relationshipSource ?? ''} disabled={saving} onChange={(event) => updateMetadata('relationshipSource', event.target.value)} /></label>
         </div>
         <MultiValueField label="Tags" query={draft.tagQuery ?? ''} onQueryChange={(tagQuery) => updateDraft((current) => ({ ...current, tagQuery }))} values={draft.tagNames} suggestions={lookups.tags.map((tag) => tag.name)} disabled={saving} onChange={(tagNames) => updateDraft({ ...draft, tagNames })} />

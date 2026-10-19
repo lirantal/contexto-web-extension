@@ -10,6 +10,7 @@ const profile = {
   displayName: 'Theo – t3.gg',
   profileUrl: 'https://x.com/theo',
   location: 'San Francisco',
+  website: 'https://arize.com/',
 };
 
 function renderSurface(send: ReturnType<typeof vi.fn>) {
@@ -26,6 +27,9 @@ describe('ContextoProfileSurface', () => {
 
     const editor = await screen.findByRole('region', { name: 'Contexto profile editor' });
     expect(within(editor).getByRole('group', { name: 'Identity' })).toContainElement(screen.getByLabelText('Display name'));
+    expect(within(editor).getByRole('group', { name: 'Identity' })).toContainElement(screen.getByLabelText('Location'));
+    expect(within(editor).getByRole('group', { name: 'Identity' })).toContainElement(screen.getByLabelText('Website'));
+    expect(within(editor).getByRole('group', { name: 'Relationship' })).not.toContainElement(screen.getByLabelText('Location'));
     expect(within(editor).getByRole('group', { name: 'Work' })).toContainElement(screen.getByLabelText('Company'));
     expect(within(editor).getByRole('group', { name: 'Relationship' })).toContainElement(screen.getByLabelText('Tags'));
   });
@@ -42,10 +46,33 @@ describe('ContextoProfileSurface', () => {
     expect(screen.queryByLabelText('Profession')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Company')).toBeVisible();
     expect(screen.getByLabelText('Location')).toHaveValue('San Francisco');
+    expect(screen.getByLabelText('Website')).toHaveValue('https://arize.com/');
     expect(screen.getByLabelText('How you know them')).toBeVisible();
     expect(screen.getByLabelText('Tags')).toBeVisible();
     expect(screen.getByLabelText('Folders')).toBeVisible();
     expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'contexto:account:saveContext' }));
+  });
+
+  it('saves an edited website and restores the saved website on Cancel', async () => {
+    const saved = { ...profile, id: 'saved', website: 'https://saved.example/', tags: [], folders: [] };
+    const send = vi.fn(async (message) => {
+      if (message.type === 'contexto:account:lookup') return { ok: true, lookup: true, lookupAccount: saved };
+      if (message.type === 'contexto:account:saveContext') return { ok: true, account: { ...saved, website: message.input.metadata.website } };
+      return { ok: true, lookups: { companies: [], tags: [], folders: [], locations: [] } };
+    });
+    renderSurface(send);
+    const website = await screen.findByLabelText('Website');
+    expect(website).toHaveValue('https://saved.example/');
+    fireEvent.change(website, { target: { value: 'https://edited.example/' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await screen.findByText('Saved to Contexto');
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'contexto:account:saveContext',
+      input: expect.objectContaining({ metadata: expect.objectContaining({ website: 'https://edited.example/' }) }),
+    }));
+    fireEvent.change(website, { target: { value: 'discard' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(website).toHaveValue('https://edited.example/');
   });
 
   it('fuzzy-selects and saves an existing company', async () => {

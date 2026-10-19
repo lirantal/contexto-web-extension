@@ -4,7 +4,7 @@ The current schema lives in `src/data/db.ts` and is versioned as Dexie version `
 
 ## Core Records
 
-- `accounts`: platform-neutral social accounts. Important fields include `platform`, `handle`, `normalizedHandle`, `displayName`, `profileUrl`, `role`, `companyId`, `location`, `relationshipSource`, the optional explicit `lastCatchUpAt` checkpoint, `syncState`, timestamps, and soft-delete metadata.
+- `accounts`: platform-neutral social accounts. Important fields include `platform`, `handle`, `normalizedHandle`, `displayName`, `profileUrl`, optional `website`, `role`, `companyId`, `location`, `relationshipSource`, the optional explicit `lastCatchUpAt` checkpoint, `syncState`, timestamps, and soft-delete metadata.
 - `companies`: normalized company records referenced by accounts.
 - `tags` and `accountTags`: many-to-many account labels.
 - `folders` and `folderAccounts`: many-to-many relationship groups.
@@ -40,3 +40,5 @@ Bookmarks remain separate from account notes and from `AccountSummary`. Focused 
 Bookmark completion is represented by the optional `completedAt` timestamp on the existing record. Editing a reminder or toggling completion updates the bookmark, marks its account pending sync, and appends a bookmark change-log entry; no schema/index migration is required.
 
 The catch-up checkpoint is an optional account field rather than a new table or index. It therefore remains compatible with the existing Dexie schema and backup format: account export/import naturally carries the ISO timestamp.
+
+The profile website is an optional account field carried by existing account backup export/import; it requires no new index or schema version.
