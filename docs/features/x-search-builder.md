@@ -8,11 +8,10 @@ On X, the builder is hosted in Contexto-owned Shadow DOM immediately before X's 
 
 Supported directions:
 
-- `Messages I sent`: `from:{me} to:{them}`.
-- `Messages to me`: `from:{them} to:{me}`.
-- `Posts from profile`: `from:{them}`.
-- `Posts to profile`: `to:{them}`.
-- `Mentions`: `@{them}`.
+- `Posts by me`: `from:{me} to:{them}`.
+- `Posts to me`: `from:{them} to:{me}`.
+- `Posts by other person`: `from:{them}`.
+- `Mentions of other person`: `@{them}`.
 
 Optional filters:
 
@@ -20,4 +19,4 @@ Optional filters:
 - Since date.
 - Until date.
 
-Generated searches open in a new X tab and are recorded in local search history.
+Generated searches open in a new X tab. After a successful launch, the normalized target is recorded only in extension-local autosuggest history.
