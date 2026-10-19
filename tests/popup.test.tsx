@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '@/entrypoints/popup/App';
@@ -51,6 +51,21 @@ describe('popup search form', () => {
     expect(screen.getByLabelText('Keyword')).toHaveValue('security');
     expect(screen.getByLabelText('Since')).toHaveValue('2026-01-01');
     expect(screen.getByLabelText('Until')).toHaveValue('2026-02-01');
+  });
+
+  it('groups people, filters, and search actions under visible headings', async () => {
+    render(<App />);
+    await screen.findByLabelText('My X handle');
+
+    const people = screen.getByRole('group', { name: 'People' });
+    const filters = screen.getByRole('group', { name: 'Filters' });
+    const actions = screen.getByRole('group', { name: 'Choose what to search' });
+
+    expect(within(people).getByLabelText('My X handle')).toBeVisible();
+    expect(within(people).getByLabelText(/Other person/)).toBeVisible();
+    expect(within(filters).getByLabelText('Keyword')).toBeVisible();
+    expect(within(filters).getByLabelText('Since')).toBeVisible();
+    expect(within(actions).getAllByRole('button')).toHaveLength(4);
   });
 
   it('persists changes to the optional search fields', async () => {

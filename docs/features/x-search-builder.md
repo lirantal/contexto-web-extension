@@ -2,6 +2,14 @@
 
 Contexto builds X search URLs without using unofficial X APIs.
 
+The toolbar popup organizes the workflow into three visible groups:
+
+- **People** contains your X handle and the optional other person's handle.
+- **Filters** contains the optional keyword, since date, and until date.
+- **Choose what to search** contains the four search actions and their query previews.
+
+This grouping changes only the presentation; search enablement, query construction, history, and tab navigation remain unchanged.
+
 Supported directions:
 
 - `Messages I sent`: `from:{me} to:{them}`.

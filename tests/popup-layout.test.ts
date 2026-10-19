@@ -14,12 +14,14 @@ function ruleBody(css: string, selector: string) {
 }
 
 describe('popup layout contract', () => {
-  it('includes popup padding in its width and reserves a larger right gutter', () => {
+  it('uses readable shell and group spacing without changing popup width', () => {
     const shell = ruleBody(appCss, '.popup-shell');
-
-    expect(shell).toContain('box-sizing: border-box;');
     expect(shell).toContain('width: 400px;');
-    expect(shell).toContain('padding: 10px 20px 10px 12px;');
+    expect(shell).toContain('padding: 16px;');
+
+    const section = ruleBody(appCss, '.popup-section');
+    expect(section).toContain('gap: 10px;');
+    expect(section).toContain('margin-bottom: 16px;');
   });
 
   it('keeps long query previews on one ellipsized line', () => {

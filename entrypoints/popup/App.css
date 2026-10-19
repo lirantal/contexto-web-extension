@@ -2,7 +2,7 @@
   box-sizing: border-box;
   width: 400px;
   min-height: 480px;
-  padding: 10px 20px 10px 12px;
+  padding: 16px;
   background: #f7f8f5;
   color: #222822;
 }
@@ -52,8 +52,8 @@
 .popup-section {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  margin-bottom: 9px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .popup-shell label {
@@ -76,6 +76,7 @@
 
 .popup-shell input {
   width: 100%;
+  min-height: 36px;
   padding: 6px 8px;
   background: #ffffff;
   color: #222822;
@@ -173,7 +174,7 @@
   gap: 8px;
 }
 
-.action-heading h2 {
+.popup-section h2 {
   margin: 0;
   color: #313a32;
   font-size: 13px;

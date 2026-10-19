@@ -144,7 +144,12 @@ function App() {
         </div>
       </header>
 
-      <section className="popup-section search-fields">
+      <section
+        className="popup-section search-fields"
+        role="group"
+        aria-labelledby="people-heading"
+      >
+        <h2 id="people-heading">People</h2>
         <label>
           My X handle
           <input
@@ -164,6 +169,14 @@ function App() {
           />
           <small>Narrows the first two actions; required by the last two.</small>
         </label>
+      </section>
+
+      <section
+        className="popup-section search-fields"
+        role="group"
+        aria-labelledby="filters-heading"
+      >
+        <h2 id="filters-heading">Filters</h2>
         <label>
           Keyword
           <input
@@ -195,7 +208,11 @@ function App() {
         </div>
       </section>
 
-      <section className="popup-section action-grid" aria-labelledby="search-actions-heading">
+      <section
+        className="popup-section action-grid"
+        role="group"
+        aria-labelledby="search-actions-heading"
+      >
         <div className="action-heading">
           <h2 id="search-actions-heading">Choose what to search</h2>
           <p>Each button previews the X query it will run.</p>
