@@ -441,6 +441,7 @@ function AccountDetail({
       <section className="panel detail-section split-section">
         <div>
           <h3><Tag size={16} aria-hidden="true" /> Tags</h3>
+          <div className="inline-form"><input value={tagName} onChange={(event) => setTagName(event.target.value)} placeholder="Add tag" /><button onClick={addTagAndClear}>Add</button></div>
           <div className="chip-row">{account.tags.map((tag) => (
             <span className="chip" key={tag.id}>
               {tag.name}
@@ -448,10 +449,10 @@ function AccountDetail({
                 onClick={() => removeAssignedTag(tag.id)}>×</button>
             </span>
           ))}</div>
-          <div className="inline-form"><input value={tagName} onChange={(event) => setTagName(event.target.value)} placeholder="Add tag" /><button onClick={addTagAndClear}>Add</button></div>
         </div>
         <div>
           <h3><FolderPlus size={16} aria-hidden="true" /> Folders</h3>
+          <div className="inline-form"><input value={folderName} onChange={(event) => setFolderName(event.target.value)} placeholder="Add folder" /><button onClick={addFolderAndClear}>Add</button></div>
           <div className="chip-row">{account.folders.map((folder) => (
             <span className="chip folder-chip" key={folder.id}>
               {folder.name}
@@ -459,7 +460,6 @@ function AccountDetail({
                 onClick={() => removeAssignedFolder(folder.id)}>×</button>
             </span>
           ))}</div>
-          <div className="inline-form"><input value={folderName} onChange={(event) => setFolderName(event.target.value)} placeholder="Add folder" /><button onClick={addFolderAndClear}>Add</button></div>
         </div>
       </section>
 
