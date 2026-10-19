@@ -685,6 +685,9 @@ export async function listAccountSummaries(filters: AccountFilters = {}, databas
         if (!haystack.includes(query)) return false;
       }
 
+      if (filters.tagIds && !filters.tagIds.every((id) => summary.tags.some((tag) => tag.id === id))) return false;
+      if (filters.folderIds && !filters.folderIds.every((id) => summary.folders.some((folder) => folder.id === id))) return false;
+      if (filters.companyIds && !filters.companyIds.every((id) => summary.companyId === id)) return false;
       if (filters.tagId && !summary.tags.some((tag) => tag.id === filters.tagId)) return false;
       if (filters.folderId && !summary.folders.some((folder) => folder.id === filters.folderId)) return false;
       if (filters.companyId && summary.companyId !== filters.companyId) return false;

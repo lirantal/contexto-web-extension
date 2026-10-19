@@ -172,6 +172,9 @@ export interface AccountSummary extends Account {
 }
 
 export interface AccountFilters {
+  tagIds?: RecordId[];
+  folderIds?: RecordId[];
+  companyIds?: RecordId[];
   query?: string;
   tagId?: RecordId;
   folderId?: RecordId;

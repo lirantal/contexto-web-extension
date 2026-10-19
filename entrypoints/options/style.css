@@ -592,3 +592,71 @@ textarea {
 .clear-history-action {
   width: 100%;
 }
+
+.filter-help {
+  margin: 0;
+  color: #667066;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.account-filter-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.account-filter-field details {
+  border: 1px solid #cdd5ce;
+  border-radius: 7px;
+}
+
+.account-filter-field summary {
+  padding: 9px 10px;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.account-filter-field summary span {
+  float: right;
+  color: #667066;
+  font-size: 12px;
+}
+
+.account-filter-menu {
+  display: grid;
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.account-filter-options {
+  display: grid;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.account-filter-options .checkbox-field {
+  padding: 6px 2px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.account-filter-options input {
+  accent-color: #0f7f76;
+  flex: none;
+}
+
+.account-filter-options span,
+.account-filter-field .chip > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.account-filter-field .chip {
+  max-width: 100%;
+}
+
+.account-filter-field .chip button {
+  flex: none;
+}

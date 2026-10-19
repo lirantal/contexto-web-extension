@@ -41,6 +41,7 @@ import type { ContextoSettingsPersistence } from '@/src/shared/quick-x-search-pe
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
 import { getAdjacentAccountId } from './account-navigation';
 import { AccountBookmarks } from './AccountBookmarks';
+import { AccountFilterField } from './AccountFilterField';
 import { FuzzyTextCombobox } from './FuzzyTextCombobox';
 
 const searchDirections: SearchDirection[] = ['me-to-them', 'them-to-me', 'from-profile', 'to-profile', 'mentions'];
@@ -60,9 +61,9 @@ export function Dashboard({
 
   const accounts = useLiveQuery(() => listAccountSummaries(filters), [
     filters.query,
-    filters.tagId,
-    filters.folderId,
-    filters.companyId,
+    filters.tagIds,
+    filters.folderIds,
+    filters.companyIds,
     filters.location,
   ]);
   const lookups = useLiveQuery(() => getLookups(), []);
@@ -188,23 +189,21 @@ export function Dashboard({
             />
           </div>
 
-          <label className="field-label" htmlFor="folder-filter">Folder</label>
-          <select id="folder-filter" value={filters.folderId ?? ''} onChange={(event) => setFilters({ ...filters, folderId: event.target.value || undefined })}>
-            <option value="">All folders</option>
-            {lookups?.folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
-          </select>
-
-          <label className="field-label" htmlFor="tag-filter">Tag</label>
-          <select id="tag-filter" value={filters.tagId ?? ''} onChange={(event) => setFilters({ ...filters, tagId: event.target.value || undefined })}>
-            <option value="">All tags</option>
-            {lookups?.tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
-          </select>
-
-          <label className="field-label" htmlFor="company-filter">Company</label>
-          <select id="company-filter" value={filters.companyId ?? ''} onChange={(event) => setFilters({ ...filters, companyId: event.target.value || undefined })}>
-            <option value="">All companies</option>
-            {lookups?.companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
-          </select>
+          <p className="filter-help">Accounts must match every selected filter (AND).</p>
+          <AccountFilterField label="Folders" options={lookups?.folders ?? []}
+            selectedIds={filters.folderIds ?? []}
+            onChange={(folderIds) => setFilters((current) => ({ ...current, folderIds }))} />
+          <AccountFilterField label="Tags" options={lookups?.tags ?? []}
+            selectedIds={filters.tagIds ?? []}
+            onChange={(tagIds) => setFilters((current) => ({ ...current, tagIds }))} />
+          <AccountFilterField label="Companies" options={lookups?.companies ?? []}
+            selectedIds={filters.companyIds ?? []}
+            onChange={(companyIds) => setFilters((current) => ({ ...current, companyIds }))} />
+          {(filters.companyIds?.length ?? 0) > 1 && (
+            <p className="filter-help">Accounts have one company, so multiple companies cannot match all selections.</p>
+          )}
+          <button type="button" disabled={!filters.query && !filters.folderIds?.length && !filters.tagIds?.length && !filters.companyIds?.length}
+            onClick={() => setFilters({})}>Clear filters</button>
         </section>
 
         <section className="panel compact-panel">

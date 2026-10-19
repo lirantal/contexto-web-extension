@@ -18,7 +18,9 @@ Search currently matches:
 - Tag names.
 - Folder names.
 
-Dashboard filters also support narrowing by folder, tag, and company.
+Dashboard filters support multiple folders, tags, and companies. Expand a filter to search saved options and select them with checkboxes; selected values remain visible as removable chips when collapsed. Search text and every selected item combine with **AND**, including items within the same category. For example, three tags and two folders return only accounts assigned all three tags and both folders. An empty category adds no restriction. **Clear filters** resets the query and all selections.
+
+Accounts currently have one company. Selecting different companies therefore returns no accounts under the AND rule; the dashboard explains this when multiple companies are selected.
 
 ## Account deletion
 
