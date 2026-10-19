@@ -92,8 +92,13 @@ describe('mountContextoSurface', () => {
 
 describe('mountContextoSidebarSearch', () => {
   it('keeps both sidebar sections and launch controls inside a closed shadow root', () => {
+    const sidebarColumn = document.createElement('aside');
+    sidebarColumn.dataset.testid = 'sidebarColumn';
+    const searchShell = document.createElement('div');
     const nativeForm = document.createElement('form');
-    document.body.append(nativeForm);
+    searchShell.append(nativeForm);
+    sidebarColumn.append(searchShell);
+    document.body.append(sidebarColumn);
     const originalAttachShadow = HTMLElement.prototype.attachShadow;
     let capturedRoot: ShadowRoot | undefined;
     const attachShadow = vi.spyOn(HTMLElement.prototype, 'attachShadow').mockImplementation(function (
@@ -112,8 +117,10 @@ describe('mountContextoSidebarSearch', () => {
         theme: 'dark',
       });
 
-      const mountHost = nativeForm.previousElementSibling as HTMLElement;
+      const mountHost = searchShell.previousElementSibling as HTMLElement;
       expect(mountHost).toHaveAttribute('data-contexto-surface', 'sidebar-search');
+      expect(mountHost.parentElement).toBe(sidebarColumn);
+      expect(searchShell.contains(mountHost)).toBe(false);
       expect(mountHost.shadowRoot).toBeNull();
       expect(capturedRoot).toBeDefined();
       expect(capturedRoot).toHaveTextContent('Contexto account search');
@@ -132,11 +139,14 @@ describe('mountContextoSidebarSearch', () => {
     }
   });
 
-  it('reports connected only while the host is the native form immediate previous sibling', () => {
-    const firstParent = document.createElement('div');
-    const secondParent = document.createElement('div');
+  it('keeps the workspace outside search wrappers and invalidates only changes to its column placement', () => {
+    const firstParent = document.createElement('aside');
+    const secondParent = document.createElement('aside');
+    firstParent.dataset.testid = secondParent.dataset.testid = 'sidebarColumn';
+    const nativeBranch = document.createElement('div');
     const nativeForm = document.createElement('form');
-    firstParent.append(nativeForm);
+    nativeBranch.append(nativeForm);
+    firstParent.append(nativeBranch);
     document.body.append(firstParent, secondParent);
     const cleanup = mountContextoSidebarSearch({
       nativeForm,
@@ -144,20 +154,36 @@ describe('mountContextoSidebarSearch', () => {
       css: '.contexto-surface{} .contexto-quick-search{}',
       theme: 'light',
     });
-    const mountHost = nativeForm.previousElementSibling as HTMLElement;
+    const mountHost = nativeBranch.previousElementSibling as HTMLElement;
 
     expect(cleanup.isConnected?.()).toBe(true);
     nativeForm.before(document.createElement('span'));
+    expect(cleanup.isConnected?.()).toBe(true);
+    nativeBranch.before(document.createElement('span'));
     expect(cleanup.isConnected?.()).toBe(false);
-    nativeForm.before(mountHost);
+    nativeBranch.before(mountHost);
     expect(cleanup.isConnected?.()).toBe(true);
     secondParent.append(nativeForm);
     expect(cleanup.isConnected?.()).toBe(false);
-    secondParent.append(mountHost, nativeForm);
+    nativeBranch.append(nativeForm);
     expect(cleanup.isConnected?.()).toBe(true);
     mountHost.remove();
     expect(cleanup.isConnected?.()).toBe(false);
 
+    cleanup();
+  });
+
+  it('does not mount beside an unvalidated search form outside the sidebar', () => {
+    const nativeForm = document.createElement('form');
+    document.body.append(nativeForm);
+    const cleanup = mountContextoSidebarSearch({
+      nativeForm,
+      send: vi.fn(),
+      css: '',
+      theme: 'light',
+    });
+    expect(document.querySelector('[data-contexto-surface="sidebar-search"]')).toBeNull();
+    expect(cleanup.isConnected?.()).toBe(false);
     cleanup();
   });
 });

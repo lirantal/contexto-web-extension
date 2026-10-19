@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { ContextoSidebarWorkspace } from '@/src/ui/ContextoSidebarWorkspace';
 import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
 import type { XSurfaceCleanup } from './surface-observer';
+import { resolveXSidebarSearchPlacement } from './sidebar-search-placement';
 
 export interface MountContextoSidebarSearchOptions {
   nativeForm: HTMLFormElement;
@@ -17,6 +18,13 @@ export function mountContextoSidebarSearch({
   css,
   theme,
 }: MountContextoSidebarSearchOptions): XSurfaceCleanup {
+  const placement = resolveXSidebarSearchPlacement(nativeForm);
+  if (!placement) {
+    const cleanup: XSurfaceCleanup = () => {};
+    cleanup.isConnected = () => false;
+    return cleanup;
+  }
+  const { sidebarColumn, nativeBranch } = placement;
   const mountHost = document.createElement('div');
   mountHost.dataset.contextoSurface = 'sidebar-search';
   mountHost.dataset.theme = theme;
@@ -25,7 +33,7 @@ export function mountContextoSidebarSearch({
   style.textContent = css;
   const app = document.createElement('div');
   shadow.append(style, app);
-  nativeForm.before(mountHost);
+  nativeBranch.before(mountHost);
 
   const root = createRoot(app);
   flushSync(() => {
@@ -36,11 +44,14 @@ export function mountContextoSidebarSearch({
     root.unmount();
     mountHost.remove();
   };
-  cleanup.isConnected = () => (
-    mountHost.isConnected
-    && nativeForm.isConnected
-    && mountHost.parentElement === nativeForm.parentElement
-    && mountHost.nextElementSibling === nativeForm
-  );
+  cleanup.isConnected = () => {
+    const current = resolveXSidebarSearchPlacement(nativeForm);
+    return mountHost.isConnected
+      && nativeForm.isConnected
+      && current?.sidebarColumn === sidebarColumn
+      && current.nativeBranch === nativeBranch
+      && mountHost.parentElement === sidebarColumn
+      && mountHost.nextElementSibling === nativeBranch;
+  };
   return cleanup;
 }

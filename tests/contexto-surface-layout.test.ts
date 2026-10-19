@@ -60,9 +60,14 @@ describe('Contexto X surface layout contract', () => {
     expect(darkHost).toContain('--ctx-hover:#23352e;');
   });
 
-  it('keeps the sidebar search clear of the viewport edge and native X search', () => {
+  it('keeps the sidebar workspace in flow and scrollable within the viewport', () => {
     const host = ruleBody(css, ':host([data-contexto-surface="sidebar-search"])');
-    expect(host).toContain('margin:72px 0 16px;');
+    expect(host).toContain('position:relative;');
+    expect(host).toContain('flex:none;');
+    expect(host).toContain('margin:12px 0 16px;');
+    expect(host).toContain('max-height:calc(100dvh - 24px);');
+    expect(host).toContain('overflow:auto;');
+    expect(host).toContain('overscroll-behavior:contain;');
   });
 
   it('stacks inline editor fields and pairs owned editor fields only in containers at least 380 pixels wide', () => {

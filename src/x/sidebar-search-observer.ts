@@ -1,4 +1,5 @@
 import type { XSurfaceCleanup } from './surface-observer';
+import { resolveXSidebarSearchPlacement } from './sidebar-search-placement';
 
 const nativeWidgetMarker = 'data-contexto-native-sidebar-widget';
 
@@ -83,8 +84,13 @@ export function createXSidebarSearchObserver({
 
   const scan = () => {
     timer = undefined;
-    const input = root.querySelector<HTMLInputElement>('input[data-testid="SearchBox_Search_Input"]');
-    const form = input?.closest<HTMLFormElement>('form') ?? undefined;
+    const form = Array.from(root.querySelectorAll<HTMLInputElement>('input[data-testid="SearchBox_Search_Input"]'))
+      .map((input) => input.closest<HTMLFormElement>('form'))
+      .find((candidate): candidate is HTMLFormElement => {
+        if (!candidate) return false;
+        const placement = resolveXSidebarSearchPlacement(candidate);
+        return Boolean(placement && root.contains(placement.sidebarColumn));
+      });
     const mountIsConnected = cleanup?.isConnected?.() ?? Boolean(cleanup);
     if (form !== mountedForm || !mountIsConnected) {
       cleanup?.();

@@ -12,6 +12,7 @@
     "zip": "cross-env NODE_ENV=production wxt zip -b chrome",
     "compile": "tsc --noEmit",
     "verify:popup": "node scripts/verify-popup-bundle.mjs",
+    "verify:sidebar": "node scripts/verify-sidebar-layout.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

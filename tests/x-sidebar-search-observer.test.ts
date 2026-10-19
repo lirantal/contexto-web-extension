@@ -13,6 +13,10 @@ const nativeSearchFixture = readFileSync(
   resolve('tests/fixtures/x/sidebar-native-search.html'),
   'utf8',
 );
+const constrainedSearchFixture = readFileSync(
+  resolve('tests/fixtures/x/sidebar-constrained-search-shell.html'),
+  'utf8',
+);
 
 async function flushMutations() {
   await Promise.resolve();
@@ -62,16 +66,20 @@ describe('X sidebar search observer', () => {
     expect(replacementSports).not.toHaveAttribute('data-contexto-native-sidebar-widget');
   });
 
-  it('mounts before native search, remounts when X replaces it, and cleans up on disconnect', async () => {
-    document.body.innerHTML = nativeSearchFixture;
+  it.each([nativeSearchFixture, constrainedSearchFixture])('mounts outside native search wrappers, remounts on replacement, and cleans up', async (fixture) => {
+    document.body.innerHTML = fixture;
     const nativeForm = document.querySelector<HTMLFormElement>('form')!;
+    const nativeBranch = document.querySelector<HTMLElement>('[data-testid="sidebar-stack"]')!;
+    const searchShell = nativeForm.parentElement!;
+    const originalShellStyle = searchShell.getAttribute('style');
+    const originalStackStyle = nativeBranch.getAttribute('style');
     const nativeInput = document.querySelector<HTMLInputElement>('[data-testid="SearchBox_Search_Input"]')!;
     const cleanups: XSurfaceCleanup[] = [];
     const mount = vi.fn((form: HTMLFormElement) => {
       const host = document.createElement('div');
       host.dataset.contextoSurface = 'sidebar-search';
       host.innerHTML = '<section aria-label="Contexto account search">Account search</section><section aria-label="Quick X search">Quick X search</section>';
-      form.before(host);
+      nativeBranch.before(host);
       const cleanup = vi.fn(() => host.remove()) as XSurfaceCleanup;
       cleanup.isConnected = () => host.isConnected && form.isConnected;
       cleanups.push(cleanup);
@@ -81,9 +89,10 @@ describe('X sidebar search observer', () => {
 
     await flushMutations();
 
-    expect(nativeForm.previousElementSibling).toHaveAttribute('data-contexto-surface', 'sidebar-search');
+    expect(nativeBranch.previousElementSibling).toHaveAttribute('data-contexto-surface', 'sidebar-search');
     expect(document.querySelectorAll('[data-contexto-surface="sidebar-search"]')).toHaveLength(1);
-    expect(nativeForm.previousElementSibling).toHaveTextContent('Account searchQuick X search');
+    expect(nativeBranch.previousElementSibling).toHaveTextContent('Account searchQuick X search');
+    expect(searchShell.contains(nativeBranch.previousElementSibling)).toBe(false);
     expect(nativeInput.getAttribute('data-testid')).toBe('SearchBox_Search_Input');
     expect(mount).toHaveBeenCalledTimes(1);
 
@@ -95,9 +104,11 @@ describe('X sidebar search observer', () => {
     expect(mount).toHaveBeenCalledTimes(2);
     observer.disconnect();
     expect(cleanups[1]).toHaveBeenCalledTimes(1);
+    expect(searchShell.getAttribute('style')).toBe(originalShellStyle);
+    expect(nativeBranch.getAttribute('style')).toBe(originalStackStyle);
   });
 
-  it('remounts one host immediately before the same form after reparenting or sibling reordering', async () => {
+  it('preserves drafts on internal search changes and remounts once when the column placement changes', async () => {
     document.body.innerHTML = nativeSearchFixture;
     const nativeForm = document.querySelector<HTMLFormElement>('form')!;
     const cleanups: XSurfaceCleanup[] = [];
@@ -114,13 +125,14 @@ describe('X sidebar search observer', () => {
       return cleanup;
     });
     const observer = createXSidebarSearchObserver({ root: document.body, mount });
-    const expectSingleHostBeforeForm = () => {
+    const nativeBranch = document.querySelector<HTMLElement>('[data-testid="sidebar-stack"]')!;
+    const expectSingleHostBeforeBranch = () => {
       expect(document.querySelectorAll('[data-contexto-surface="sidebar-search"]')).toHaveLength(1);
-      expect(nativeForm.previousElementSibling).toHaveAttribute('data-contexto-surface', 'sidebar-search');
+      expect(nativeBranch.previousElementSibling).toHaveAttribute('data-contexto-surface', 'sidebar-search');
     };
 
     await flushMutations();
-    expectSingleHostBeforeForm();
+    expectSingleHostBeforeBranch();
     expect(mount).toHaveBeenCalledTimes(1);
 
     const reparentedSearch = document.createElement('div');
@@ -128,24 +140,32 @@ describe('X sidebar search observer', () => {
     reparentedSearch.append(nativeForm);
     await flushMutations();
 
+    expect(cleanups[0]).not.toHaveBeenCalled();
+    expect(mount).toHaveBeenCalledTimes(1);
+    expectSingleHostBeforeBranch();
+
+    nativeBranch.before(document.createElement('span'));
+    await flushMutations();
+
     expect(cleanups[0]).toHaveBeenCalledTimes(1);
     expect(mount).toHaveBeenCalledTimes(2);
-    expectSingleHostBeforeForm();
+    expectSingleHostBeforeBranch();
 
-    nativeForm.before(document.createElement('span'));
+    const reorderedHost = nativeBranch.previousElementSibling!;
+    nativeBranch.after(reorderedHost);
     await flushMutations();
 
     expect(cleanups[1]).toHaveBeenCalledTimes(1);
     expect(mount).toHaveBeenCalledTimes(3);
-    expectSingleHostBeforeForm();
+    expectSingleHostBeforeBranch();
 
-    const reorderedHost = nativeForm.previousElementSibling!;
-    nativeForm.after(reorderedHost);
+    const replacementBranch = document.createElement('div');
+    nativeBranch.parentElement!.append(replacementBranch);
+    replacementBranch.append(nativeForm);
     await flushMutations();
-
     expect(cleanups[2]).toHaveBeenCalledTimes(1);
     expect(mount).toHaveBeenCalledTimes(4);
-    expectSingleHostBeforeForm();
+    expect(replacementBranch.previousElementSibling).toHaveAttribute('data-contexto-surface', 'sidebar-search');
 
     observer.disconnect();
     expect(cleanups[3]).toHaveBeenCalledTimes(1);
@@ -174,10 +194,20 @@ describe('X sidebar search observer', () => {
 
     await flushMutations();
 
-    expect(mount).toHaveBeenCalledOnce();
+    expect(mount).not.toHaveBeenCalled();
     expect(unrelated.style.display).toBe('grid');
     observer.setShowNativeWidgets(false);
     expect(unrelated.style.display).toBe('grid');
+    observer.disconnect();
+  });
+
+  it('ignores search inputs outside the validated sidebar when selecting a mount target', async () => {
+    document.body.innerHTML = `<form><input data-testid="SearchBox_Search_Input" /></form>${nativeSearchFixture}`;
+    const nativeForm = document.querySelector<HTMLFormElement>('[data-testid="sidebarColumn"] form')!;
+    const mount = vi.fn(() => vi.fn() as XSurfaceCleanup);
+    const observer = createXSidebarSearchObserver({ root: document.body, mount });
+    await flushMutations();
+    expect(mount).toHaveBeenCalledExactlyOnceWith(nativeForm);
     observer.disconnect();
   });
 });
