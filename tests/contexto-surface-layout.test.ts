@@ -73,4 +73,23 @@ describe('Contexto X surface layout contract', () => {
     expect(xLink).toContain('text-decoration:underline;');
     expect(xLink).toContain('min-height:44px;');
   });
+
+  it('keeps feed supporting content at least 12 pixels tall', () => {
+    const label = ruleBody('.contexto-feed-section-label');
+    expect(label).toContain('font-size:12px;');
+
+    const checkpoint = ruleBody('.contexto-feed-checkpoint time,.contexto-feed-checkpoint span');
+    expect(checkpoint).toContain('font-size:12px;');
+  });
+
+  it('gives compact feed controls a 36 pixel minimum target height', () => {
+    const marker = ruleBody('.contexto-feed-marker');
+    expect(marker).toContain('min-height:36px;');
+
+    const localActions = ruleBody('.contexto-feed-local-actions button');
+    expect(localActions).toContain('min-height:36px;');
+
+    const checkpoint = ruleBody('.contexto-feed-checkpoint button');
+    expect(checkpoint).toContain('min-height:36px;');
+  });
 });
