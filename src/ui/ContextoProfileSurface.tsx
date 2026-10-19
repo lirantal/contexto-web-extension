@@ -31,6 +31,13 @@ function draftFor(profile: ProfileSnapshot, account?: AccountSummary): AccountCo
   };
 }
 
+function prefilledDraftFor(profile: ProfileSnapshot, account?: AccountSummary): AccountContextDraft {
+  const draft = draftFor(profile, account);
+  if (!draft.metadata.location?.trim()) draft.metadata.location = profile.location ?? '';
+  if (!draft.metadata.website?.trim()) draft.metadata.website = profile.website ?? '';
+  return draft;
+}
+
 export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestClose, placement = 'inline' }: ContextoProfileSurfaceProps) {
   const [state, setState] = useState<'loading' | 'editing' | 'lookup-error'>('loading');
   const [account, setAccount] = useState<AccountSummary>();
@@ -60,7 +67,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
       const found = lookupResponse.lookupAccount;
       setAccount(found);
       const storedDraft = drafts.get(profile.handle);
-      setDraft(storedDraft ?? draftFor(profile, found));
+      setDraft(storedDraft ?? prefilledDraftFor(profile, found));
       setState('editing');
     }).catch((caught) => {
       if (!cancelled) { setError(caught instanceof Error ? caught.message : 'Could not load Contexto'); setState('lookup-error'); }

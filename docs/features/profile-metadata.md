@@ -25,6 +25,8 @@ Tags and folders are separate multi-value fields with the same interaction model
 
 The right-rail or modal editor is owned by Contexto, so it stays mounted when X dismisses the originating hover card. Internal clicks, backdrop clicks, Escape, and pointer movement do not close it. A successful **Save** or explicit **Cancel** closes this owned editor; a failed Save keeps it open with the draft intact. Navigation, extension reload, and content-script teardown remain system lifecycle events rather than user close actions.
 
+When an editor opens for a saved account, empty or whitespace-only Location and Website values prefill independently from the visible X profile metadata when available. Non-empty saved values and existing unsaved drafts take precedence. Prefilling does not persist anything until Save; users can edit or clear either prefilled value.
+
 The full-profile editor is inline and remains visible after Save or Cancel. Save repopulates it from the authoritative account, while Cancel restores persisted values. Unsaved drafts remain memory-only.
 
 Website capture reads the scoped profile’s `a[data-testid="UserUrl"]`, excluding posts and bio-text links. Direct HTTP(S) destinations are retained. For X’s `t.co` links, a complete HTTP(S) title or visible website address is preferred (bare domains receive `https://`); truncated labels retain the shortened destination without guessing. Capture does not follow redirects. Website is editable in Identity and in the dashboard, and is persisted only on Save. Missing website metadata preserves an existing value.

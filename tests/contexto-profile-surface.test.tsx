@@ -53,6 +53,74 @@ describe('ContextoProfileSurface', () => {
     expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'contexto:account:saveContext' }));
   });
 
+  it.each([
+    ['', '', 'San Francisco', 'https://arize.com/'],
+    ['   ', '  ', 'San Francisco', 'https://arize.com/'],
+    ['', 'https://saved.example/', 'San Francisco', 'https://saved.example/'],
+    ['Berlin', '', 'Berlin', 'https://arize.com/'],
+    ['Berlin', 'https://saved.example/', 'Berlin', 'https://saved.example/'],
+  ])('prefills empty saved metadata independently (%j, %j)', async (location, website, expectedLocation, expectedWebsite) => {
+    const saved = { ...profile, id: 'saved', location, website, tags: [], folders: [] };
+    const send = vi.fn(async (message) => {
+      if (message.type === 'contexto:account:lookup') return { ok: true, lookup: true, lookupAccount: saved };
+      if (message.type === 'contexto:account:saveContext') return { ok: true, account: { ...saved, ...message.input.metadata } };
+      return { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } };
+    });
+    render(<ContextoProfileSurface profile={profile} kind="full-profile"
+      send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
+    expect(await screen.findByLabelText('Location')).toHaveValue(expectedLocation);
+    expect(screen.getByLabelText('Website')).toHaveValue(expectedWebsite);
+    expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'contexto:account:saveContext' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await screen.findByText('Saved to Contexto');
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'contexto:account:saveContext',
+      input: expect.objectContaining({ metadata: expect.objectContaining({ location: expectedLocation, website: expectedWebsite }) }),
+    }));
+  });
+
+  it('keeps fields empty when neither the saved account nor X provides metadata', async () => {
+    const saved = { ...profile, id: 'saved', location: '', website: '', tags: [], folders: [] };
+    const send = vi.fn(async (message) => message.type === 'contexto:account:lookup'
+      ? { ok: true, lookup: true, lookupAccount: saved }
+      : { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } });
+    render(<ContextoProfileSurface profile={{ ...profile, location: undefined, website: undefined }} kind="full-profile"
+      send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
+    expect(await screen.findByLabelText('Location')).toHaveValue('');
+    expect(screen.getByLabelText('Website')).toHaveValue('');
+  });
+
+  it('preserves cleared fields through remount and Save; Cancel restores persisted blanks', async () => {
+    const drafts = new AccountDraftStore();
+    const saved = { ...profile, id: 'saved', location: '', website: '', tags: [], folders: [] };
+    const send = vi.fn(async (message) => {
+      if (message.type === 'contexto:account:lookup') return { ok: true, lookup: true, lookupAccount: saved };
+      if (message.type === 'contexto:account:saveContext') return { ok: true, account: saved };
+      return { ok: true, lookups: { companies: [], tags: [], folders: [], roles: [], locations: [] } };
+    });
+    const props = { profile, kind: 'full-profile' as const, send: send as ContextoProfileSurfaceProps['send'], drafts };
+    const first = render(<ContextoProfileSurface {...props} />);
+    fireEvent.change(await screen.findByLabelText('Location'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('Website'), { target: { value: '' } });
+    first.unmount();
+    render(<ContextoProfileSurface {...props} />);
+    expect(await screen.findByLabelText('Location')).toHaveValue('');
+    expect(screen.getByLabelText('Website')).toHaveValue('');
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await screen.findByText('Saved to Contexto');
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'contexto:account:saveContext',
+      input: expect.objectContaining({ metadata: expect.objectContaining({ location: '', website: '' }) }),
+    }));
+    expect(screen.getByLabelText('Location')).toHaveValue('');
+    expect(screen.getByLabelText('Website')).toHaveValue('');
+    fireEvent.change(screen.getByLabelText('Location'), { target: { value: 'Discard' } });
+    fireEvent.change(screen.getByLabelText('Website'), { target: { value: 'https://discard.example/' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByLabelText('Location')).toHaveValue('');
+    expect(screen.getByLabelText('Website')).toHaveValue('');
+  });
+
   it('saves an edited website and restores the saved website on Cancel', async () => {
     const saved = { ...profile, id: 'saved', website: 'https://saved.example/', tags: [], folders: [] };
     const send = vi.fn(async (message) => {
