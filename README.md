@@ -12,7 +12,7 @@ The extension is built with [WXT](https://wxt.dev/), React, TypeScript, and Inde
 - Explicit per-contact catch-up checkpoints with live X searches for posts since the last review.
 - Local IndexedDB database for accounts, companies, tags, folders, notes, search history, and backups.
 - Dashboard/options page for offline account search, metadata editing, filtering, import, and export.
-- Popup quick-search builder for X searches with keyword and date filters.
+- One persisted Quick X search builder in both the toolbar popup and the always-expanded Contexto section in X's right sidebar, with keyword and date filters.
 - X search helpers for messages/posts from you to them, them to you, profile posts, direct mentions, and keyword/date constraints.
 - JSON backup/restore so local data can be moved or recovered.
 - Platform adapter boundary so LinkedIn and Reddit can be added later without rewriting the CRM core.

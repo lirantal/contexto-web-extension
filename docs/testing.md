@@ -13,6 +13,8 @@ npm run verify:popup
 
 Use focused Vitest commands while iterating, then run the complete suite before completion.
 
+Quick X search regression coverage must prove that the shared popup/sidebar builder restores and synchronizes persisted handles, keyword, dates, saved-account suggestions, free-form targets, and autosuggest history; validates required handles; launches only validated searches in a new tab; records target history only after a successful launch; and remains usable when optional suggestions/history sources fail. X-sidebar observer coverage must prove that the complete, always-expanded workspace mounts in a Contexto-owned Shadow DOM host before the validated native form, remounts after X replaces the form, and fails closed without native-form evidence while leaving X's native search and separately governed widget policy usable.
+
 ## X DOM fixtures
 
 Store observed X markup variants under `tests/fixtures/x/`. Fixtures are minimal structural examples named for the DOM variant rather than a real account. Do not treat a live X selector or DOM hierarchy as a stable API.
@@ -43,4 +45,4 @@ Feed quick-note tests cover no-write opening, autofocus, non-empty saves, pendin
 
 ## Manual browser checks
 
-Synthetic tests cannot reproduce every X or browser lifecycle. Run the matrix in [Browser Development Workflow](development/browser-workflow.md) after changing content-script mounting, X selectors, popup layout, Shadow DOM behavior, or extension lifecycle handling.
+Synthetic tests cannot reproduce every X or browser lifecycle. Run the matrix in [Browser Development Workflow](development/browser-workflow.md) after changing content-script mounting, X selectors, popup layout, Shadow DOM behavior, or extension lifecycle handling. For Quick X search, this includes Chrome and Vivaldi; light and dark themes; saved-account suggestions and free-form targets; successful and failed launches; popup/sidebar state restoration; X rerenders; and extension reload.
