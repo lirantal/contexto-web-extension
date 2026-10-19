@@ -248,11 +248,11 @@ export function ContextoFeedContext({ profile, post, send, onEdit }: ContextoFee
       </section>
       <section className="contexto-feed-section contexto-feed-local-actions" aria-labelledby={`${panelId}-local`}>
         <span className="contexto-feed-section-label" id={`${panelId}-local`}>Add to Contexto</span>
-        <div className="contexto-feed-action-row">
-          {!composerOpen && !noteComposerOpen && <button type="button" onClick={openNoteComposer}>Add quick note</button>}
-          {bookmarkState === 'available' && !composerOpen && !noteComposerOpen && <button type="button" onClick={openComposer}>Capture this post</button>}
+        {!composerOpen && !noteComposerOpen && <div className="contexto-feed-action-row">
+          <button type="button" onClick={openNoteComposer}>Add quick note</button>
+          {bookmarkState === 'available' && <button type="button" onClick={openComposer}>Capture this post</button>}
           {bookmarkState === 'saved' && <button type="button" disabled>Bookmarked</button>}
-        </div>
+        </div>}
         {noteComposerOpen && <div className="contexto-feed-note-composer">
           <label>
             Relationship note

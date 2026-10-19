@@ -10,7 +10,7 @@ The feed integration only considers top-level, non-promoted post roots. Identity
 
 Contexto never creates an account from feed visibility. It performs an ephemeral local account lookup and renders the marker only when a saved `AccountSummary` is returned.
 
-When the primary post also has one validated canonical status URL, the panel checks the saved contact's bookmark collection. It offers **Capture this post** for uncaptured items or shows disabled **Bookmarked** state for duplicates. Capture uses an inline optional-reminder composer; invalid post evidence or bookmark lookup failure hides capture while preserving relationship context.
+When the primary post also has one validated canonical status URL, the panel checks the saved contact's bookmark collection. It offers **Capture this post** for uncaptured items or shows disabled **Bookmarked** state for duplicates. Available local actions share a two-column row, while a lone action spans the full row. Opening either composer replaces the complete local-action row, including the saved **Bookmarked** state. Capture uses an inline optional-reminder composer; invalid post evidence or bookmark lookup failure hides capture while preserving relationship context.
 
 When the saved `myXHandle` setting and author handle are both valid, the panel also shows **View our interactions**. It opens a new tab with X's live results for `(from:viewer to:author) OR (from:author to:viewer)`. Missing, invalid, or unavailable settings hide only this shortcut.
 

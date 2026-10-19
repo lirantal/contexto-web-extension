@@ -267,6 +267,22 @@ describe('ContextoFeedContext', () => {
       .toBeVisible();
   });
 
+  it('replaces a saved bookmark action row with the quick-note composer', async () => {
+    renderCapturable(bookmarkRecord);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+
+    const localActions = screen.getByText('Add to Contexto').closest('section')!;
+    expect(within(localActions).getByRole('button', { name: 'Bookmarked' })).toBeDisabled();
+    expect(localActions.querySelector('.contexto-feed-action-row')).toBeInTheDocument();
+
+    await user.click(within(localActions).getByRole('button', { name: 'Add quick note' }));
+
+    expect(within(localActions).getByRole('textbox', { name: 'Relationship note' })).toBeVisible();
+    expect(within(localActions).queryByRole('button', { name: 'Bookmarked' })).not.toBeInTheDocument();
+    expect(localActions.querySelector('.contexto-feed-action-row')).not.toBeInTheDocument();
+  });
+
   it('opens a safe two-way X interaction search when my handle is configured', async () => {
     renderWithSettings({
       ok: true,

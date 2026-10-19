@@ -61,15 +61,17 @@ describe('Contexto X surface layout contract', () => {
     expect(host).toContain('margin:12px 0 16px;');
   });
 
-  it('groups editor fields into responsive paired rows', () => {
+  it('stacks inline editor fields and pairs owned editor fields only in containers at least 380 pixels wide', () => {
     const formSection = ruleBody('.contexto-form-section');
     expect(formSection).toContain('gap:10px;');
 
     const fieldRow = ruleBody('.contexto-field-row');
     expect(fieldRow).toContain('display:grid;');
-    expect(fieldRow).toContain('grid-template-columns:repeat(2,minmax(0,1fr));');
+    expect(fieldRow).toContain('grid-template-columns:minmax(0,1fr);');
 
-    expect(css).toContain('@media (max-width:379px) { .contexto-field-row { display:grid; grid-template-columns:minmax(0,1fr); } }');
+    const ownedEditor = ruleBody('.contexto-surface[data-placement="docked"],.contexto-surface[data-placement="modal"]');
+    expect(ownedEditor).toContain('container-type:inline-size;');
+    expect(css).toContain('@container (min-width:380px) { .contexto-surface:not([data-placement="inline"]) .contexto-field-row { grid-template-columns:repeat(2,minmax(0,1fr)); } }');
   });
 
   it('makes structured sidebar results visibly keyboard focusable', () => {
@@ -132,5 +134,10 @@ describe('Contexto X surface layout contract', () => {
 
     const checkpoint = ruleBody('.contexto-feed-checkpoint button');
     expect(checkpoint).toContain('min-height:36px;');
+  });
+
+  it('lets a lone local feed action span the available two-column row', () => {
+    const loneAction = ruleBody('.contexto-feed-action-row > :only-child');
+    expect(loneAction).toContain('grid-column:1 / -1;');
   });
 });
