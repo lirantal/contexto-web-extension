@@ -264,7 +264,7 @@ export function Dashboard() {
                 <strong>{account.displayName}</strong>
                 <small className="account-row-metadata">
                   <span>@{account.handle}</span>
-                  {account.company && <span className="account-row-company">
+                  {account.company?.name.trim() && <span className="account-row-company">
                     <span className="metadata-label">Company:</span>
                     <span>{account.company.name}</span>
                   </span>}
@@ -446,7 +446,7 @@ function AccountDetail({
 
       <section className="panel detail-section">
         <h3>Notes</h3>
-        {account.latestNote && <p className="latest-note">
+        {account.latestNote?.body.trim() && <p className="latest-note">
           <strong className="metadata-label">Latest note:</strong>
           <span>{account.latestNote.body}</span>
         </p>}
