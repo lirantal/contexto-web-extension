@@ -15,7 +15,10 @@ vi.mock('@/src/ui/ContextoHoverLauncher', () => ({
 vi.mock('@/src/ui/ContextoSidebarWorkspace', () => ({
   ContextoSidebarWorkspace: () => <>
     <section aria-label="Contexto account search">Contexto account search</section>
-    <section aria-label="Quick X search">Quick X search</section>
+    <section aria-label="Quick X search">
+      Quick X search
+      <button type="button" data-testid="quick-x-launch">Launch X search</button>
+    </section>
   </>,
 }));
 
@@ -88,25 +91,73 @@ describe('mountContextoSurface', () => {
 });
 
 describe('mountContextoSidebarSearch', () => {
-  it('mounts both sidebar sections in one shadow host and removes it during cleanup', () => {
+  it('keeps both sidebar sections and launch controls inside a closed shadow root', () => {
     const nativeForm = document.createElement('form');
     document.body.append(nativeForm);
+    const originalAttachShadow = HTMLElement.prototype.attachShadow;
+    let capturedRoot: ShadowRoot | undefined;
+    const attachShadow = vi.spyOn(HTMLElement.prototype, 'attachShadow').mockImplementation(function (
+      this: HTMLElement,
+      init: ShadowRootInit,
+    ) {
+      capturedRoot = originalAttachShadow.call(this, init);
+      return capturedRoot;
+    });
 
+    try {
+      const cleanup = mountContextoSidebarSearch({
+        nativeForm,
+        send: vi.fn().mockResolvedValue({ ok: true, accounts: [] }),
+        css: '.contexto-surface{} .contexto-quick-search{}',
+        theme: 'dark',
+      });
+
+      const mountHost = nativeForm.previousElementSibling as HTMLElement;
+      expect(mountHost).toHaveAttribute('data-contexto-surface', 'sidebar-search');
+      expect(mountHost.shadowRoot).toBeNull();
+      expect(capturedRoot).toBeDefined();
+      expect(capturedRoot).toHaveTextContent('Contexto account search');
+      expect(capturedRoot).toHaveTextContent('Quick X search');
+      expect(capturedRoot?.querySelector('style')).toHaveTextContent('.contexto-surface');
+      expect(capturedRoot?.querySelector('style')).toHaveTextContent('.contexto-quick-search');
+      expect(capturedRoot?.querySelector('[data-testid="quick-x-launch"]')).not.toBeNull();
+      expect(document.querySelector('[data-testid="quick-x-launch"]')).toBeNull();
+      expect(cleanup.isConnected?.()).toBe(true);
+
+      cleanup();
+
+      expect(document.querySelector('[data-contexto-surface="sidebar-search"]')).toBeNull();
+    } finally {
+      attachShadow.mockRestore();
+    }
+  });
+
+  it('reports connected only while the host is the native form immediate previous sibling', () => {
+    const firstParent = document.createElement('div');
+    const secondParent = document.createElement('div');
+    const nativeForm = document.createElement('form');
+    firstParent.append(nativeForm);
+    document.body.append(firstParent, secondParent);
     const cleanup = mountContextoSidebarSearch({
       nativeForm,
       send: vi.fn().mockResolvedValue({ ok: true, accounts: [] }),
-      css: '.contexto-surface{}',
-      theme: 'dark',
+      css: '.contexto-surface{} .contexto-quick-search{}',
+      theme: 'light',
     });
-
     const mountHost = nativeForm.previousElementSibling as HTMLElement;
-    expect(mountHost).toHaveAttribute('data-contexto-surface', 'sidebar-search');
-    expect(mountHost.shadowRoot).toHaveTextContent('Contexto account search');
-    expect(mountHost.shadowRoot).toHaveTextContent('Quick X search');
+
     expect(cleanup.isConnected?.()).toBe(true);
+    nativeForm.before(document.createElement('span'));
+    expect(cleanup.isConnected?.()).toBe(false);
+    nativeForm.before(mountHost);
+    expect(cleanup.isConnected?.()).toBe(true);
+    secondParent.append(nativeForm);
+    expect(cleanup.isConnected?.()).toBe(false);
+    secondParent.append(mountHost, nativeForm);
+    expect(cleanup.isConnected?.()).toBe(true);
+    mountHost.remove();
+    expect(cleanup.isConnected?.()).toBe(false);
 
     cleanup();
-
-    expect(document.querySelector('[data-contexto-surface="sidebar-search"]')).toBeNull();
   });
 });

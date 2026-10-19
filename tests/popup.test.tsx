@@ -10,8 +10,16 @@ const mocks = vi.hoisted(() => ({
   getSearchState: vi.fn(),
   setSearchState: vi.fn(),
   getHistory: vi.fn(),
-  recordTarget: vi.fn(),
+  sendMessage: vi.fn(),
+  createTab: vi.fn(),
   listAccounts: vi.fn(),
+}));
+
+vi.mock('wxt/browser', () => ({
+  browser: {
+    runtime: { openOptionsPage: vi.fn(), sendMessage: mocks.sendMessage },
+    tabs: { create: mocks.createTab },
+  },
 }));
 
 vi.mock('@/src/data/repositories', () => ({
@@ -24,11 +32,11 @@ vi.mock('@/src/shared/settings', () => ({
   settingsItem: { getValue: mocks.getSettings, setValue: mocks.setSettings, watch: vi.fn(() => () => undefined) },
   popupSearchStateItem: { getValue: mocks.getSearchState, setValue: mocks.setSearchState, watch: vi.fn(() => () => undefined) },
   targetHandleHistoryItem: { getValue: mocks.getHistory, watch: vi.fn(() => () => undefined) },
-  recordTargetHandleSearch: mocks.recordTarget,
 }));
 
 describe('popup search form', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mocks.getSettings.mockResolvedValue({ myXHandle: '@me', lastDashboardView: 'accounts' });
     mocks.getSearchState.mockResolvedValue({
       targetHandle: '@them',
@@ -39,7 +47,34 @@ describe('popup search form', () => {
     mocks.setSettings.mockResolvedValue(undefined);
     mocks.setSearchState.mockResolvedValue(undefined);
     mocks.getHistory.mockResolvedValue([]);
-    mocks.recordTarget.mockResolvedValue([]);
+    mocks.sendMessage.mockImplementation(async (message) => {
+      if (message.type === 'contexto:settings:update') {
+        return {
+          ok: true,
+          settings: { myXHandle: message.patch.myXHandle ?? '@me', lastDashboardView: 'accounts' },
+        };
+      }
+      if (message.type === 'contexto:search-state:update') {
+        return {
+          ok: true,
+          searchState: {
+            targetHandle: '@them',
+            keyword: 'security',
+            since: '2026-01-01',
+            until: '2026-02-01',
+            ...message.patch,
+          },
+        };
+      }
+      if (message.type === 'contexto:target-history:promote') {
+        return {
+          ok: true,
+          targetHandleHistory: [{ handle: message.handle, searchedAt: '2026-07-11T00:00:00Z' }],
+        };
+      }
+      throw new Error('Unexpected request');
+    });
+    mocks.createTab.mockResolvedValue({ id: 1 });
     mocks.listAccounts.mockResolvedValue([]);
   });
 
@@ -59,11 +94,9 @@ describe('popup search form', () => {
 
     fireEvent.change(keyword, { target: { value: 'typescript' } });
 
-    await waitFor(() => expect(mocks.setSearchState).toHaveBeenCalledWith({
-      targetHandle: '@them',
-      keyword: 'typescript',
-      since: '2026-01-01',
-      until: '2026-02-01',
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenCalledWith({
+      type: 'contexto:search-state:update',
+      patch: { keyword: 'typescript' },
     }));
   });
 
@@ -76,11 +109,9 @@ describe('popup search form', () => {
 
     expect(screen.getByLabelText(/Other person/)).toHaveValue('');
     expect(screen.queryByRole('button', { name: "Clear other person's X handle" })).not.toBeInTheDocument();
-    await waitFor(() => expect(mocks.setSearchState).toHaveBeenCalledWith({
-      targetHandle: '',
-      keyword: 'security',
-      since: '2026-01-01',
-      until: '2026-02-01',
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenCalledWith({
+      type: 'contexto:search-state:update',
+      patch: { targetHandle: '' },
     }));
   });
 

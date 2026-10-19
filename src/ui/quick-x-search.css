@@ -35,12 +35,13 @@
   border: 1px solid var(--ctx-border);
   border-radius: 7px;
   font: inherit;
+  background: var(--ctx-input, var(--ctx-bg));
 }
 
 .contexto-quick-search input {
   width: 100%;
   padding: 6px 8px;
-  background: var(--ctx-bg);
+  background: var(--ctx-input, var(--ctx-bg));
   color: var(--ctx-text);
 }
 
@@ -50,7 +51,6 @@
   justify-content: center;
   min-height: 32px;
   padding: 6px 8px;
-  background: var(--ctx-bg);
   color: var(--ctx-text);
   cursor: pointer;
 }
@@ -103,6 +103,7 @@
 
 .contexto-quick-search .search-action {
   justify-content: flex-start;
+  gap: 8px;
   min-height: 40px;
   padding: 6px 9px;
   text-align: left;
@@ -179,7 +180,7 @@
   overflow-y: auto;
   border: 1px solid var(--ctx-border);
   border-radius: 7px;
-  background: var(--ctx-bg);
+  background: var(--ctx-input, var(--ctx-bg));
   box-shadow: 0 8px 22px rgb(34 40 34 / 18%);
 }
 

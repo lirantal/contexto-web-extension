@@ -20,7 +20,7 @@ export function mountContextoSidebarSearch({
   const mountHost = document.createElement('div');
   mountHost.dataset.contextoSurface = 'sidebar-search';
   mountHost.dataset.theme = theme;
-  const shadow = mountHost.attachShadow({ mode: 'open' });
+  const shadow = mountHost.attachShadow({ mode: 'closed' });
   const style = document.createElement('style');
   style.textContent = css;
   const app = document.createElement('div');
@@ -36,6 +36,11 @@ export function mountContextoSidebarSearch({
     root.unmount();
     mountHost.remove();
   };
-  cleanup.isConnected = () => mountHost.isConnected && nativeForm.isConnected;
+  cleanup.isConnected = () => (
+    mountHost.isConnected
+    && nativeForm.isConnected
+    && mountHost.parentElement === nativeForm.parentElement
+    && mountHost.nextElementSibling === nativeForm
+  );
   return cleanup;
 }

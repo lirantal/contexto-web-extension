@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContextoSidebarWorkspace } from '@/src/ui/ContextoSidebarWorkspace';
+import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
 import type { AccountSummary, XSearchFilters } from '@/src/shared/types';
 
 const mocks = vi.hoisted(() => ({
@@ -14,7 +15,6 @@ const mocks = vi.hoisted(() => ({
   watchSearchState: vi.fn(),
   getHistory: vi.fn(),
   watchHistory: vi.fn(),
-  recordTarget: vi.fn(),
 }));
 
 vi.mock('@/src/shared/settings', () => ({
@@ -34,7 +34,6 @@ vi.mock('@/src/shared/settings', () => ({
     getValue: mocks.getHistory,
     watch: mocks.watchHistory,
   },
-  recordTargetHandleSearch: mocks.recordTarget,
 }));
 
 const alice: AccountSummary = {
@@ -63,6 +62,32 @@ function isOpenSearch(message: unknown): message is { type: 'contexto:search:ope
     && message.type === 'contexto:search:open';
 }
 
+function persistenceResponse(message: ContextoRequest): ContextoResponse | undefined {
+  if (message.type === 'contexto:settings:update') {
+    return {
+      ok: true,
+      settings: {
+        myXHandle: message.patch.myXHandle ?? '@me',
+        lastDashboardView: 'accounts',
+        showNativeXSidebarWidgets: false,
+      },
+    };
+  }
+  if (message.type === 'contexto:search-state:update') {
+    return {
+      ok: true,
+      searchState: { targetHandle: '', keyword: '', since: '', until: '', ...message.patch },
+    };
+  }
+  if (message.type === 'contexto:target-history:promote') {
+    return {
+      ok: true,
+      targetHandleHistory: [{ handle: message.handle, searchedAt: '2026-07-11T00:00:00Z' }],
+    };
+  }
+  return undefined;
+}
+
 describe('ContextoSidebarWorkspace', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -71,7 +96,6 @@ describe('ContextoSidebarWorkspace', () => {
     mocks.getHistory.mockResolvedValue([]);
     mocks.setSettings.mockResolvedValue(undefined);
     mocks.setSearchState.mockResolvedValue(undefined);
-    mocks.recordTarget.mockResolvedValue([]);
     mocks.watchSettings.mockReturnValue(() => undefined);
     mocks.watchSearchState.mockReturnValue(() => undefined);
     mocks.watchHistory.mockReturnValue(() => undefined);
@@ -80,6 +104,8 @@ describe('ContextoSidebarWorkspace', () => {
   it('composes account search and Quick X search with saved-account suggestions', async () => {
     const user = userEvent.setup();
     const send = vi.fn(async (message) => {
+      const persisted = persistenceResponse(message);
+      if (persisted) return persisted;
       if (message.type === 'contexto:account:list') return { ok: true as const, accounts: [alice] };
       if (isOpenSearch(message)) return { ok: true as const };
       throw new Error('Unexpected request');
@@ -95,17 +121,33 @@ describe('ContextoSidebarWorkspace', () => {
     expect(await screen.findByRole('option', { name: /Alice Example.*@alice_dev.*Acme/i })).toBeVisible();
 
     await user.click(screen.getByRole('option', { name: /Alice Example.*@alice_dev.*Acme/i }));
+    await waitFor(() => expect(send).toHaveBeenCalledWith({
+      type: 'contexto:search-state:update',
+      patch: { targetHandle: '@alice_dev' },
+    }));
     await user.click(screen.getByRole('button', { name: /Posts by other person/ }));
 
     await waitFor(() => expect(send).toHaveBeenCalledWith({
       type: 'contexto:search:open',
       filters: expect.objectContaining({ direction: 'from-profile', targetHandle: 'alice_dev' }),
     }));
+    await waitFor(() => expect(send).toHaveBeenCalledWith({
+      type: 'contexto:target-history:promote',
+      handle: 'alice_dev',
+    }));
+
+    const openCall = send.mock.calls.findIndex(([message]) => message.type === 'contexto:search:open');
+    const promotionCall = send.mock.calls.findIndex(
+      ([message]) => message.type === 'contexto:target-history:promote',
+    );
+    expect(send.mock.invocationCallOrder[openCall]).toBeLessThan(send.mock.invocationCallOrder[promotionCall]);
   });
 
   it('keeps free-form target search usable when saved accounts are unavailable', async () => {
     const user = userEvent.setup();
     const send = vi.fn(async (message) => {
+      const persisted = persistenceResponse(message);
+      if (persisted) return persisted;
       if (message.type === 'contexto:account:list') return { ok: false as const, error: 'Accounts unavailable' };
       if (isOpenSearch(message)) return { ok: true as const };
       throw new Error('Unexpected request');

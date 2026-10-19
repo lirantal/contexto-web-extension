@@ -50,6 +50,7 @@ describe('Contexto X surface layout contract', () => {
     expect(lightHost).toContain('--ctx-label:#536471;');
     expect(lightHost).toContain('--ctx-subtle-border:#eff3f4;');
     expect(lightHost).toContain('--ctx-hover:#f7f9f9;');
+    expect(lightHost).toContain('color-scheme:light;');
 
     const darkHost = ruleBody(css, ':host([data-contexto-surface="sidebar-search"][data-theme="dark"])');
     expect(darkHost).toContain('--ctx-bg:#000;');
@@ -61,6 +62,7 @@ describe('Contexto X surface layout contract', () => {
     expect(darkHost).toContain('--ctx-label:#71767b;');
     expect(darkHost).toContain('--ctx-subtle-border:#2f3336;');
     expect(darkHost).toContain('--ctx-hover:#16181c;');
+    expect(darkHost).toContain('color-scheme:dark;');
   });
 
   it('keeps the sidebar search clear of the viewport edge and native X search', () => {
@@ -94,7 +96,7 @@ describe('Contexto X surface layout contract', () => {
     expect(sidebarQuickSearch).not.toContain('min-height:480px;');
     expect(sidebarDateRow).toContain('flex-wrap: wrap;');
     expect(sidebarDateLabel).toContain('min-width: 132px;');
-    expect(sharedInputs).toContain('background: var(--ctx-bg);');
+    expect(sharedInputs).toContain('background: var(--ctx-input, var(--ctx-bg));');
     expect(sharedInputs).toContain('color: var(--ctx-text);');
     expect(actionPreview).toContain('text-overflow: ellipsis;');
     expect(actionPreview).toContain('white-space: nowrap;');

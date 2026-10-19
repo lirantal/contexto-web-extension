@@ -10,13 +10,13 @@ const mocks = vi.hoisted(() => ({
   setSearchState: vi.fn(),
   getHistory: vi.fn(),
   listAccounts: vi.fn(),
-  recordTarget: vi.fn(),
+  sendMessage: vi.fn(),
   createTab: vi.fn(),
 }));
 
 vi.mock('wxt/browser', () => ({
   browser: {
-    runtime: { openOptionsPage: vi.fn() },
+    runtime: { openOptionsPage: vi.fn(), sendMessage: mocks.sendMessage },
     tabs: { create: mocks.createTab },
   },
 }));
@@ -31,14 +31,13 @@ vi.mock('@/src/shared/settings', () => ({
   settingsItem: { getValue: mocks.getSettings, setValue: mocks.setSettings, watch: vi.fn(() => () => undefined) },
   popupSearchStateItem: { getValue: mocks.getSearchState, setValue: mocks.setSearchState, watch: vi.fn(() => () => undefined) },
   targetHandleHistoryItem: { getValue: mocks.getHistory, watch: vi.fn(() => () => undefined) },
-  recordTargetHandleSearch: mocks.recordTarget,
 }));
 
 describe('popup target handle autosuggest', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('browser', {
-      runtime: { openOptionsPage: vi.fn() },
+      runtime: { openOptionsPage: vi.fn(), sendMessage: mocks.sendMessage },
       tabs: { create: mocks.createTab },
     });
     mocks.getSettings.mockResolvedValue({ myXHandle: '@me', lastDashboardView: 'accounts' });
@@ -54,7 +53,27 @@ describe('popup target handle autosuggest', () => {
     mocks.setSettings.mockResolvedValue(undefined);
     mocks.setSearchState.mockResolvedValue(undefined);
     mocks.createTab.mockResolvedValue({ id: 1 });
-    mocks.recordTarget.mockResolvedValue([{ handle: 'alice_dev', searchedAt: '2026-07-11T00:00:00Z' }]);
+    mocks.sendMessage.mockImplementation(async (message) => {
+      if (message.type === 'contexto:settings:update') {
+        return {
+          ok: true,
+          settings: { myXHandle: message.patch.myXHandle ?? '@me', lastDashboardView: 'accounts' },
+        };
+      }
+      if (message.type === 'contexto:search-state:update') {
+        return {
+          ok: true,
+          searchState: { targetHandle: '', keyword: '', since: '', until: '', ...message.patch },
+        };
+      }
+      if (message.type === 'contexto:target-history:promote') {
+        return {
+          ok: true,
+          targetHandleHistory: [{ handle: message.handle, searchedAt: '2026-07-11T00:00:00Z' }],
+        };
+      }
+      throw new Error('Unexpected request');
+    });
   });
 
   it('loads rich suggestions and persists the selected handle', async () => {
@@ -66,11 +85,9 @@ describe('popup target handle autosuggest', () => {
     await user.click(await screen.findByRole('option', { name: /Alice Example/ }));
 
     expect(input).toHaveValue('@alice_dev');
-    await waitFor(() => expect(mocks.setSearchState).toHaveBeenCalledWith({
-      targetHandle: '@alice_dev',
-      keyword: '',
-      since: '',
-      until: '',
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenCalledWith({
+      type: 'contexto:search-state:update',
+      patch: { targetHandle: '@alice_dev' },
     }));
   });
 
@@ -83,8 +100,15 @@ describe('popup target handle autosuggest', () => {
     fireEvent.click(searchButton);
 
     await waitFor(() => expect(mocks.createTab).toHaveBeenCalledOnce());
-    await waitFor(() => expect(mocks.recordTarget).toHaveBeenCalledWith('alice_dev'));
-    expect(mocks.createTab.mock.invocationCallOrder[0]).toBeLessThan(mocks.recordTarget.mock.invocationCallOrder[0]);
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenCalledWith({
+      type: 'contexto:target-history:promote',
+      handle: 'alice_dev',
+    }));
+    const promotionCall = mocks.sendMessage.mock.calls.findIndex(
+      ([message]) => message.type === 'contexto:target-history:promote',
+    );
+    expect(mocks.createTab.mock.invocationCallOrder[0])
+      .toBeLessThan(mocks.sendMessage.mock.invocationCallOrder[promotionCall]);
   });
 
   it('does not record history when opening the search tab fails', async () => {
@@ -96,6 +120,8 @@ describe('popup target handle autosuggest', () => {
     await waitFor(() => expect(searchButton).toBeEnabled());
     fireEvent.click(searchButton);
     await waitFor(() => expect(mocks.createTab).toHaveBeenCalledOnce());
-    await waitFor(() => expect(mocks.recordTarget).not.toHaveBeenCalled());
+    expect(mocks.sendMessage).not.toHaveBeenCalledWith(expect.objectContaining({
+      type: 'contexto:target-history:promote',
+    }));
   });
 });

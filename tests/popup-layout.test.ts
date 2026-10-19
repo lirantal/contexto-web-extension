@@ -31,6 +31,18 @@ describe('popup layout contract', () => {
     expect(preview).toContain('white-space: nowrap;');
   });
 
+  it('uses the shared input surface for fields, actions, and suggestions with consistent spacing', () => {
+    const input = ruleBody(quickSearchCss, '.contexto-quick-search input');
+    const button = ruleBody(quickSearchCss, '.contexto-quick-search button');
+    const suggestions = ruleBody(quickSearchCss, '.contexto-quick-search .target-handle-options');
+    const action = ruleBody(quickSearchCss, '.contexto-quick-search .search-action');
+
+    expect(input).toContain('background: var(--ctx-input, var(--ctx-bg));');
+    expect(button).toContain('background: var(--ctx-input, var(--ctx-bg));');
+    expect(suggestions).toContain('background: var(--ctx-input, var(--ctx-bg));');
+    expect(action).toContain('gap: 8px;');
+  });
+
   it('keeps body scrolling available when the popup exceeds the browser limit', () => {
     const body = ruleBody(globalCss, 'body');
 

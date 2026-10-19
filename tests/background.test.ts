@@ -20,6 +20,8 @@ vi.mock('@/src/data/repositories', () => ({
 
 vi.mock('@/src/shared/settings', () => ({
   settingsItem: { getValue: vi.fn(), setValue: vi.fn() },
+  popupSearchStateItem: { getValue: vi.fn(), setValue: vi.fn() },
+  targetHandleHistoryItem: { getValue: vi.fn(), setValue: vi.fn() },
 }));
 
 import { handleRequest } from '@/entrypoints/background';

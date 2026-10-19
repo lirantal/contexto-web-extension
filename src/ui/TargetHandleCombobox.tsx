@@ -4,16 +4,22 @@ import { X } from 'lucide-react';
 import type { TargetHandleSuggestion } from '../shared/target-handle-suggestions';
 
 interface TargetHandleComboboxProps {
+  disabled?: boolean;
   value: string;
   suggestions: TargetHandleSuggestion[];
   onChange: (value: string) => void;
 }
 
-export function TargetHandleCombobox({ value, suggestions, onChange }: TargetHandleComboboxProps) {
+export function TargetHandleCombobox({
+  disabled = false,
+  value,
+  suggestions,
+  onChange,
+}: TargetHandleComboboxProps) {
   const listboxId = useId();
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
-  const expanded = open && suggestions.length > 0;
+  const expanded = !disabled && open && suggestions.length > 0;
 
   useEffect(() => {
     setHighlighted(-1);
@@ -56,6 +62,7 @@ export function TargetHandleCombobox({ value, suggestions, onChange }: TargetHan
   return (
     <div className="target-handle-combobox input-with-clear">
       <input
+        disabled={disabled}
         aria-label="Other person's X handle"
         role="combobox"
         aria-autocomplete="list"
@@ -78,6 +85,7 @@ export function TargetHandleCombobox({ value, suggestions, onChange }: TargetHan
           type="button"
           className="clear-input"
           aria-label="Clear other person's X handle"
+          disabled={disabled}
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => {
             onChange('');

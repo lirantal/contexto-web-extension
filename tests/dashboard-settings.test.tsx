@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dashboard } from '@/src/ui/Dashboard';
@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   removeBookmark: vi.fn(),
   removeTag: vi.fn(),
   updateAccount: vi.fn(),
-  setSettings: vi.fn(),
+  updateSettings: vi.fn(),
 }));
 
 vi.mock('dexie-react-hooks', () => ({
@@ -52,9 +52,13 @@ vi.mock('@/src/shared/settings', () => ({
     showNativeXSidebarWidgets: false,
     ...value,
   }),
-  settingsItem: { getValue: mocks.getSettings, setValue: mocks.setSettings },
+  settingsItem: { getValue: mocks.getSettings },
   clearTargetHandleHistory: mocks.clearTargetHistory,
 }));
+
+function renderDashboard() {
+  return render(<Dashboard settingsPersistence={{ updateSettings: mocks.updateSettings }} />);
+}
 
 describe('dashboard target handle history settings', () => {
   beforeEach(() => {
@@ -64,14 +68,19 @@ describe('dashboard target handle history settings', () => {
     mocks.companies = [];
     mocks.locations = [];
     mocks.getSettings.mockResolvedValue({ myXHandle: '@me', lastDashboardView: 'accounts' });
-    mocks.setSettings.mockResolvedValue(undefined);
+    mocks.updateSettings.mockImplementation(async (patch) => ({
+      myXHandle: '@me',
+      lastDashboardView: 'accounts',
+      showNativeXSidebarWidgets: false,
+      ...patch,
+    }));
     mocks.clearTargetHistory.mockResolvedValue(undefined);
     mocks.markAccountCaughtUp.mockResolvedValue(undefined);
   });
 
   it('clears target handle history and confirms the action', async () => {
     const user = userEvent.setup();
-    render(<Dashboard />);
+    renderDashboard();
 
     await user.click(screen.getByRole('button', { name: 'Clear target handle history' }));
 
@@ -81,17 +90,25 @@ describe('dashboard target handle history settings', () => {
 
   it('shows X sidebar widgets only when the dashboard toggle is enabled', async () => {
     const user = userEvent.setup();
-    render(<Dashboard />);
+    renderDashboard();
 
     const toggle = await screen.findByRole('checkbox', { name: 'Show X sidebar widgets' });
     expect(toggle).not.toBeChecked();
     await user.click(toggle);
 
-    expect(mocks.setSettings).toHaveBeenCalledWith({
-      myXHandle: '@me',
-      lastDashboardView: 'accounts',
+    expect(mocks.updateSettings).toHaveBeenCalledWith({
       showNativeXSidebarWidgets: true,
     });
+  });
+
+  it('persists the viewer handle as a narrow settings patch', async () => {
+    renderDashboard();
+    const handle = await screen.findByLabelText('My X handle');
+
+    fireEvent.change(handle, { target: { value: '@updated' } });
+
+    expect(handle).toHaveValue('@updated');
+    expect(mocks.updateSettings).toHaveBeenCalledWith({ myXHandle: '@updated' });
   });
 
   it('immediately removes tag and folder assignments from the selected account', async () => {
@@ -115,7 +132,7 @@ describe('dashboard target handle history settings', () => {
       }],
     }];
     const user = userEvent.setup();
-    render(<Dashboard />);
+    renderDashboard();
 
     await user.click(await screen.findByRole('button', { name: 'Remove founder from Tags' }));
     await user.click(screen.getByRole('button', { name: 'Remove Friends from Folders' }));
@@ -133,7 +150,7 @@ describe('dashboard target handle history settings', () => {
     }];
     mocks.companies = [{ id: 'company-1', name: 'OpenAI' }];
     const user = userEvent.setup();
-    render(<Dashboard />);
+    renderDashboard();
 
     const details = await screen.findByRole('region', { name: 'Account details' });
     const company = within(details).getByLabelText('Company');
@@ -155,7 +172,7 @@ describe('dashboard target handle history settings', () => {
     }];
     mocks.locations = ['San Francisco'];
     const user = userEvent.setup();
-    render(<Dashboard />);
+    renderDashboard();
 
     const location = await screen.findByLabelText('Location');
     await user.type(location, 'sfr');
@@ -176,7 +193,7 @@ describe('dashboard target handle history settings', () => {
       tags: [], folders: [],
     }];
     const user = userEvent.setup();
-    render(<Dashboard />);
+    renderDashboard();
 
     const link = await screen.findByRole('link', { name: 'Catch up on X' });
     expect(new URL(link.getAttribute('href')!).searchParams.get('q'))

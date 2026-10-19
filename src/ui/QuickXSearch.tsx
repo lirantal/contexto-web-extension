@@ -9,10 +9,10 @@ import {
   defaultPopupSearchState,
   defaultSettings,
   popupSearchStateItem,
-  recordTargetHandleSearch,
   settingsItem,
   targetHandleHistoryItem,
 } from '@/src/shared/settings';
+import type { QuickXSearchPersistence } from '@/src/shared/quick-x-search-persistence';
 import type {
   ContextoSettings,
   PopupSearchState,
@@ -29,6 +29,7 @@ import { TargetHandleCombobox } from '@/src/ui/TargetHandleCombobox';
 export interface QuickXSearchProps {
   loadAccountSuggestions: () => Promise<TargetAccountSuggestion[]>;
   launchSearch: (filters: XSearchFilters) => Promise<void>;
+  persistence: QuickXSearchPersistence;
   surface: 'popup' | 'sidebar';
 }
 
@@ -39,15 +40,76 @@ const actions: Array<{ direction: SearchDirection; label: string }> = [
   { direction: 'mentions', label: 'Mentions of other person' },
 ];
 
-export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: QuickXSearchProps): React.JSX.Element {
+interface DirtyField {
+  value: unknown;
+}
+
+function reconcileWatchedValue<T extends object>(
+  current: T,
+  watched: T,
+  dirtyFields: Map<keyof T, DirtyField[]>,
+): T {
+  const next = { ...watched };
+  dirtyFields.forEach((pending, field) => {
+    if (Object.is(watched[field], pending[0]?.value)) {
+      pending.shift();
+    }
+    if (pending.length === 0) {
+      dirtyFields.delete(field);
+    } else {
+      next[field] = current[field];
+    }
+  });
+  return next;
+}
+
+function markDirtyField<T extends object>(
+  dirtyFields: Map<keyof T, DirtyField[]>,
+  field: keyof T,
+  value: unknown,
+): DirtyField {
+  const dirty = { value };
+  const pending = dirtyFields.get(field) ?? [];
+  pending.push(dirty);
+  dirtyFields.set(field, pending);
+  return dirty;
+}
+
+function forgetDirtyField<T extends object>(
+  dirtyFields: Map<keyof T, DirtyField[]>,
+  field: keyof T,
+  dirty: DirtyField,
+): void {
+  const pending = dirtyFields.get(field);
+  if (!pending) return;
+
+  const index = pending.indexOf(dirty);
+  if (index >= 0) pending.splice(index, 1);
+  if (pending.length === 0) dirtyFields.delete(field);
+}
+
+export function QuickXSearch({
+  loadAccountSuggestions,
+  launchSearch,
+  persistence,
+  surface,
+}: QuickXSearchProps): React.JSX.Element {
   const [settings, setSettings] = useState<ContextoSettings>(defaultSettings);
   const [searchState, setSearchState] = useState<PopupSearchState>(defaultPopupSearchState);
   const [accountSuggestions, setAccountSuggestions] = useState<TargetAccountSuggestion[]>([]);
   const [targetHistory, setTargetHistory] = useState<TargetHandleHistoryEntry[]>([]);
+  const [settingsReady, setSettingsReady] = useState(false);
+  const [searchStateReady, setSearchStateReady] = useState(false);
   const settingsVersion = useRef(0);
   const searchStateVersion = useRef(0);
   const targetHistoryVersion = useRef(0);
+  const latestSettings = useRef(defaultSettings);
+  const latestSearchState = useRef(defaultPopupSearchState);
+  const dirtySettings = useRef(new Map<keyof ContextoSettings, DirtyField[]>());
+  const dirtySearchState = useRef(new Map<keyof PopupSearchState, DirtyField[]>());
 
+  const pendingSettingsWrite = useRef<Promise<ContextoSettings> | undefined>(undefined);
+  const pendingSearchStateWrite = useRef<Promise<PopupSearchState> | undefined>(undefined);
   useEffect(() => {
     let active = true;
     const initialSettingsVersion = settingsVersion.current;
@@ -55,14 +117,20 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
     const initialTargetHistoryVersion = targetHistoryVersion.current;
 
     void Promise.allSettled([settingsItem.getValue()]).then(([result]) => {
-      if (active && settingsVersion.current === initialSettingsVersion && result.status === 'fulfilled') {
+      if (!active) return;
+      if (settingsVersion.current === initialSettingsVersion && result.status === 'fulfilled') {
+        latestSettings.current = result.value;
         setSettings(result.value);
       }
+      setSettingsReady(true);
     });
     void Promise.allSettled([popupSearchStateItem.getValue()]).then(([result]) => {
-      if (active && searchStateVersion.current === initialSearchStateVersion && result.status === 'fulfilled') {
+      if (!active) return;
+      if (searchStateVersion.current === initialSearchStateVersion && result.status === 'fulfilled') {
+        latestSearchState.current = result.value;
         setSearchState(result.value);
       }
+      setSearchStateReady(true);
     });
     void Promise.allSettled([loadAccountSuggestions()]).then(([result]) => {
       if (active && result.status === 'fulfilled') {
@@ -78,13 +146,25 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
     const unwatchSettings = settingsItem.watch((value) => {
       if (active) {
         settingsVersion.current += 1;
-        setSettings(value);
+        const next = reconcileWatchedValue(
+          latestSettings.current,
+          value,
+          dirtySettings.current,
+        );
+        latestSettings.current = next;
+        setSettings(next);
       }
     });
     const unwatchSearchState = popupSearchStateItem.watch((value) => {
       if (active) {
         searchStateVersion.current += 1;
-        setSearchState(value);
+        const next = reconcileWatchedValue(
+          latestSearchState.current,
+          value,
+          dirtySearchState.current,
+        );
+        latestSearchState.current = next;
+        setSearchState(next);
       }
     });
     const unwatchTargetHistory = targetHandleHistoryItem.watch((value) => {
@@ -109,38 +189,78 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
 
   function updateMyHandle(value: string) {
     settingsVersion.current += 1;
-    const next = { ...settings, myXHandle: value };
+    const next = { ...latestSettings.current, myXHandle: value };
+    const dirty = markDirtyField(dirtySettings.current, 'myXHandle', value);
+    latestSettings.current = next;
     setSettings(next);
-    void settingsItem.setValue(next);
+    const write = persistence.updateSettings({ myXHandle: value });
+    pendingSettingsWrite.current = write;
+    void write.catch(() => {
+      forgetDirtyField(dirtySettings.current, 'myXHandle', dirty);
+    });
   }
 
   function updateSearchField<Key extends keyof PopupSearchState>(field: Key, value: PopupSearchState[Key]) {
     searchStateVersion.current += 1;
-    const next = { ...searchState, [field]: value };
+    const next = { ...latestSearchState.current, [field]: value };
+    const dirty = markDirtyField(dirtySearchState.current, field, value);
+    latestSearchState.current = next;
     setSearchState(next);
-    void popupSearchStateItem.setValue(next);
+    const write = persistence.updateSearchState({ [field]: value });
+    pendingSearchStateWrite.current = write;
+    void write.catch(() => {
+      forgetDirtyField(dirtySearchState.current, field, dirty);
+    });
   }
 
-  function filtersFor(direction: SearchDirection): XSearchFilters {
+  function filtersFor(
+    direction: SearchDirection,
+    currentSettings = settings,
+    currentSearchState = searchState,
+  ): XSearchFilters {
     return {
-      viewerHandle: settings.myXHandle,
-      targetHandle: normalizeXHandle(searchState.targetHandle),
-      keyword: searchState.keyword,
-      since: searchState.since,
-      until: searchState.until,
+      viewerHandle: currentSettings.myXHandle,
+      targetHandle: normalizeXHandle(currentSearchState.targetHandle),
+      keyword: currentSearchState.keyword,
+      since: currentSearchState.since,
+      until: currentSearchState.until,
       direction,
     };
   }
 
+  async function waitForStableWrites(): Promise<boolean> {
+    while (true) {
+      const settingsWrite = pendingSettingsWrite.current;
+      const searchStateWrite = pendingSearchStateWrite.current;
+
+      try {
+        await Promise.all([settingsWrite, searchStateWrite]);
+      } catch {
+        return false;
+      }
+
+      if (
+        settingsWrite === pendingSettingsWrite.current
+        && searchStateWrite === pendingSearchStateWrite.current
+      ) {
+        return true;
+      }
+    }
+  }
+
   async function openSearch(direction: SearchDirection) {
-    const filters = filtersFor(direction);
+    if (!settingsReady || !searchStateReady) return;
+
+    if (!await waitForStableWrites()) return;
+
+    const filters = filtersFor(
+      direction,
+      latestSettings.current,
+      latestSearchState.current,
+    );
     if (!canRunXSearch(filters)) return;
 
     try {
-      await Promise.all([
-        settingsItem.setValue(settings),
-        popupSearchStateItem.setValue(searchState),
-      ]);
       await launchSearch(filters);
     } catch {
       return;
@@ -149,7 +269,7 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
     if (filters.targetHandle) {
       try {
         targetHistoryVersion.current += 1;
-        setTargetHistory(await recordTargetHandleSearch(filters.targetHandle));
+        setTargetHistory(await persistence.promoteTargetHandle(filters.targetHandle));
       } catch {
         // Launch already succeeded; history remains best-effort.
       }
@@ -162,6 +282,7 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
         <label>
           My X handle
           <input
+            disabled={!settingsReady}
             aria-label="My X handle"
             value={settings.myXHandle}
             onChange={(event) => updateMyHandle(event.target.value)}
@@ -173,6 +294,7 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
           Other person's X handle <span className="optional-label">Optional</span>
           <TargetHandleCombobox
             value={searchState.targetHandle}
+            disabled={!searchStateReady}
             suggestions={targetSuggestions}
             onChange={(value) => updateSearchField('targetHandle', value)}
           />
@@ -181,6 +303,7 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
         <label>
           Keyword
           <input
+            disabled={!searchStateReady}
             aria-label="Keyword"
             value={searchState.keyword}
             onChange={(event) => updateSearchField('keyword', event.target.value)}
@@ -193,6 +316,7 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
             <input
               aria-label="Since"
               type="date"
+              disabled={!searchStateReady}
               value={searchState.since}
               onChange={(event) => updateSearchField('since', event.target.value)}
             />
@@ -202,6 +326,7 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
             <input
               aria-label="Until"
               type="date"
+              disabled={!searchStateReady}
               value={searchState.until}
               onChange={(event) => updateSearchField('until', event.target.value)}
             />
@@ -216,7 +341,7 @@ export function QuickXSearch({ loadAccountSuggestions, launchSearch, surface }: 
         </div>
         {actions.map(({ direction, label }) => {
           const filters = filtersFor(direction);
-          const enabled = canRunXSearch(filters);
+          const enabled = settingsReady && searchStateReady && canRunXSearch(filters);
           const missingHandle = direction === 'me-to-them' || direction === 'them-to-me'
             ? 'Enter your X handle'
             : 'Enter the other person’s handle';

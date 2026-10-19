@@ -42,7 +42,7 @@ The tradeoff is that you may need to press Reload on the extension card after ea
 
 ## Manual QA Matrix
 
-Run the relevant rows in both Chrome and Vivaldi when a change touches browser integration.
+Run the relevant rows while signed in to X in both Chrome and Vivaldi when a change touches browser integration. A successful check in only one browser, or in a signed-out X shell, does not complete browser QA.
 
 | Scenario | Expected result |
 | --- | --- |
@@ -57,7 +57,7 @@ Run the relevant rows in both Chrome and Vivaldi when a change touches browser i
 | Hover dismissal and editor interaction | Moving away from the X card, typing, clicking fields or the backdrop, and pressing Escape do not close the editor. |
 | Save, failed Save, and Cancel | Successful Save and explicit Cancel close the owned editor; failed Save stays open with the draft intact. |
 | Full profile page | The inline editor remains visible and shows authoritative saved values. |
-| Quick X search in popup and right sidebar | The complete builder is available in both places; the sidebar builder is always expanded and sits in a Contexto-owned Shadow DOM host immediately before X's usable native search form. Enter saved-account suggestions and a free-form target; verify shared handles, keyword, dates, autosuggest history, validation, and new-tab launches restore across popup/sidebar reopening. Verify both successful and failed launches: only a successful launch updates target history. |
+| Quick X search in popup and right sidebar | The complete builder is available in both places; the sidebar builder is always expanded and sits in a Contexto-owned closed Shadow DOM root immediately before X's usable native search form. Enter saved-account suggestions and a free-form target; verify shared handles, keyword, dates, autosuggest history, validation, and new-tab launches restore across popup/sidebar reopening. Run **Posts by me** and **Posts to me** both with and without a target. Verify both successful and failed launches: only a successful launch updates target history. |
 | X right-sidebar account search and native widgets | Saved-account exact, prefix, and fuzzy matches show up to five results; selecting a result navigates the current tab. Native news, sports, trends, and follow modules are hidden by default; enabling **Show X sidebar widgets** in the dashboard restores them live around mid-viewport in their original order; disabling it hides them again. On X rerender, resize, navigation, and extension reload, one Contexto workspace remounts cleanly and restores X-owned inline state during cleanup. If the native search-form evidence is absent, Contexto does not mount or alter X's own search/widgets. |
 | Quick X search themes | In both Chrome and Vivaldi, verify the popup and X sidebar builder in light and dark X/browser themes. |
 | Toolbar popup | Popup content and search controls render at the expected extension width. |
