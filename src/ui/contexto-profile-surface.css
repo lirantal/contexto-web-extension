@@ -39,10 +39,6 @@ button:focus-visible,input:focus-visible { border-color:var(--ctx-accent); outli
 .chip { display:inline-flex; align-items:center; gap:4px; min-height:36px; box-sizing:border-box; border-radius:7px; padding:0 0 0 10px; background:var(--ctx-hover); color:var(--ctx-accent-strong); font-size:12px; font-weight:700; }
 .folder-chip { background:var(--ctx-folder-bg); color:var(--ctx-folder-text); }
 .chip button { min-width:36px; min-height:36px; border:0; padding:0; background:transparent; color:inherit; }
-.value-options { display:grid; max-height:140px; overflow:auto; border:1px solid var(--ctx-border); border-radius:7px; background:var(--ctx-input); box-shadow:0 8px 22px rgb(34 40 34 / 14%); }
-.value-options .value-option { border:0; border-radius:0; color:var(--ctx-text); text-align:left; }
-.value-options .value-option:hover,
-.value-options .value-option.highlighted { background:var(--ctx-hover); color:var(--ctx-accent-strong); }
 .contexto-error { margin:0; color:#d92d20; }
 .contexto-success { margin:0; color:#18864b; }
 .contexto-summary h3,.contexto-summary p { margin:0; }

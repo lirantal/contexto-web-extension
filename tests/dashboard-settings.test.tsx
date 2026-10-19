@@ -270,8 +270,21 @@ describe('dashboard target handle history settings', () => {
     renderDashboard();
 
     const location = await screen.findByLabelText('Location');
+    const company = screen.getByLabelText('Company');
+    const metadataGrid = location.closest('.form-grid')!;
+    const companyField = company.closest('.fuzzy-text-combobox');
+    const locationField = location.closest('.fuzzy-text-combobox');
+    const gridItemCount = metadataGrid.children.length;
+
+    expect(companyField?.parentElement).toBe(metadataGrid);
+    expect(locationField?.parentElement).toBe(metadataGrid);
     await user.type(location, 'sfr');
-    await user.click(screen.getByRole('option', { name: 'San Francisco' }));
+    const suggestion = screen.getByRole('option', { name: 'San Francisco' });
+    expect(locationField).toContainElement(suggestion);
+    expect(Array.from(metadataGrid.children)).not.toContain(suggestion);
+    expect(metadataGrid.children).toHaveLength(gridItemCount);
+
+    await user.click(suggestion);
     await user.click(screen.getByRole('button', { name: 'Save metadata' }));
 
     expect(mocks.updateAccount).toHaveBeenCalledWith('account-1', expect.objectContaining({

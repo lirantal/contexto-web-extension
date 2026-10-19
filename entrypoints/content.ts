@@ -1,6 +1,7 @@
 import { settingsItem } from '@/src/shared/settings';
 import quickSearchCss from '@/src/ui/quick-x-search.css?inline';
-import surfaceCss from '@/src/ui/contexto-profile-surface.css?inline';
+import fuzzyTextComboboxCss from '@/src/ui/fuzzy-text-combobox.css?inline';
+import profileSurfaceCss from '@/src/ui/contexto-profile-surface.css?inline';
 import { createContentRuntimeSender } from '@/src/x/content-runtime-sender';
 import { AccountDraftStore } from '@/src/x/draft-store';
 import { mountContextoSurface, detectXTheme } from '@/src/x/mount-contexto-surface';
@@ -11,6 +12,7 @@ import { createXSidebarSearchObserver } from '@/src/x/sidebar-search-observer';
 import { createPageEditorController } from '@/src/x/page-editor-controller';
 
 const drafts = new AccountDraftStore();
+const surfaceCss = [profileSurfaceCss, fuzzyTextComboboxCss].join('\n');
 const sidebarCss = [surfaceCss, quickSearchCss].join("\n");
 
 export default defineContentScript({

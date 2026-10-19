@@ -35,6 +35,8 @@ Use surface tests for successful Save, failed Save, Cancel, draft retention, and
 
 Company- and location-suggestion coverage must include active-account extraction, trimming, blank removal, case-insensitive deduplication, stable ordering, exact/prefix/substring/fuzzy ranking, keyboard and pointer selection, free-text retention, disabled behavior, and successful selection for both fields in both the X editor and dashboard.
 
+Autocomplete layout coverage must assert that the dashboard and X editors load the same suggestion styles, including neutral defaults and teal hover/highlight states. Dashboard layout coverage must keep the Location suggestion panel inside its control and verify it overlays beneath the input without adding grid height or shifting Company.
+
 Bookmark component tests cover duplicate lookup, optional-reminder capture, pending controls, success, retry-preserved drafts, Cancel/panel-close clearing, dashboard reminder editing and Handled/Reopen controls, loading/update/removal errors, safe source links, empty collections, and stale account requests. Repository tests cover ownership and URL validation, field bounds, transactional reminder/completion updates, deduplication, soft deletion/restoration, recency ordering, change logging, handled-state backup validation, backup format 1/2 compatibility, and permanent account deletion of all account-owned rows while retaining shared lookups. Dashboard tests cover the required confirmation and cancellation path for account deletion.
 
 Prior-interaction shortcut tests cover normalized two-way query construction, live X search URL parameters, invalid handles, safe new-tab attributes, conditional visibility, and settings-failure isolation from saved context and bookmark capture.

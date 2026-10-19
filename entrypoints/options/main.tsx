@@ -5,6 +5,7 @@ import type { ContextoResponse } from '@/src/shared/messages';
 import { createContextoSettingsPersistence } from '@/src/shared/quick-x-search-persistence';
 import { Dashboard } from '@/src/ui/Dashboard';
 import './style.css';
+import '@/src/ui/fuzzy-text-combobox.css';
 
 const settingsPersistence = createContextoSettingsPersistence(
   (message) => browser.runtime.sendMessage(message) as Promise<ContextoResponse>,
