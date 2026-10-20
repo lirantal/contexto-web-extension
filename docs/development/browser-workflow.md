@@ -46,7 +46,7 @@ Run the relevant rows in both Chrome and Vivaldi when a change touches browser i
 
 | Scenario | Expected result |
 | --- | --- |
-| Unknown and saved accounts on feed hover cards | Correct handle and display name; populated Role, Company, and Tags use their canonical labels; empty values are omitted; long values wrap without overlapping X controls or the Edit launcher. |
+| Unknown and saved accounts on feed hover cards | Correct handle and display name; populated Role, Company, Tags, and Circles use their canonical labels; empty values are omitted; long values wrap without overlapping X controls or the Edit launcher. |
 | Saved-contact feed context | The marker opens an opaque compact panel at the viewport's right edge above X content, outside the post subtree, without navigating to the post. Verify light/dark themes, quoted posts, narrow viewports, and scrolling to all actions on short screens. Close, marker toggle, outside pointer, and Escape dismiss the compact panel; Open full context hands off to the persistent editor. Populated Role, Company, How you know them, Tags, Circles, and Latest note use canonical labels; empty values and blank chips are omitted; long values wrap; intentional panel links still work. |
 | Saved-contact post capture | Eligible primary posts show Capture or Bookmarked; optional reminders save without leaving X; quoted/promoted/ambiguous posts do not expose capture. |
 | Saved-contact prior interactions | A valid configured viewer handle shows View our interactions and opens a live two-way X query in a new tab; a missing or invalid viewer handle hides the action without affecting context or bookmarks. |

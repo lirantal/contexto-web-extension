@@ -52,6 +52,7 @@ export function ContextoHoverLauncher({ profile, send, onEdit }: ContextoHoverLa
   }
 
   const tags = account?.tags.filter((tag) => tag.name.trim()) ?? [];
+  const circles = account?.folders.filter((circle) => circle.name.trim()) ?? [];
 
   if (state === 'error') {
     return <section className="contexto-hover-launcher" aria-label="Contexto profile context">
@@ -89,6 +90,12 @@ export function ContextoHoverLauncher({ profile, send, onEdit }: ContextoHoverLa
         <span className="contexto-metadata-label">Tags:</span>
         <div className="contexto-hover-tags contexto-metadata-value">
           {tags.map((tag) => <span className="contexto-hover-tag" key={tag.id}>{tag.name}</span>)}
+        </div>
+      </div>}
+      {circles.length > 0 && <div className="contexto-metadata-field" data-testid="contexto-hover-circles">
+        <span className="contexto-metadata-label">Circles:</span>
+        <div className="contexto-hover-tags contexto-metadata-value">
+          {circles.map((circle) => <span className="contexto-hover-tag folder-chip" key={circle.id}>{circle.name}</span>)}
         </div>
       </div>}
     </div>}

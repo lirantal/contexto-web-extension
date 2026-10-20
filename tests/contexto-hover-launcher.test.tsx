@@ -29,7 +29,7 @@ describe('ContextoHoverLauncher', () => {
     expect(onEdit).toHaveBeenCalledWith(profile, edit);
   });
 
-  it('shows saved display name and populated role, company, and tags', async () => {
+  it('shows saved display name and populated role, company, tags, and circles', async () => {
     const saved = {
       id: 'account_1', platform: 'x' as const, handle: 'theo', normalizedHandle: 'theo',
       displayName: 'Theo Browne', profileUrl: 'https://x.com/theo',
@@ -38,7 +38,10 @@ describe('ContextoHoverLauncher', () => {
         { id: 'tag_1', name: 'Founder', normalizedName: 'founder', updatedAt: '2026-07-12' },
         { id: 'tag_2', name: 'Security', normalizedName: 'security', updatedAt: '2026-07-12' },
       ],
-      folders: [],
+      folders: [
+        { id: 'circle_1', name: 'Friends', normalizedName: 'friends', updatedAt: '2026-07-12' },
+        { id: 'circle_2', name: 'Colleagues', normalizedName: 'colleagues', updatedAt: '2026-07-12' },
+      ],
     };
     renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: saved }));
 
@@ -51,6 +54,10 @@ describe('ContextoHoverLauncher', () => {
     expect(screen.getByText('Tags:')).toBeVisible();
     expect(screen.getByText('Founder')).toBeVisible();
     expect(screen.getByText('Security')).toBeVisible();
+    expect(screen.getByText('Circles:')).toBeVisible();
+    expect(screen.getByText('Friends')).toBeVisible();
+    expect(screen.getByText('Colleagues')).toBeVisible();
+    expect(screen.getByText('Friends')).toHaveClass('contexto-hover-tag', 'folder-chip');
     expect(screen.queryByText('Developer · Ping Labs')).not.toBeInTheDocument();
   });
 
@@ -68,6 +75,8 @@ describe('ContextoHoverLauncher', () => {
     expect(screen.queryByTestId('contexto-hover-role')).not.toBeInTheDocument();
     expect(screen.queryByTestId('contexto-hover-company')).not.toBeInTheDocument();
     expect(screen.queryByTestId('contexto-hover-tags')).not.toBeInTheDocument();
+    expect(screen.queryByText('Circles:')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-hover-circles')).not.toBeInTheDocument();
   });
 
   it('omits empty and whitespace-only imported metadata without orphan labels', async () => {
@@ -79,7 +88,10 @@ describe('ContextoHoverLauncher', () => {
         { id: 'tag_1', name: '', normalizedName: '', updatedAt: '2026-07-12' },
         { id: 'tag_2', name: '\t', normalizedName: '', updatedAt: '2026-07-12' },
       ],
-      folders: [],
+      folders: [
+        { id: 'circle_1', name: '', normalizedName: '', updatedAt: '2026-07-12' },
+        { id: 'circle_2', name: '\t', normalizedName: '', updatedAt: '2026-07-12' },
+      ],
     };
     renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: saved }));
 
@@ -87,9 +99,11 @@ describe('ContextoHoverLauncher', () => {
     expect(screen.queryByTestId('contexto-hover-role')).not.toBeInTheDocument();
     expect(screen.queryByTestId('contexto-hover-company')).not.toBeInTheDocument();
     expect(screen.queryByTestId('contexto-hover-tags')).not.toBeInTheDocument();
+    expect(screen.queryByText('Circles:')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contexto-hover-circles')).not.toBeInTheDocument();
   });
 
-  it('preserves original nonblank metadata text while filtering blank tag names', async () => {
+  it('preserves original nonblank metadata text while filtering blank tag and circle names', async () => {
     const saved = {
       id: 'account_1', platform: 'x' as const, handle: 'theo', normalizedHandle: 'theo',
       displayName: 'Theo', profileUrl: 'https://x.com/theo', role: '  Developer  ',
@@ -98,7 +112,10 @@ describe('ContextoHoverLauncher', () => {
         { id: 'tag_1', name: ' ', normalizedName: '', updatedAt: '2026-07-12' },
         { id: 'tag_2', name: '  Security  ', normalizedName: 'security', updatedAt: '2026-07-12' },
       ],
-      folders: [],
+      folders: [
+        { id: 'circle_1', name: ' ', normalizedName: '', updatedAt: '2026-07-12' },
+        { id: 'circle_2', name: '  Friends  ', normalizedName: 'friends', updatedAt: '2026-07-12' },
+      ],
     };
     renderLauncher(vi.fn().mockResolvedValue({ ok: true, lookup: true, lookupAccount: saved }));
 
@@ -110,6 +127,10 @@ describe('ContextoHoverLauncher', () => {
     expect(screen.getByTestId('contexto-hover-tags').querySelector('.contexto-hover-tag')?.textContent)
       .toBe('  Security  ');
     expect(screen.getByTestId('contexto-hover-tags').querySelectorAll('.contexto-hover-tag'))
+      .toHaveLength(1);
+    expect(screen.getByTestId('contexto-hover-circles').querySelector('.contexto-hover-tag')?.textContent)
+      .toBe('  Friends  ');
+    expect(screen.getByTestId('contexto-hover-circles').querySelectorAll('.contexto-hover-tag'))
       .toHaveLength(1);
   });
 
