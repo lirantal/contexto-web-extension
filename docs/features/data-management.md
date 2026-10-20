@@ -1,6 +1,6 @@
 # Feature: Manage Data
 
-Open **Manage data** in the dashboard to clean up shared values in the current browser profile. Tabs cover Tags, Folders, Companies, Roles, and Locations. Search by value, sort by name or active-contact usage, and select **View contacts** or any action to preview the affected active contacts. Company, role, and location previews also show how many inactive imported contacts will be updated.
+Open **Manage data** in the dashboard to clean up shared values in the current browser profile. Tabs cover Tags, Circles, Companies, Roles, and Locations. Search by value, sort by name or active-contact usage, and select **View contacts** or any action to preview the affected active contacts. Company, role, and location previews also show how many inactive imported contacts will be updated.
 
 ## Companies
 
@@ -27,4 +27,4 @@ Each operation is one IndexedDB transaction including affected-account timestamp
 
 The existing `groupingCatalog` log and `groupingRevision` request/response field now cover every Manage data operation. These names are retained for stored-data and message compatibility. Profile-context, grouping-only, and dashboard metadata saves check the loaded revision inside their write transaction. A stale save performs no writes and preserves the draft. **Reload saved values** explicitly discards the metadata draft and loads current saved values before retrying. In X editors, this reload uses saved metadata without refilling cleared fields from the older X snapshot; ordinary editor opening retains the documented profile-prefill behavior. Save/Cancel close behavior is unchanged.
 
-No schema or backup-format migration is required. Export a backup through dashboard Settings if recovery may be needed. Import merges records by ID and can restore deleted companies, old references, or pre-cleanup role/location values. See [Backup and restore](backup-restore.md) and [Folders and tags](folders-tags.md) for their respective contracts.
+No schema or backup-format migration is required. Export a backup through dashboard Settings if recovery may be needed. Import merges records by ID and can restore deleted companies, old references, or pre-cleanup role/location values. See [Backup and restore](backup-restore.md) and [Circles and tags](folders-tags.md) for their respective contracts.

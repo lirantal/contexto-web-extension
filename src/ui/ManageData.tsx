@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { listManagedData, manageData, type ManagedDataKind, type ManagedValue } from '../data/data-management';
 
-const dataLabels: Record<ManagedDataKind, string> = { tag: 'Tags', folder: 'Folders', company: 'Companies', role: 'Roles', location: 'Locations' };
+const dataLabels: Record<ManagedDataKind, string> = { tag: 'Tags', folder: 'Circles', company: 'Companies', role: 'Roles', location: 'Locations' };
 type Action = 'view' | 'rename' | 'merge' | 'delete' | 'replace' | 'clear';
 
 export function ManageData({ onBack }: { onBack(): void }) {
@@ -24,6 +24,7 @@ export function ManageData({ onBack }: { onBack(): void }) {
 function ValueManager({ kind }: { kind: ManagedDataKind }) {
   const textField = kind === 'role' || kind === 'location';
   const plural = dataLabels[kind];
+  const singular = kind === 'folder' ? 'circle' : kind;
   const actions: Action[] = textField ? ['view', 'replace', 'clear'] : ['view', 'rename', 'merge', 'delete'];
   const [query, setQuery] = useState('');
   const [unusedOnly, setUnusedOnly] = useState(false);
@@ -96,7 +97,7 @@ function ValueManager({ kind }: { kind: ManagedDataKind }) {
       </table>
       {result?.data && visible.length === 0 && <p className="empty-state">No values match. Try another search{!textField && ' or turn off Unused only'}.</p>}
     </div>
-    {selection && preview && <section className="panel detail-section" aria-label={`${selection.action} ${kind}`}>
+    {selection && preview && <section className="panel detail-section" aria-label={`${selection.action} ${singular}`}>
       <h2>{selection.action === 'view' ? 'Contacts using' : selection.action === 'delete' ? 'Delete everywhere:' : selection.action === 'merge' ? 'Merge:' : selection.action === 'replace' ? 'Replace everywhere:' : selection.action === 'clear' ? 'Clear everywhere:' : 'Rename:'} {preview.name}</h2>
       <p>{preview.contacts.length} contact{preview.contacts.length === 1 ? '' : 's'} {selection.action === 'view' ? 'using this value' : 'affected'}.</p>
       {!!preview.inactiveContactCount && <p>Also affects {preview.inactiveContactCount} inactive contacts.</p>}
@@ -125,13 +126,13 @@ function ValueManager({ kind }: { kind: ManagedDataKind }) {
             {kind === 'company' && <p>Contacts move to the destination company. Its website takes precedence, missing details are filled, and distinct notes are combined.</p>}
             <p>All source assignments move to the destination, then “{preview.name}” is permanently deleted.</p>
           </>}
-          {selection.action === 'delete' && <p className="danger-warning">Permanently delete {kind} “{preview.name}” from Contexto’s database and remove it from all {preview.contacts.length + (preview.inactiveContactCount ?? 0)} contacts?{kind === 'company' && ' Their company field will be empty.'} Contacts and their other saved data remain intact.</p>}
+          {selection.action === 'delete' && <p className="danger-warning">Permanently delete {singular} “{preview.name}” from Contexto’s database and remove it from all {preview.contacts.length + (preview.inactiveContactCount ?? 0)} contacts?{kind === 'company' && ' Their company field will be empty.'} Contacts and their other saved data remain intact.</p>}
           {error && <p role="alert" className="error-line">{error}</p>}
           <div className="management-actions">
             <button type="button" onClick={() => setSelection(undefined)}>Cancel</button>
             <button type="submit" className={selection.action === 'delete' || selection.action === 'clear' ? 'danger-action' : 'primary-action'}
               disabled={pending || !selected || (selection.action === 'rename' && (!name.trim() || !!collision)) || (selection.action === 'merge' && !target) || (selection.action === 'replace' && !name.trim())}>
-              {pending ? 'Saving…' : selection.action === 'delete' ? `Delete ${kind} everywhere` : selection.action === 'merge' ? 'Merge values' : selection.action === 'replace' ? 'Replace everywhere' : selection.action === 'clear' ? 'Clear everywhere' : 'Rename everywhere'}
+              {pending ? 'Saving…' : selection.action === 'delete' ? `Delete ${singular} everywhere` : selection.action === 'merge' ? 'Merge values' : selection.action === 'replace' ? 'Replace everywhere' : selection.action === 'clear' ? 'Clear everywhere' : 'Rename everywhere'}
             </button>
           </div>
         </fieldset>

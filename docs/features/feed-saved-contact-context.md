@@ -31,7 +31,7 @@ Every populated saved metadata value has a visible field label. The summary may 
 
 The display name remains an unlabeled identity heading. Empty metadata fields and their labels are omitted.
 
-Opening Saved context starts in the Tags and Folders editing state, including when neither field has any assignments. The shared multi-select controls allow searching existing values, selecting suggestions, creating new values with Enter, and removing chips. After **Save tags and folders** or **Cancel**, the read-only grouping summary returns with **Edit tags and folders** available. Save also includes non-empty text still in either input, saves only grouping assignments, and refreshes the summary without closing the panel. Other contact metadata is preserved. Controls are disabled while saving; a failed save retains the draft for retry. Closing the panel discards unsaved grouping edits. Suggestions are optional: if loading them fails, free-text creation remains available.
+Opening Saved context starts in the Tags and Circles editing state, including when neither field has any assignments. The shared multi-select controls allow searching existing values, selecting suggestions, creating new values with Enter, and removing chips. After **Save tags and circles** or **Cancel**, the read-only grouping summary returns with **Edit tags and circles** available. Save also includes non-empty text still in either input, saves only grouping assignments, and refreshes the summary without closing the panel. Other contact metadata is preserved. Controls are disabled while saving; a failed save retains the draft for retry. Closing the panel discards unsaved grouping edits. Suggestions are optional: if loading them fails, free-text creation remains available.
 
 **Open full context** delegates to the existing Contexto-owned profile editor. **View our interactions** performs outbound navigation only. Opening or reading the compact panel does not write data.
 
@@ -39,7 +39,7 @@ Opening Saved context starts in the Tags and Folders editing state, including wh
 
 **Add quick note** does not write until a non-empty draft is explicitly saved. During Save its controls are disabled. Success closes the composer, clears the draft, confirms the write, and refreshes the displayed latest note from the authoritative saved account. Failure preserves the draft for retry. **Cancel** or closing the feed panel discards an unsaved quick note.
 
-Quick-note and bookmark composers are mutually exclusive. Tags and folders use a separate draft in Saved context; closing the panel discards all unsaved drafts.
+Quick-note and bookmark composers are mutually exclusive. Tags and circles use a separate draft in Saved context; closing the panel discards all unsaved drafts.
 
 ## Lifecycle and privacy
 

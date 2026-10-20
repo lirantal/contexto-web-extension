@@ -25,16 +25,18 @@ async function setup(kind: management.GroupingKind) {
   const user = userEvent.setup();
   const onBack = vi.fn();
   render(<ManageData onBack={onBack} />);
-  if (kind === 'folder') await user.click(screen.getByRole('button', { name: 'Folders' }));
+  if (kind === 'folder') await user.click(screen.getByRole('button', { name: 'Circles' }));
   await screen.findByRole('button', { name: 'Delete Typo' });
   return { ...contacts, user, onBack };
 }
 
-for (const kind of ['tag', 'folder'] as const) describe(`Manage ${kind}s`, () => {
+for (const kind of ['tag', 'folder'] as const) describe(`Manage ${kind === 'folder' ? 'circles' : 'tags'}`, () => {
+  const singular = kind === 'folder' ? 'circle' : kind;
+  const plural = kind === 'folder' ? 'circles' : 'tags';
   it('searches, filters unused values, sorts by usage, and previews affected contacts', async () => {
     const { user, onBack } = await setup(kind);
     await user.click(screen.getByRole('button', { name: 'View contacts for Typo' }));
-    const preview = screen.getByRole('region', { name: `view ${kind}` });
+    const preview = screen.getByRole('region', { name: `view ${singular}` });
     expect(within(preview).getByText('2 contacts using this value.')).toBeVisible();
     expect(within(preview).getByText('@first')).toBeVisible();
     expect(within(preview).getByText('@second')).toBeVisible();
@@ -44,7 +46,7 @@ for (const kind of ['tag', 'folder'] as const) describe(`Manage ${kind}s`, () =>
     await user.click(screen.getByRole('checkbox', { name: 'Unused only' }));
     expect(screen.getAllByRole('row')).toHaveLength(2);
     expect(screen.getAllByRole('row')[1]).toHaveTextContent('Unused');
-    await user.type(screen.getByLabelText(`Search ${kind}s`), 'absent');
+    await user.type(screen.getByLabelText(`Search ${plural}`), 'absent');
     expect(screen.getByText(/No values match/)).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Back to accounts' }));
     expect(onBack).toHaveBeenCalledOnce();
@@ -90,7 +92,7 @@ for (const kind of ['tag', 'folder'] as const) describe(`Manage ${kind}s`, () =>
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
     expect((await management.listManagedGroupings(kind)).items.some((i) => i.name === 'Typo')).toBe(true);
     await user.click(screen.getByRole('button', { name: 'Delete Typo' }));
-    await user.click(screen.getByRole('button', { name: `Delete ${kind} everywhere` }));
+    await user.click(screen.getByRole('button', { name: `Delete ${singular} everywhere` }));
     await screen.findByText('Value and all its assignments deleted.');
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Delete Typo' })).not.toBeInTheDocument());
     expect(await getAccountSummary(first.id)).toBeDefined();

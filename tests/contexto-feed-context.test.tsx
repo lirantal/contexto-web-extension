@@ -115,9 +115,9 @@ describe('ContextoFeedContext', () => {
     expect(within(panel).getByText('How you know them:')).toBeVisible();
     expect(within(panel).getByText('Conference friend')).toBeVisible();
     expect(within(panel).getByRole('combobox', { name: 'Tags' })).toBeVisible();
-    await user.click(within(screen.getByRole('group', { name: 'Edit tags and folders' })).getByRole('button', { name: 'Cancel' }));
+    await user.click(within(screen.getByRole('group', { name: 'Edit tags and circles' })).getByRole('button', { name: 'Cancel' }));
     expect(within(panel).getByText('Tags:')).toBeVisible();
-    expect(within(panel).getByText('Folders:')).toBeVisible();
+    expect(within(panel).getByText('Circles:')).toBeVisible();
     expect(within(panel).getByText('Latest note:')).toBeVisible();
     expect(within(panel).getByText('Invite Theo to the security roundtable.')).toBeVisible();
     expect(within(panel).queryByText('Developer · Ping Labs')).not.toBeInTheDocument();
@@ -152,7 +152,7 @@ describe('ContextoFeedContext', () => {
     expect(screen.queryByText('Company:')).not.toBeInTheDocument();
     expect(screen.queryByText('How you know them:')).not.toBeInTheDocument();
     expect(screen.queryByText('Tags:')).not.toBeInTheDocument();
-    expect(screen.queryByText('Folders:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Circles:')).not.toBeInTheDocument();
     expect(screen.queryByText('Latest note:')).not.toBeInTheDocument();
     expect(screen.queryByText(/Developer/)).not.toBeInTheDocument();
     expect(screen.queryByText('Conference friend')).not.toBeInTheDocument();
@@ -207,7 +207,7 @@ describe('ContextoFeedContext', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
 
-    await userEvent.click(within(screen.getByRole('group', { name: 'Edit tags and folders' })).getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(within(screen.getByRole('group', { name: 'Edit tags and circles' })).getByRole('button', { name: 'Cancel' }));
 
     expect(within(screen.getByTestId('contexto-feed-role')).getByText('Developer').textContent)
       .toBe('  Developer  ');

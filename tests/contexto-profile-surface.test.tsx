@@ -49,7 +49,7 @@ describe('ContextoProfileSurface', () => {
     expect(screen.getByLabelText('Website')).toHaveValue('https://arize.com/');
     expect(screen.getByLabelText('How you know them')).toBeVisible();
     expect(screen.getByLabelText('Tags')).toBeVisible();
-    expect(screen.getByLabelText('Folders')).toBeVisible();
+    expect(screen.getByLabelText('Circles')).toBeVisible();
     expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'contexto:account:saveContext' }));
   });
 
@@ -248,8 +248,8 @@ describe('ContextoProfileSurface', () => {
     fireEvent.change(screen.getByLabelText('Company'), { target: { value: 't3dotchat' } });
     fireEvent.change(screen.getByLabelText('Tags'), { target: { value: 'Founder' } });
     fireEvent.keyDown(screen.getByLabelText('Tags'), { key: 'Enter' });
-    fireEvent.change(screen.getByLabelText('Folders'), { target: { value: 'Friends' } });
-    fireEvent.keyDown(screen.getByLabelText('Folders'), { key: 'Enter' });
+    fireEvent.change(screen.getByLabelText('Circles'), { target: { value: 'Friends' } });
+    fireEvent.keyDown(screen.getByLabelText('Circles'), { key: 'Enter' });
     fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
     await waitFor(() => expect(send).toHaveBeenCalledWith(expect.objectContaining({
       type: 'contexto:account:saveContext',
@@ -279,7 +279,7 @@ describe('ContextoProfileSurface', () => {
       onRequestClose={placement === 'inline' ? undefined : onRequestClose}
       send={send as ContextoProfileSurfaceProps['send']} drafts={new AccountDraftStore()} />);
     const tags = await screen.findByLabelText('Tags');
-    const folders = screen.getByLabelText('Folders');
+    const folders = screen.getByLabelText('Circles');
     fireEvent.change(tags, { target: { value: 'Founder' } });
     fireEvent.keyDown(tags, { key: 'Enter' });
     fireEvent.change(folders, { target: { value: 'Friends' } });
@@ -309,7 +309,7 @@ describe('ContextoProfileSurface', () => {
       .mockResolvedValueOnce({ ok: true, account: saved });
     renderSurface(send);
     fireEvent.change(await screen.findByLabelText('Tags'), { target: { value: query } });
-    fireEvent.change(screen.getByLabelText('Folders'), { target: { value: query } });
+    fireEvent.change(screen.getByLabelText('Circles'), { target: { value: query } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => expect(send).toHaveBeenCalledWith(expect.objectContaining({
       type: 'contexto:account:saveContext', input: expect.objectContaining({ tagNames: ['Founder'], folderNames: ['Founder'] }),
@@ -327,21 +327,21 @@ describe('ContextoProfileSurface', () => {
     const props = { profile, kind: 'full-profile' as const, send: send as ContextoProfileSurfaceProps['send'], drafts };
     const first = render(<ContextoProfileSurface {...props} />);
     fireEvent.change(await screen.findByLabelText('Tags'), { target: { value: 'speaker' } });
-    fireEvent.change(screen.getByLabelText('Folders'), { target: { value: 'Friends' } });
+    fireEvent.change(screen.getByLabelText('Circles'), { target: { value: 'Friends' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
     await screen.findByText('Database unavailable');
     expect(screen.getByLabelText('Tags')).toHaveValue('speaker');
-    expect(screen.getByLabelText('Folders')).toHaveValue('Friends');
+    expect(screen.getByLabelText('Circles')).toHaveValue('Friends');
     fireEvent.click(screen.getByRole('button', { name: 'Retry save' }));
     await waitFor(() => expect(send.mock.calls.filter(([message]) => message.type === 'contexto:account:saveContext')).toHaveLength(2));
     await screen.findByText('Database unavailable');
     first.unmount();
     render(<ContextoProfileSurface {...props} />);
     expect(await screen.findByLabelText('Tags')).toHaveValue('speaker');
-    expect(screen.getByLabelText('Folders')).toHaveValue('Friends');
+    expect(screen.getByLabelText('Circles')).toHaveValue('Friends');
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.getByLabelText('Tags')).toHaveValue('');
-    expect(screen.getByLabelText('Folders')).toHaveValue('');
+    expect(screen.getByLabelText('Circles')).toHaveValue('');
     expect(drafts.get(profile.handle)).toBeUndefined();
   });
 

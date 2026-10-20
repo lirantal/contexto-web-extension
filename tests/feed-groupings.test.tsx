@@ -40,11 +40,11 @@ describe('feed tag and folder editing', () => {
     await user.click(screen.getByRole('button', { name: 'Remove Security from Tags' }));
     await user.type(screen.getByRole('combobox', { name: 'Tags' }), 'OS');
     await user.click(await screen.findByRole('option', { name: 'OSS' }));
-    await user.click(screen.getByRole('button', { name: 'Remove Friends from Folders' }));
-    await user.type(screen.getByRole('combobox', { name: 'Folders' }), ' Speakers ');
-    await user.click(screen.getByRole('button', { name: 'Save tags and folders' }));
+    await user.click(screen.getByRole('button', { name: 'Remove Friends from Circles' }));
+    await user.type(screen.getByRole('combobox', { name: 'Circles' }), ' Speakers ');
+    await user.click(screen.getByRole('button', { name: 'Save tags and circles' }));
     expect(send).toHaveBeenCalledWith({ type: 'contexto:account:saveGroupings', accountId: account.id, tagNames: ['OSS'], folderNames: ['Speakers'] });
-    expect(await screen.findByText('Tags and folders saved')).toBeVisible();
+    expect(await screen.findByText('Tags and circles saved')).toBeVisible();
     expect(within(screen.getByTestId('contexto-feed-tags')).getByText('OSS')).toBeVisible();
     expect(within(screen.getByTestId('contexto-feed-folders')).getByText('Speakers')).toBeVisible();
     expect(screen.getByRole('dialog')).toBeVisible();
@@ -53,34 +53,34 @@ describe('feed tag and folder editing', () => {
   it('supports empty assignments and free-text creation when suggestions fail', async () => {
     const { user, send } = await setup(async () => ({ ok: true, account }), true, true);
     await user.type(screen.getByRole('combobox', { name: 'Tags' }), 'New tag{Enter}');
-    await user.type(screen.getByRole('combobox', { name: 'Folders' }), 'New folder');
-    await user.click(screen.getByRole('button', { name: 'Save tags and folders' }));
+    await user.type(screen.getByRole('combobox', { name: 'Circles' }), 'New folder');
+    await user.click(screen.getByRole('button', { name: 'Save tags and circles' }));
     expect(send).toHaveBeenCalledWith({ type: 'contexto:account:saveGroupings', accountId: account.id, tagNames: ['New tag'], folderNames: ['New folder'] });
   });
 
   it('keeps failed drafts for retry and discards them on Cancel or panel dismissal', async () => {
     const { user, marker } = await setup(async () => ({ ok: false, error: 'Storage unavailable' }));
     await user.type(screen.getByRole('combobox', { name: 'Tags' }), 'Retry me');
-    await user.click(screen.getByRole('button', { name: 'Save tags and folders' }));
+    await user.click(screen.getByRole('button', { name: 'Save tags and circles' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Storage unavailable');
     expect(screen.getByRole('combobox', { name: 'Tags' })).toHaveValue('Retry me');
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.getByRole('dialog')).toBeVisible();
-    await user.click(screen.getByRole('button', { name: 'Edit tags and folders' }));
+    await user.click(screen.getByRole('button', { name: 'Edit tags and circles' }));
     expect(screen.getByRole('combobox', { name: 'Tags' })).toHaveValue('');
-    await user.type(screen.getByRole('combobox', { name: 'Folders' }), 'Discard me');
+    await user.type(screen.getByRole('combobox', { name: 'Circles' }), 'Discard me');
     await user.click(marker);
     await user.click(marker);
-    expect(screen.getByRole('combobox', { name: 'Folders' })).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: 'Circles' })).toHaveValue('');
   });
 
   it('disables controls while saving and ignores a response after the panel closes', async () => {
     let resolveSave!: (response: ContextoResponse) => void;
     const pending = new Promise<ContextoResponse>((resolve) => { resolveSave = resolve; });
     const { user, marker } = await setup(() => pending);
-    await user.click(screen.getByRole('button', { name: 'Save tags and folders' }));
+    await user.click(screen.getByRole('button', { name: 'Save tags and circles' }));
     expect(screen.getByRole('combobox', { name: 'Tags' })).toBeDisabled();
-    expect(screen.getByRole('combobox', { name: 'Folders' })).toBeDisabled();
+    expect(screen.getByRole('combobox', { name: 'Circles' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
     fireEvent.pointerDown(document.body);

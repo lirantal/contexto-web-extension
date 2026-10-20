@@ -1,6 +1,6 @@
 # Contexto
 
-Contexto is a local-first browser extension for lightweight CRM and social relationship management on X/Twitter. It is built for Developer Relations and Developer Advocacy workflows where the useful context lives around people: how you met, what they work on, what company they are attached to, notes, tags, folders, and fast ways to search previous public X interactions.
+Contexto is a local-first browser extension for lightweight CRM and social relationship management on X/Twitter. It is built for Developer Relations and Developer Advocacy workflows where the useful context lives around people: how you met, what they work on, what company they are attached to, notes, tags, circles, and fast ways to search previous public X interactions.
 
 The extension is built with [WXT](https://wxt.dev/), React, TypeScript, and IndexedDB through Dexie. Chrome and Vivaldi are the MVP browser targets.
 
@@ -10,7 +10,7 @@ The extension is built with [WXT](https://wxt.dev/), React, TypeScript, and Inde
 - Saved-contact feed markers with compact relationship context, inline quick notes, and a path into the full editor.
 - Rich contact bookmarks captured from supported X posts with editable reminders, Handled/Reopen tracking, and dashboard review/removal.
 - Explicit per-contact catch-up checkpoints with live X searches for posts since the last review.
-- Local IndexedDB database for accounts, companies, tags, folders, notes, search history, and backups.
+- Local IndexedDB database for accounts, companies, tags, circles, notes, search history, and backups.
 - Dashboard/options page for offline account search, metadata editing, filtering, shared-value management, bulk role/location cleanup, import, and export.
 - One persisted Quick X search builder in both the toolbar popup and the always-expanded Contexto section in X's right sidebar, with keyword and date filters.
 - X search helpers for messages/posts from you to them, them to you, profile posts, direct mentions, and keyword/date constraints.

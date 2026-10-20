@@ -5,7 +5,7 @@ import {
   Building2,
   Download,
   ExternalLink,
-  FolderPlus,
+  UsersRound,
   RefreshCw,
   Search,
   Settings,
@@ -214,7 +214,7 @@ export function Dashboard({
           </div>
 
           <p className="filter-help">Accounts must match every selected filter (AND).</p>
-          <AccountFilterField label="Folders" options={lookups?.folders ?? []}
+          <AccountFilterField label="Circles" options={lookups?.folders ?? []}
             selectedIds={filters.folderIds ?? []}
             onChange={(folderIds) => setFilters((current) => ({ ...current, folderIds }))} />
           <AccountFilterField label="Tags" options={lookups?.tags ?? []}
@@ -522,12 +522,12 @@ function AccountDetail({
           ))}</div>
         </div>
         <div>
-          <h3><FolderPlus size={16} aria-hidden="true" /> Folders</h3>
-          <div className="inline-form"><input disabled={saving} value={folderName} onChange={(event) => setFolderName(event.target.value)} placeholder="Add folder" /><button disabled={saving} onClick={addFolderAndClear}>Add</button></div>
+          <h3><UsersRound size={16} aria-hidden="true" /> Circles</h3>
+          <div className="inline-form"><input disabled={saving} value={folderName} onChange={(event) => setFolderName(event.target.value)} placeholder="Add circle" /><button disabled={saving} onClick={addFolderAndClear}>Add</button></div>
           <div className="chip-row">{account.folders.map((folder) => (
             <span className="chip folder-chip" key={folder.id}>
               {folder.name}
-              <button type="button" aria-label={`Remove ${folder.name} from Folders`}
+              <button type="button" aria-label={`Remove ${folder.name} from Circles`}
                 onClick={() => removeAssignedFolder(folder.id)}>×</button>
             </span>
           ))}</div>
@@ -599,7 +599,7 @@ function AccountDetail({
           </button>
         </> : <>
           <p className="danger-warning">
-            This permanently deletes @{account.handle}, including profile metadata, notes, bookmarks, search history, and tag/folder assignments. Shared company, tag, and folder definitions remain available to other accounts.
+            This permanently deletes @{account.handle}, including profile metadata, notes, bookmarks, search history, and tag/circle assignments. Shared company, tag, and circle definitions remain available to other accounts.
           </p>
           <div className="delete-actions">
             <button type="button" disabled={deleting} onClick={() => setDeleteConfirmation(false)}>Cancel</button>

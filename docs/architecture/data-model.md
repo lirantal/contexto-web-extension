@@ -7,7 +7,7 @@ The current schema lives in `src/data/db.ts` and is versioned as Dexie version `
 - `accounts`: platform-neutral social accounts. Important fields include `platform`, `handle`, `normalizedHandle`, `displayName`, `profileUrl`, optional `website`, `role`, `companyId`, `location`, `relationshipSource`, the optional explicit `lastCatchUpAt` checkpoint, `syncState`, timestamps, and soft-delete metadata.
 - `companies`: normalized company records referenced by accounts.
 - `tags` and `accountTags`: many-to-many account labels.
-- `folders` and `folderAccounts`: many-to-many relationship groups.
+- `folders` and `folderAccounts`: many-to-many relationship groups displayed as Circles. Persisted table/field names and backup keys retain their original names for compatibility.
 - `notes`: timestamped account notes.
 - `bookmarks`: account-scoped X post references with canonical URL, post ID, optional excerpt/reminder, capture timestamp, optional handled timestamp, and soft-delete metadata.
 - `searchPresets`: saved search filters for future expansion.
@@ -17,11 +17,11 @@ The current schema lives in `src/data/db.ts` and is versioned as Dexie version `
 
 ## Shared value management
 
-Dashboard management permanently deletes tag/folder definitions and their joins, or merges joins into another definition without duplicate assignments. Renaming preserves IDs. These operations update affected accounts and record entity/account mutations plus a `groupingCatalog` change-log entry in a single transaction. The sorted IDs of catalog entries form an opaque revision token. Account summaries and lookup responses read their data and revision in a consistent read transaction. The same marker covers company rename/merge/delete and bulk role/location replacement/clearing. Companies keep stable IDs on rename; merge reassigns source references, and deletion clears all references. Free-text cleanup writes matching active and inactive account rows directly. Full-context, dashboard metadata, and grouping-only saves compare the draft revision before writing; a stale or missing revision is rejected after the first catalog edit. No Dexie schema or backup format migration is required. See [Manage data](../features/data-management.md) and [Folders and tags](../features/folders-tags.md).
+Dashboard management permanently deletes tag/circle definitions and their joins, or merges joins into another definition without duplicate assignments. Renaming preserves IDs. These operations update affected accounts and record entity/account mutations plus a `groupingCatalog` change-log entry in a single transaction. The sorted IDs of catalog entries form an opaque revision token. Account summaries and lookup responses read their data and revision in a consistent read transaction. The same marker covers company rename/merge/delete and bulk role/location replacement/clearing. Companies keep stable IDs on rename; merge reassigns source references, and deletion clears all references. Free-text cleanup writes matching active and inactive account rows directly. Full-context, dashboard metadata, and grouping-only saves compare the draft revision before writing; a stale or missing revision is rejected after the first catalog edit. No Dexie schema or backup format migration is required. See [Manage data](../features/data-management.md) and [Circles and tags](../features/folders-tags.md).
 
 ## Account deletion
 
-The dashboard's **Delete account** action is a permanent local delete. It removes the account, its notes, bookmarks (including previously soft-deleted bookmark rows), tag/folder joins, account-linked search history, and related change-log entries in one transaction. Shared companies, tags, and folders are retained because other accounts may use them; only this account's assignments are removed. There is no in-app undo, so export a backup first when recovery may be needed.
+The dashboard's **Delete account** action is a permanent local delete. It removes the account, its notes, bookmarks (including previously soft-deleted bookmark rows), tag/circle joins, account-linked search history, and related change-log entries in one transaction. Shared companies, tags, and circles are retained because other accounts may use them; only this account's assignments are removed. There is no in-app undo, so export a backup first when recovery may be needed.
 
 ## Indexes
 

@@ -57,10 +57,10 @@ export function FeedGroupingsEditor({ account, send, onSaved, onCancel }: FeedGr
       if (response.ok && 'account' in response) {
         onSaved(response.account);
       } else {
-        setError(!response.ok ? response.error : 'Could not save tags and folders');
+        setError(!response.ok ? response.error : 'Could not save tags and circles');
       }
     } catch (caught) {
-      if (activeRef.current) setError(caught instanceof Error ? caught.message : 'Could not save tags and folders');
+      if (activeRef.current) setError(caught instanceof Error ? caught.message : 'Could not save tags and circles');
     } finally {
       if (activeRef.current) setSaving(false);
     }
@@ -88,15 +88,15 @@ export function FeedGroupingsEditor({ account, send, onSaved, onCancel }: FeedGr
     } finally { if (activeRef.current) setSaving(false); }
   }
 
-  return <div ref={rootRef} className="contexto-feed-groupings-editor" role="group" aria-label="Edit tags and folders">
+  return <div ref={rootRef} className="contexto-feed-groupings-editor" role="group" aria-label="Edit tags and circles">
     <MultiValueField label="Tags" values={tags} suggestions={suggestions.tags} onChange={setTags}
       query={tagQuery} onQueryChange={setTagQuery} disabled={saving} />
-    <MultiValueField label="Folders" values={folders} suggestions={suggestions.folders} onChange={setFolders}
+    <MultiValueField label="Circles" values={folders} suggestions={suggestions.folders} onChange={setFolders}
       query={folderQuery} onQueryChange={setFolderQuery} disabled={saving} />
     {error && <p className="contexto-error" role="alert">{error}</p>}
     <div className="form-actions">
       <button type="button" className="primary-action" disabled={saving} onClick={save}>
-        {saving ? 'Saving…' : 'Save tags and folders'}
+        {saving ? 'Saving…' : 'Save tags and circles'}
       </button>
       {error && <button type="button" disabled={saving} onClick={reloadSavedValues}>Reload saved values</button>}
       <button type="button" disabled={saving} onClick={onCancel}>Cancel</button>

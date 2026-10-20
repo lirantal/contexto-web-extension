@@ -3,7 +3,7 @@
 Contexto is a WXT React extension with four user-facing surfaces:
 
 - `entrypoints/content.ts`: content script for `x.com` and `twitter.com`. It observes hover cards, profiles, and feed posts and injects Shadow DOM Contexto surfaces and sends messages to the background service worker.
-- `entrypoints/background.ts`: message/API boundary for content scripts. It owns profile upsert, metadata updates, explicit catch-up checkpoints, notes, contact-post bookmarks, tags, folders, settings, and search-history writes.
+- `entrypoints/background.ts`: message/API boundary for content scripts. It owns profile upsert, metadata updates, explicit catch-up checkpoints, notes, contact-post bookmarks, tags, circles, settings, and search-history writes.
 - `entrypoints/popup`: compact Quick X search UI for creating X search URLs.
 - `entrypoints/options`: full dashboard for account search, metadata editing, filtering, shared-value management and bulk metadata cleanup, backup, and restore.
 

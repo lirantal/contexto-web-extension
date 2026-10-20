@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
 
 export interface MultiValueFieldProps {
-  label: 'Tags' | 'Folders';
+  label: 'Tags' | 'Circles';
   values: string[];
   suggestions: string[];
   onChange(values: string[]): void;
@@ -58,7 +58,7 @@ export function MultiValueField({ label, values, suggestions, onChange, disabled
       <label htmlFor={`contexto-${label.toLowerCase()}`}>{label}</label>
       <div className="chip-row">
         {values.map((value) => (
-          <span className={`chip ${label === 'Folders' ? 'folder-chip' : ''}`} key={value.toLowerCase()}>
+          <span className={`chip ${label === 'Circles' ? 'folder-chip' : ''}`} key={value.toLowerCase()}>
             {value}
             <button type="button" disabled={disabled} aria-label={`Remove ${value} from ${label}`}
               onClick={() => onChange(values.filter((item) => item !== value))}>×</button>

@@ -97,7 +97,7 @@ describe('dashboard AND search', () => {
     render(<Dashboard settingsPersistence={{ updateSettings: vi.fn() }} />);
     const results = screen.getByRole('region', { name: 'Accounts' });
     await within(results).findByRole('button', { name: /@partial/ });
-    for (const label of ['Folders', 'Tags', 'Companies']) {
+    for (const label of ['Circles', 'Tags', 'Companies']) {
       await user.click(screen.getByText(label, { selector: 'summary' }));
     }
     for (const name of ['Friends', 'Conference', 'devrel', 'speaker', 'security', 'Acme']) {
@@ -108,7 +108,7 @@ describe('dashboard AND search', () => {
     await user.type(screen.getByLabelText('Account search'), 'missing');
     await waitFor(() => expect(within(results).queryByRole('button')).not.toBeInTheDocument());
     await user.clear(screen.getByLabelText('Account search'));
-    await user.click(screen.getByRole('button', { name: 'Remove Conference from Folders filters' }));
+    await user.click(screen.getByRole('button', { name: 'Remove Conference from Circles filters' }));
     await user.click(screen.getByRole('button', { name: 'Remove speaker from Tags filters' }));
     await user.click(screen.getByRole('button', { name: 'Remove security from Tags filters' }));
     await waitFor(() => expect(within(results).getAllByRole('button')).toHaveLength(2));

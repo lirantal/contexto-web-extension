@@ -152,7 +152,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
           <label>How you know them<input value={draft.metadata.relationshipSource ?? ''} disabled={saving} onChange={(event) => updateMetadata('relationshipSource', event.target.value)} /></label>
         </div>
         <MultiValueField label="Tags" query={draft.tagQuery ?? ''} onQueryChange={(tagQuery) => updateDraft((current) => ({ ...current, tagQuery }))} values={draft.tagNames} suggestions={lookups.tags.map((tag) => tag.name)} disabled={saving} onChange={(tagNames) => updateDraft({ ...draft, tagNames })} />
-        <MultiValueField label="Folders" query={draft.folderQuery ?? ''} onQueryChange={(folderQuery) => updateDraft((current) => ({ ...current, folderQuery }))} values={draft.folderNames} suggestions={lookups.folders.map((folder) => folder.name)} disabled={saving} onChange={(folderNames) => updateDraft({ ...draft, folderNames })} />
+        <MultiValueField label="Circles" query={draft.folderQuery ?? ''} onQueryChange={(folderQuery) => updateDraft((current) => ({ ...current, folderQuery }))} values={draft.folderNames} suggestions={lookups.folders.map((folder) => folder.name)} disabled={saving} onChange={(folderNames) => updateDraft({ ...draft, folderNames })} />
       </section>
       {success && <p className="contexto-success" role="status" aria-live="polite">{success}</p>}
       {error && <p className="contexto-error" role="alert">{error}</p>}

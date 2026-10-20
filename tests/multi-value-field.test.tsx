@@ -73,10 +73,10 @@ describe('MultiValueField', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
-  it('uses the same custom suggestion behavior for Folders and supports pointer selection', async () => {
+  it('uses the same custom suggestion behavior for Circles and supports pointer selection', async () => {
     const user = userEvent.setup();
-    render(<Harness label="Folders" />);
-    const input = screen.getByRole('combobox', { name: 'Folders' });
+    render(<Harness label="Circles" />);
+    const input = screen.getByRole('combobox', { name: 'Circles' });
 
     await user.type(input, 'you');
     const option = screen.getByRole('option', { name: 'YouTuber' });

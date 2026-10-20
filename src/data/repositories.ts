@@ -287,7 +287,7 @@ function validateAccountContextSave(input: AccountContextSaveInput): AccountCont
   if (!Array.isArray(input.tagNames) || !Array.isArray(input.folderNames)
     || !input.tagNames.every((name) => typeof name === 'string')
     || !input.folderNames.every((name) => typeof name === 'string')) {
-    throw new Error('Tags and folders must be lists of names');
+    throw new Error('Tags and circles must be lists of names');
   }
   return {
     ...input,
@@ -311,7 +311,7 @@ export async function saveAccountGroupings(
   if (!Array.isArray(tagNames) || !Array.isArray(folderNames)
     || !tagNames.every((name) => typeof name === 'string')
     || !folderNames.every((name) => typeof name === 'string')) {
-    throw new Error('Tags and folders must be lists of names');
+    throw new Error('Tags and circles must be lists of names');
   }
   return database.transaction('rw', [database.accounts, database.tags, database.accountTags,
     database.folders, database.folderAccounts, database.changeLog, database.companies, database.notes], async () => {

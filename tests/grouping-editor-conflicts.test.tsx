@@ -58,13 +58,13 @@ it('blocks stale feed folders and allows an explicit reload and successful retry
   render(<FeedGroupingsEditor account={account} send={send} onSaved={saved} onCancel={vi.fn()} />);
   const catalog = await listManagedGroupings('folder');
   await manageGrouping('folder', catalog.items[0].id, { type: 'rename', name: 'Fixed' }, catalog.revision);
-  await user.click(await screen.findByRole('button', { name: 'Save tags and folders' }));
+  await user.click(await screen.findByRole('button', { name: 'Save tags and circles' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('Shared data changed');
   expect(saved).not.toHaveBeenCalled();
-  expect(screen.getByRole('button', { name: 'Remove Typo from Folders' })).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Remove Typo from Circles' })).toBeVisible();
   await user.click(screen.getByRole('button', { name: 'Reload saved values' }));
-  expect(await screen.findByRole('button', { name: 'Remove Fixed from Folders' })).toBeVisible();
-  await user.click(await screen.findByRole('button', { name: 'Save tags and folders' }));
+  expect(await screen.findByRole('button', { name: 'Remove Fixed from Circles' })).toBeVisible();
+  await user.click(await screen.findByRole('button', { name: 'Save tags and circles' }));
   await waitFor(() => expect(saved).toHaveBeenCalledWith(expect.objectContaining({ folders: [expect.objectContaining({ name: 'Fixed' })] })));
   expect(await db.folders.count()).toBe(1);
 });
