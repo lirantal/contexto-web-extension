@@ -11,7 +11,11 @@ npm run build
 npm run verify:popup
 ```
 
-Use focused Vitest commands while iterating, then run the complete suite before completion.
+Use focused Vitest commands while iterating, then run the complete suite before completion. `npm run check` runs all four release checks above.
+
+For persistence, model, import, or draft-save changes, run `npm run test:integrity`. It covers upgrades from database versions 1–3, legacy/unknown field preservation, complete-table JSON round trips, concurrent exports, atomic failure rollback, contact ownership, malformed backup records and relationships, identity collisions, conflict-safe merge, full restore, stale previews, and stale contact drafts.
+
+After building, run `npm run verify:integrity` with Playwright Chromium and its host dependencies installed. This uses the actual extension with a disposable profile and synthetic data, saves and reads real JSON downloads, checks safe merge, verifies that another dashboard tab cannot overwrite newer metadata, performs a full restore that removes later-added contacts, and checks records and unknown fields after restarting the browser with the same profile. It makes no live X requests and removes its temporary profile/downloads on exit. This complements live Chrome/Vivaldi checks; it does not automate disable/uninstall. See [Data integrity](development/data-integrity.md) for future-release preservation rules.
 
 After sidebar placement or scrolling changes, build the extension and run `npm run verify:sidebar` with Playwright Chromium installed (`npx playwright install chromium`). This loads the actual built extension in a temporary browser profile against locally routed X fixtures with constrained and pinned native-search shells. It reproduces clipping at the previous insertion point, then checks that the workspace clears the pinned search header, the first label is unobscured using hit testing, the workspace fits the viewport, the last action is reachable and launches, and native X search remains usable. On profile and conversation fixture routes, it scrolls the page down and back up to check that the workspace stays at its 72-pixel sticky offset and its first label remains unobscured in light/dark themes at 900-, 600-, and 360-pixel window heights. Search-tab destinations are recorded and replaced with blank tabs to avoid live X requests. It inspects the production closed Shadow DOM through Chromium's debugging protocol; no X login is needed. Browser fixture checks complement the live X matrix below.
 

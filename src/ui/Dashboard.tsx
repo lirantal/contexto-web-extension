@@ -3,7 +3,6 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import {
   ArchiveRestore,
   Building2,
-  Download,
   ExternalLink,
   UsersRound,
   RefreshCw,
@@ -11,7 +10,6 @@ import {
   Settings,
   Tag,
   Trash2,
-  Upload,
   UserPlus,
 } from 'lucide-react';
 import {
@@ -20,10 +18,8 @@ import {
   assignTag,
   deleteAccount,
   ensureAccountFromProfile,
-  exportBackup,
   getLookups,
   getAccountSummary,
-  importBackup,
   listAccountSummaries,
   markAccountCaughtUp,
   recordSearch,
@@ -42,6 +38,7 @@ import type { ContextoSettingsPersistence } from '@/src/shared/quick-x-search-pe
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
 import { getAdjacentAccountId } from './account-navigation';
 import { ManageData } from './ManageData';
+import { BackupControls } from './BackupControls';
 import { AccountBookmarks } from './AccountBookmarks';
 import { AccountFilterField } from './AccountFilterField';
 import { FuzzyTextCombobox } from './FuzzyTextCombobox';
@@ -158,25 +155,6 @@ export function Dashboard({
     setStatus(`Added @${normalizedHandle}`);
   }
 
-  async function downloadBackup() {
-    const backup = await exportBackup();
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `contexto-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setStatus('Backup exported');
-  }
-
-  async function uploadBackup(file?: File) {
-    if (!file) return;
-    const parsed = JSON.parse(await file.text());
-    await importBackup(parsed);
-    setStatus('Backup imported');
-  }
-
   async function clearTargetHistory() {
     try {
       await clearTargetHandleHistory();
@@ -259,13 +237,7 @@ export function Dashboard({
           <button className="clear-history-action" onClick={clearTargetHistory}>
             <Trash2 size={16} aria-hidden="true" /> Clear target handle history
           </button>
-          <div className="backup-actions">
-            <button onClick={downloadBackup}><Download size={16} aria-hidden="true" /> Export</button>
-            <label className="file-button">
-              <Upload size={16} aria-hidden="true" /> Import
-              <input type="file" accept="application/json" onChange={(event) => uploadBackup(event.target.files?.[0])} />
-            </label>
-          </div>
+          <BackupControls />
           {status && <p className="status-line">{status}</p>}
         </section>
       </aside>
@@ -336,6 +308,10 @@ function metadataDraftFor(account: AccountSummary) {
   };
 }
 
+function metadataMatchesDraft(account: AccountSummary, draft: ReturnType<typeof metadataDraftFor>) {
+  return JSON.stringify(metadataDraftFor(account)) === JSON.stringify(draft);
+}
+
 function AccountDetail({
   account,
   settings,
@@ -351,6 +327,8 @@ function AccountDetail({
 }) {
   const [draft, setDraft] = useState(() => metadataDraftFor(account));
   const [draftRevision, setDraftRevision] = useState(account.groupingRevision);
+  const [contactRevision, setContactRevision] = useState(account.accountRevision);
+  const baselineMetadata = useRef(metadataDraftFor(account));
   const [note, setNote] = useState('');
   const [tagName, setTagName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -370,16 +348,21 @@ function AccountDetail({
   useEffect(() => {
     setDraft(metadataDraftFor(account));
     setDraftRevision(account.groupingRevision);
+    setContactRevision(account.accountRevision);
+    baselineMetadata.current = metadataDraftFor(account);
   }, [account.id]);
 
   async function save() {
     setSaving(true);
     setSaveError('');
     try {
-      const saved = await updateAccount(account.id, { ...draft, groupingRevision: draftRevision });
+      const saved = await updateAccount(account.id, { ...draft, accountRevision: contactRevision, groupingRevision: draftRevision,
+        ...(tagName.trim() ? { addTagNames: [tagName.trim()] } : {}),
+        ...(folderName.trim() ? { addFolderNames: [folderName.trim()] } : {}) });
       setDraftRevision(saved.groupingRevision);
-      await addTagAndClear();
-      await addFolderAndClear();
+      setContactRevision(saved.accountRevision);
+      baselineMetadata.current = metadataDraftFor(saved);
+      setTagName(''); setFolderName('');
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Could not save metadata');
     } finally {
@@ -394,6 +377,8 @@ function AccountDetail({
       if (!current) throw new Error('Contact no longer exists.');
       setDraft(metadataDraftFor(current));
       setDraftRevision(current.groupingRevision);
+      setContactRevision(current.accountRevision);
+      baselineMetadata.current = metadataDraftFor(current);
       setTagName(''); setFolderName('');
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Could not reload saved values');
@@ -402,13 +387,15 @@ function AccountDetail({
 
   async function addTagAndClear() {
     if (!tagName.trim()) return;
-    await assignTag(account.id, tagName.trim());
+    const saved = await assignTag(account.id, tagName.trim());
+    if (saved && metadataMatchesDraft(saved, baselineMetadata.current)) setContactRevision(saved.accountRevision);
     setTagName('');
   }
 
   async function addFolderAndClear() {
     if (!folderName.trim()) return;
-    await assignFolder(account.id, folderName.trim());
+    const saved = await assignFolder(account.id, folderName.trim());
+    if (saved && metadataMatchesDraft(saved, baselineMetadata.current)) setContactRevision(saved.accountRevision);
     setFolderName('');
   }
 

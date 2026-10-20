@@ -44,3 +44,7 @@ This convention applies to the X feed panel, X hover summary, dashboard read-onl
 The dashboard displays read-only **Added to Contexto** and **Last updated in Contexto** dates with local date/time formatting, plus **X user ID** when supplied. These use the existing contact timestamps, not the X account's join date. Invalid legacy dates display Unknown. These details are absent from embedded X forms.
 
 The optional numeric X user ID is stored as a string. Current DOM capture has no reliable, identity-scoped ID evidence, so ordinary profile saves leave it unset and preserve any previously imported ID. Contexto does not infer user IDs from avatar URLs or Post IDs or make extra API requests to obtain them. Future API imports can supply the ID through a profile snapshot; see [Data model](../architecture/data-model.md#x-identity-and-contact-dates).
+
+## Concurrent contact edits
+
+X profile, dashboard metadata, and feed grouping editors retain the contact revision they loaded. A save after another contact/assignment change fails before writing, preserves the draft, and offers **Reload saved values**. The reload explicitly discards the draft and loads current values; successful Save and Cancel keep their established close behavior. An editor opened before another surface creates that contact also fails safely rather than overwriting the new record.

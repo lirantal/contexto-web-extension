@@ -191,7 +191,7 @@ describe('Contexto repositories', () => {
     }
   });
 
-  it('discards legacy profession and position values during the database upgrade', async () => {
+  it('preserves legacy profession and position and maps both into role during the database upgrade', async () => {
     const name = `ContextoLegacyRoleMigration-${globalThis.crypto.randomUUID()}`;
     const legacy = new Dexie(name);
     legacy.version(1).stores({
@@ -218,9 +218,7 @@ describe('Contexto repositories', () => {
     try {
       const account = await upgraded.accounts.get('account_legacy');
       expect(account).toMatchObject({ displayName: 'Legacy User', location: 'Berlin' });
-      expect(account).not.toHaveProperty('profession');
-      expect(account).not.toHaveProperty('position');
-      expect(account).not.toHaveProperty('role');
+      expect(account).toMatchObject({ profession: 'Developer', position: 'CTO', role: 'CTO · Developer' });
     } finally {
       await upgraded.delete();
     }
@@ -331,11 +329,11 @@ describe('Contexto repositories', () => {
 
   it.each(['location', 'role'] as const)('lists distinct active saved %s values as reusable lookups', async (field) => {
     const locations = [
-      ['berlin-primary', ' Berlin '],
-      ['berlin-duplicate', 'berlin'],
-      ['san-francisco', 'San Francisco'],
-      ['blank-location', '   '],
-      ['deleted-location', 'London'],
+      ['berlin_primary', ' Berlin '],
+      ['berlin_other', 'berlin'],
+      ['san_francisco', 'San Francisco'],
+      ['blank_location', '   '],
+      ['deleted_loc', 'London'],
     ] as const;
 
     for (const [handle, location] of locations) {
@@ -345,7 +343,7 @@ describe('Contexto repositories', () => {
       );
       await database.accounts.update(account.id, {
         [field]: location,
-        ...(handle === 'deleted-location' ? { deletedAt: '2026-07-12T00:00:00.000Z' } : {}),
+        ...(handle === 'deleted_loc' ? { deletedAt: '2026-07-12T00:00:00.000Z' } : {}),
       });
     }
 

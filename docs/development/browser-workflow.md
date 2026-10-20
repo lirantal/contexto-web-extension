@@ -38,7 +38,7 @@ npm run build
 
 Then load `.output/chrome-mv3` from `chrome://extensions` or `vivaldi://extensions`.
 
-The tradeoff is that you may need to press Reload on the extension card after each build.
+The tradeoff is that you may need to press Reload on the extension card after each build. Keep the same loaded path/extension ID and persistent browser profile. Export before schema updates, profile changes, or reinstallations; never uninstall the extension to refresh a build containing valuable local data. See [Data integrity](data-integrity.md).
 
 ## Manual QA Matrix
 
@@ -54,6 +54,8 @@ Run the relevant rows in both Chrome and Vivaldi when a change touches browser i
 | Saved-contact quick note | Add quick note opens an inline focused composer; empty drafts cannot save; success refreshes Latest note; failure preserves the draft; Cancel or panel close clears it; bookmark and note composers do not appear together. |
 | Saved-contact tags and circles | Edit tags and circles works with populated or empty assignments. Verify suggestion selection, new values, chip removal, and Save with text still in either input; success refreshes the summary and keeps the popup open, while failure retains the draft. Cancel and panel dismissal discard unsaved edits. Internal clicks stay within the popup; narrow windows and both themes remain usable. |
 | Dashboard account metadata | Account rows show Company: and Notes show Latest note: only for populated values; empty values are omitted; long unbroken values wrap within the compact list and detail pane. Role, Company, and Location suggestions use the shared neutral/teal style and appear below the input without moving the paired field row. |
+| Backup and restore | Export and verify a JSON file; select it for a no-write preview, cancel, then safe-merge identical/new records. Change a saved field and verify an old file cannot overwrite it in Safe merge. Download and verify the recovery file, then explicitly Full restore; confirm later-added records disappear and backed-up fields/notes remain. Change data in another tab after preview and verify import refuses it. |
+| Concurrent contact drafts | Edit a contact in two dashboard/X/feed surfaces. Save one, then save the older draft: it must fail without losing the inputs. Reload saved values explicitly, then retry. |
 | Dashboard account deletion | Account details requires a second explicit confirmation; confirmed deletion removes the account and its notes, bookmarks, search history, assignments, and local change-log entries, while shared company/tag/circle definitions remain. Cancel leaves the account intact. |
 | Dashboard bookmark collection | Multiple bookmarks appear newest first; reminder edits accept text or an empty value; failed saves retain the draft; Mark handled preserves the source and exposes Reopen; Open on X remains canonical; Remove updates the collection without affecting contact metadata. |
 | Wide and narrow viewports | The editor opens in the Contexto-owned right rail or modal fallback without shifting the hover card. |

@@ -19,6 +19,7 @@ const emptyLookups: LookupData = { companies: [], tags: [], folders: [], locatio
 
 function draftFor(profile: ProfileSnapshot, account?: AccountSummary, savedOnly = false): AccountContextDraft {
   return {
+    accountRevision: account?.accountRevision ?? (account ? undefined : ''),
     groupingRevision: account?.groupingRevision,
     metadata: {
       displayName: account?.displayName ?? profile.displayName ?? profile.handle,

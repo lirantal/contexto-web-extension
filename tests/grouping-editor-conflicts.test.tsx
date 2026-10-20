@@ -18,7 +18,7 @@ async function send(message: ContextoRequest): Promise<ContextoResponse> {
     if (message.type === 'contexto:account:lookup') return { ok: true, lookup: true, lookupAccount: await getAccountByHandle('x', message.handle) };
     if (message.type === 'contexto:lookups:list') return { ok: true, lookups: await getLookups() };
     if (message.type === 'contexto:account:saveContext') return { ok: true, account: await saveAccountContext(message.input) };
-    if (message.type === 'contexto:account:saveGroupings') return { ok: true, account: await saveAccountGroupings(message.accountId, message.tagNames, message.folderNames, db, message.groupingRevision) };
+    if (message.type === 'contexto:account:saveGroupings') return { ok: true, account: await saveAccountGroupings(message.accountId, message.tagNames, message.folderNames, db, message.groupingRevision, message.accountRevision) };
     throw new Error('Unexpected message');
   } catch (error) { return { ok: false, error: (error as Error).message }; }
 }

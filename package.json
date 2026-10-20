@@ -16,7 +16,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "test:integrity": "vitest run tests/data-integrity.test.ts tests/repositories.test.ts tests/backup-controls.test.tsx tests/grouping-editor-conflicts.test.tsx tests/data-management.test.ts tests/grouping-management.test.ts",
+    "check": "npm run compile && npm test && npm run build && npm run verify:popup",
+    "verify:integrity": "node scripts/verify-data-integrity.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.4",

@@ -170,6 +170,7 @@ export interface XPostSnapshot {
 }
 
 export interface AccountSummary extends Account {
+  accountRevision?: string;
   groupingRevision?: string;
   company?: Company;
   tags: Tag[];
@@ -189,6 +190,9 @@ export interface AccountFilters {
 }
 
 export interface AccountUpdateInput {
+  addTagNames?: string[];
+  addFolderNames?: string[];
+  accountRevision?: string;
   groupingRevision?: string;
   displayName?: string;
   role?: string;
@@ -201,6 +205,7 @@ export interface AccountUpdateInput {
 }
 
 export interface AccountContextSaveInput {
+  accountRevision?: string;
   groupingRevision?: string;
   profile: ProfileSnapshot;
   metadata: AccountUpdateInput;

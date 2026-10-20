@@ -93,9 +93,9 @@ describe('background account context messages', () => {
     const updated = { id: 'account_1', tags: [], folders: [] };
     repositories.saveAccountGroupings.mockResolvedValue(updated);
     await expect(handleRequest({
-      type: 'contexto:account:saveGroupings', accountId: 'account_1', tagNames: ['Security'], folderNames: ['Friends'], groupingRevision: 'revision-1',
+      type: 'contexto:account:saveGroupings', accountId: 'account_1', tagNames: ['Security'], folderNames: ['Friends'], groupingRevision: 'revision-1', accountRevision: 'contact-1',
     })).resolves.toEqual({ ok: true, account: updated });
-    expect(repositories.saveAccountGroupings).toHaveBeenCalledWith('account_1', ['Security'], ['Friends'], undefined, 'revision-1');
+    expect(repositories.saveAccountGroupings).toHaveBeenCalledWith('account_1', ['Security'], ['Friends'], undefined, 'revision-1', 'contact-1');
     expect(repositories.saveAccountContext).not.toHaveBeenCalled();
   });
 

@@ -10,7 +10,7 @@ Use circles for relationship groups such as `DevRel friends`, `Conference follow
 
 The MVP supports creating, assigning, and removing tag/circle assignments from both the X overlay and the dashboard. Dashboard removals persist immediately; the X editor persists its complete selection when the account context is saved. Removing an assignment keeps the shared tag or circle available for other accounts and future use.
 
-Saving context in any X editor or selecting **Save metadata** in the dashboard also saves non-empty text still in the Tags and Circles inputs, even if it has not been added as a chip. Pending values are trimmed and existing assignments are reused without duplicates. Failed saves retain unsaved input for retry; Cancel in an X editor discards pending input along with the rest of the draft.
+Saving context in any X editor or selecting **Save metadata** in the dashboard also saves non-empty text still in the Tags and Circles inputs, even if it has not been added as a chip. Pending values are trimmed and existing assignments are reused without duplicates. Dashboard metadata and pending assignments save in one transaction. Failed saves retain unsaved input for retry; Cancel in an X editor discards pending input along with the rest of the draft.
 
 ## Manage shared values
 
@@ -24,12 +24,12 @@ Each searchable table shows all active definitions, including unused values, and
 
 Each operation is one IndexedDB transaction, including account timestamps, sync flags, and change-log entries. A failed operation leaves the database unchanged and the action available for retry. A concurrent catalog edit invalidates an older management form; cancel and reopen that action before retrying. Live dashboard filters discard removed IDs while preserving the query and remaining selections, so removed IDs cannot leave results hidden.
 
-Export a backup through dashboard Settings if you need a recovery copy. Imports merge by ID, so importing an older backup can restore removed values.
+Export a backup through dashboard Settings if you need a recovery copy. Safe merge refuses conflicting existing records; explicit full restore can recover older values. See [Backup and restore](backup-restore.md).
 
 ## Open editors and catalog changes
 
 Account summaries and lookup data include a catalog revision. X profile drafts retain the revision they originally loaded, including across remounts; the feed grouping editor retains its account snapshot revision. All Manage data operations invalidate earlier revisions. Saving a stale draft rejects before any writes, preserving the draft and keeping the editor open so removed names cannot silently be recreated.
 
-Use **Reload saved values** after a failed save to explicitly discard the draft and load current metadata/assignments before retrying. In a profile editor, Cancel retains the established close behavior. The revision is derived from catalog mutation entries in the existing change log and survives backup/restore; ordinary assignment edits do not invalidate other editors. Dashboard metadata saves use the same protection. See [Manage data](data-management.md#consistency-open-drafts-and-recovery).
+Use **Reload saved values** after a failed save to explicitly discard the draft and load current metadata/assignments before retrying. In a profile editor, Cancel retains the established close behavior. The revision is derived from catalog mutation entries in the existing change log and survives backup/restore; ordinary assignment edits are also checked through the separate contact revision when another draft replaces the full selection. Dashboard metadata saves use the same protection. See [Manage data](data-management.md#consistency-open-drafts-and-recovery).
 
 The saved-contact feed badge popup also supports **Edit tags and circles** without opening the full editor. Its explicit **Save tags and circles** writes assignments only, includes pending input, and keeps the popup open. Cancel or panel dismissal discards unsaved grouping edits. See [Saved-contact feed context](feed-saved-contact-context.md).

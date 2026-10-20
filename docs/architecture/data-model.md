@@ -1,6 +1,6 @@
 # Data Model
 
-The current schema lives in `src/data/db.ts` and is versioned as Dexie version `3`.
+The current schema lives in `src/data/db.ts` and is versioned as Dexie version `4`.
 
 ## Core Records
 
@@ -54,3 +54,9 @@ Accounts and profile snapshots accept optional `xUserId`: a positive decimal str
 `createdAt` and `updatedAt` already record the local contact's creation and most recent account update, including relationship activity that touches the account. They are not X's account creation date or profile observation timestamps. The dashboard shows them as **Added to Contexto** and **Last updated in Contexto**; embedded forms do not display them.
 
 Future imports target people and relationships. List-derived labels use the existing many-to-many tags, including multiple labels for overlapping memberships. Contexto does not introduce List records or membership management.
+
+## Preservation and concurrency
+
+Database upgrades retain legacy `profession` and `position` fields; a missing role is derived from their distinct values (position first), without replacing a populated role. Version 4 also normalizes legacy values present in version 2/3 databases. Values removed by an already-executed older migration require recovery from a prior export.
+
+Account summaries include an opaque `accountRevision` derived from the stored record and sorted tag/circle assignments. Draft editors retain it and compare it in the same transaction as their save. This supplements catalog revisions for ordinary edits and detects same-timestamp changes. It is response metadata, not a persisted contact field. See [Data integrity](../development/data-integrity.md).

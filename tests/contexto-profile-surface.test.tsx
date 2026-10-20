@@ -290,7 +290,7 @@ describe('ContextoProfileSurface', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save to Contexto' }));
     await waitFor(() => expect(send).toHaveBeenCalledWith({
       type: 'contexto:account:saveContext',
-      input: { profile, metadata: expect.any(Object), tagNames: ['Founder', 'speaker'], folderNames: ['Friends', 'Conference'] },
+      input: { profile, accountRevision: '', groupingRevision: undefined, metadata: expect.any(Object), tagNames: ['Founder', 'speaker'], folderNames: ['Friends', 'Conference'] },
     }));
     await screen.findByText('Saved to Contexto');
     expect(tags).toHaveValue('');

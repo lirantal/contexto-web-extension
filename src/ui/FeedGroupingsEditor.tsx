@@ -50,6 +50,7 @@ export function FeedGroupingsEditor({ account, send, onSaved, onCancel }: FeedGr
     try {
       const response = await send({
         type: 'contexto:account:saveGroupings', accountId: account.id,
+        ...(baseline.accountRevision !== undefined ? { accountRevision: baseline.accountRevision } : {}),
         ...(baseline.groupingRevision !== undefined ? { groupingRevision: baseline.groupingRevision } : {}),
         tagNames: includePending(tags, tagQuery), folderNames: includePending(folders, folderQuery),
       });

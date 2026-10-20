@@ -13,6 +13,7 @@ These documents describe Contexto's current architecture, behavior, development 
 ## Development and testing
 
 - [Browser development workflow](development/browser-workflow.md) — WXT development, unpacked installs, and the manual browser QA matrix.
+- [Data integrity and development plan](development/data-integrity.md) — preservation rules, hardening plan, recovery limits, and verification.
 - [Testing](testing.md) — automated checks, X fixtures, interaction lifecycle coverage, and manual verification expectations.
 
 ## Features

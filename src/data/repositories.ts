@@ -1,3 +1,5 @@
+import { accountRevision, canonicalRecord } from './record-revision';
+import { backupTables, validateBackup } from './backup-validation';
 import { ContextoDatabase, db } from './db';
 import { assertGroupingRevision, getGroupingRevision } from './grouping-revision';
 import { buildXSearchQuery, normalizeXHandle, parseXPostUrl, parseXProfileUrl } from '../shared/platforms/x';
@@ -9,7 +11,6 @@ import type {
   AccountContextSaveInput,
   AccountUpdateInput,
   BackupEnvelope,
-  BackupImportEnvelope,
   BackupRecord,
   Bookmark,
   BookmarkCaptureInput,
@@ -44,6 +45,20 @@ export function normalizeName(value: string): string {
 function normalizeHandle(platform: Platform, handle: string): string {
   if (platform === 'x') return normalizeXHandle(handle);
   return handle.trim().toLowerCase();
+}
+
+function accountTables(database: ContextoDatabase) {
+  return [database.accounts, database.companies, database.tags, database.accountTags,
+    database.folders, database.folderAccounts, database.notes, database.changeLog];
+}
+
+async function assertAccountRevision(accountId: string | undefined, expected: string | undefined, database: ContextoDatabase) {
+  // Omitted only for direct, narrow repository operations without an editor draft.
+  if (expected === undefined) return;
+  const current = accountId ? await getAccountSummary(accountId, database) : undefined;
+  if ((current?.accountRevision ?? '') !== expected) {
+    throw new Error('Contact changed since you opened this editor. Your draft has not been saved. Reload saved values before retrying.');
+  }
 }
 
 function active<T extends { deletedAt?: string }>(records: T[]): T[] {
@@ -142,52 +157,64 @@ function validateXUserId(platform: Platform, value: unknown): void {
 }
 
 export async function ensureAccountFromProfile(profile: ProfileSnapshot, database = db): Promise<AccountSummary> {
-  validateXUserId(profile.platform, profile.xUserId);
-  const normalizedHandle = normalizeHandle(profile.platform, profile.handle);
-  const existing = await database.accounts.where('[platform+normalizedHandle]').equals([profile.platform, normalizedHandle]).first();
-  const timestamp = nowIso();
-
-  if (existing) {
-    if (existing.xUserId && profile.xUserId && existing.xUserId !== profile.xUserId) {
-      throw new Error('X user ID conflicts with the saved account');
+  return database.transaction('rw', accountTables(database), async () => {
+    validateXUserId(profile.platform, profile.xUserId);
+    const normalizedHandle = normalizeHandle(profile.platform, profile.handle);
+    if (profile.platform === 'x') {
+      const parsed = parseXProfileUrl(profile.profileUrl);
+      if (!parsed || !normalizedHandle || parsed.handle !== normalizedHandle) {
+        throw new Error('Profile handle does not match a valid X profile URL');
+      }
     }
-    const patch: Partial<Account> = {
-      xUserId: profile.xUserId ?? existing.xUserId,
-      displayName: profile.displayName?.trim() || existing.displayName || profile.handle,
+    const existing = await database.accounts.where('[platform+normalizedHandle]').equals([profile.platform, normalizedHandle]).first();
+    if (profile.xUserId) {
+      const other = await database.accounts.filter((account) => account.xUserId === profile.xUserId && account.id !== existing?.id).first();
+      if (other) throw new Error('X user ID belongs to another saved handle');
+    }
+    const timestamp = nowIso();
+
+    if (existing) {
+      if (existing.xUserId && profile.xUserId && existing.xUserId !== profile.xUserId) {
+        throw new Error('X user ID conflicts with the saved account');
+      }
+      const patch: Partial<Account> = {
+        xUserId: profile.xUserId ?? existing.xUserId,
+        displayName: profile.displayName?.trim() || existing.displayName || profile.handle,
+        profileUrl: profile.profileUrl,
+        avatarUrl: profile.avatarUrl || existing.avatarUrl,
+        bioSnapshot: profile.bioSnapshot || existing.bioSnapshot,
+        website: profile.website || existing.website,
+        location: profile.location || existing.location,
+        updatedAt: timestamp,
+        deletedAt: undefined,
+        syncState: 'pending-sync',
+      };
+      await database.accounts.update(existing.id, patch);
+      await recordChange(database, 'account', existing.id, 'update');
+      return getAccountSummary(existing.id, database) as Promise<AccountSummary>;
+    }
+
+    const account: Account = {
+      id: createId('account'),
+      platform: profile.platform,
+      xUserId: profile.xUserId,
+      handle: profile.handle.replace(/^@/, ''),
+      normalizedHandle,
+      displayName: profile.displayName?.trim() || profile.handle.replace(/^@/, ''),
       profileUrl: profile.profileUrl,
-      avatarUrl: profile.avatarUrl || existing.avatarUrl,
-      bioSnapshot: profile.bioSnapshot || existing.bioSnapshot,
-      website: profile.website || existing.website,
-      location: profile.location || existing.location,
+      avatarUrl: profile.avatarUrl,
+      bioSnapshot: profile.bioSnapshot,
+      website: profile.website,
+      location: profile.location,
+      createdAt: timestamp,
       updatedAt: timestamp,
-      deletedAt: undefined,
-      syncState: 'pending-sync',
+      syncState: 'local-only',
     };
-    await database.accounts.update(existing.id, patch);
-    await recordChange(database, 'account', existing.id, 'update');
-    return getAccountSummary(existing.id, database) as Promise<AccountSummary>;
-  }
 
-  const account: Account = {
-    id: createId('account'),
-    platform: profile.platform,
-    xUserId: profile.xUserId,
-    handle: profile.handle.replace(/^@/, ''),
-    normalizedHandle,
-    displayName: profile.displayName?.trim() || profile.handle.replace(/^@/, ''),
-    profileUrl: profile.profileUrl,
-    avatarUrl: profile.avatarUrl,
-    bioSnapshot: profile.bioSnapshot,
-    website: profile.website,
-    location: profile.location,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-    syncState: 'local-only',
-  };
-
-  await database.accounts.add(account);
-  await recordChange(database, 'account', account.id, 'create');
-  return getAccountSummary(account.id, database) as Promise<AccountSummary>;
+    await database.accounts.add(account);
+    await recordChange(database, 'account', account.id, 'create');
+    return getAccountSummary(account.id, database) as Promise<AccountSummary>;
+  });
 }
 
 export async function getAccountByHandle(platform: Platform, handle: string, database = db): Promise<AccountSummary | undefined> {
@@ -197,11 +224,17 @@ export async function getAccountByHandle(platform: Platform, handle: string, dat
 }
 
 export async function updateAccount(accountId: string, input: AccountUpdateInput, database = db): Promise<AccountSummary> {
+  for (const values of [input.addTagNames, input.addFolderNames]) {
+    if (values !== undefined && (!Array.isArray(values) || !values.every((name) => typeof name === 'string' && name.trim()))) {
+      throw new Error('Pending tags and circles must be non-empty names');
+    }
+  }
   return database.transaction('rw', [database.accounts, database.companies, database.tags, database.folders,
     database.accountTags, database.folderAccounts, database.notes, database.changeLog], async () => {
     await assertGroupingRevision(input.groupingRevision, database);
     const account = await database.accounts.get(accountId);
     if (!account || account.deletedAt) throw new Error('Account not found');
+    await assertAccountRevision(accountId, input.accountRevision, database);
     const timestamp = nowIso();
     const patch: Partial<Account> = {
       updatedAt: timestamp,
@@ -214,7 +247,11 @@ export async function updateAccount(accountId: string, input: AccountUpdateInput
     if (input.relationshipSource !== undefined) patch.relationshipSource = input.relationshipSource.trim();
     if (input.website !== undefined) patch.website = input.website.trim();
     if (input.bioSnapshot !== undefined) patch.bioSnapshot = input.bioSnapshot.trim();
-    if (input.companyId !== undefined) patch.companyId = input.companyId;
+    if (input.companyId !== undefined) {
+      const company = await database.companies.get(input.companyId);
+      if (!company || company.deletedAt) throw new Error('Company not found');
+      patch.companyId = input.companyId;
+    }
     if (input.companyName !== undefined && !input.companyName.trim()) patch.companyId = undefined;
     if (input.companyName?.trim()) {
       const company = await upsertCompanyByName(input.companyName, database);
@@ -223,6 +260,8 @@ export async function updateAccount(accountId: string, input: AccountUpdateInput
 
     await database.accounts.update(accountId, patch);
     await recordChange(database, 'account', accountId, 'update');
+    for (const name of input.addTagNames ?? []) await assignTag(accountId, name, database);
+    for (const name of input.addFolderNames ?? []) await assignFolder(accountId, name, database);
     return getAccountSummary(accountId, database) as Promise<AccountSummary>;
   });
 }
@@ -232,14 +271,13 @@ export async function markAccountCaughtUp(
   database = db,
   caughtUpAt = nowIso(),
 ): Promise<AccountSummary> {
-  const account = await database.accounts.get(accountId);
-  if (!account || account.deletedAt) throw new Error('Account not found');
-
   const timestamp = new Date(caughtUpAt).toISOString();
   await database.transaction(
     'rw',
     [database.accounts, database.changeLog],
     async () => {
+      const account = await database.accounts.get(accountId);
+      if (!account || account.deletedAt) throw new Error('Account not found');
       await database.accounts.update(accountId, {
         lastCatchUpAt: timestamp,
         updatedAt: timestamp,
@@ -307,6 +345,7 @@ export async function saveAccountGroupings(
   folderNames: string[],
   database = db,
   groupingRevision?: string,
+  expectedAccountRevision?: string,
 ): Promise<AccountSummary> {
   if (!Array.isArray(tagNames) || !Array.isArray(folderNames)
     || !tagNames.every((name) => typeof name === 'string')
@@ -318,6 +357,7 @@ export async function saveAccountGroupings(
     await assertGroupingRevision(groupingRevision, database);
     const account = await database.accounts.get(accountId);
     if (!account || account.deletedAt) throw new Error('Account not found');
+    await assertAccountRevision(accountId, expectedAccountRevision, database);
     await syncAccountTags(accountId, tagNames, database);
     await syncAccountFolders(accountId, folderNames, database);
     await database.accounts.update(accountId, { updatedAt: nowIso(), syncState: 'pending-sync' });
@@ -342,8 +382,10 @@ export async function saveAccountContext(input: AccountContextSaveInput, databas
     ],
     async () => {
       await assertGroupingRevision(input.groupingRevision, database);
+      const existing = await database.accounts.where('[platform+normalizedHandle]').equals([input.profile.platform, normalizeHandle(input.profile.platform, input.profile.handle)]).first();
+      await assertAccountRevision(existing?.id, input.accountRevision, database);
       const account = await ensureAccountFromProfile(input.profile, database);
-      const updated = await updateAccount(account.id, { ...input.metadata, groupingRevision: input.groupingRevision }, database);
+      const updated = await updateAccount(account.id, { ...input.metadata, accountRevision: undefined, groupingRevision: input.groupingRevision }, database);
       await syncAccountTags(updated.id, input.tagNames, database);
       await syncAccountFolders(updated.id, input.folderNames, database);
       return getAccountSummary(updated.id, database) as Promise<AccountSummary>;
@@ -352,21 +394,25 @@ export async function saveAccountContext(input: AccountContextSaveInput, databas
 }
 
 export async function addNote(accountId: string, body: string, database = db): Promise<AccountSummary> {
-  const trimmed = body.trim();
-  if (!trimmed) return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+  return database.transaction('rw', accountTables(database), async () => {
+    const owner = await database.accounts.get(accountId);
+    if (!owner || owner.deletedAt) throw new Error('Account not found');
+    const trimmed = body.trim();
+    if (!trimmed) return getAccountSummary(accountId, database) as Promise<AccountSummary>;
 
-  const timestamp = nowIso();
-  await database.notes.add({
-    id: createId('note'),
-    accountId,
-    body: trimmed,
-    source: 'manual',
-    createdAt: timestamp,
-    updatedAt: timestamp,
+    const timestamp = nowIso();
+    await database.notes.add({
+      id: createId('note'),
+      accountId,
+      body: trimmed,
+      source: 'manual',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    await database.accounts.update(accountId, { updatedAt: timestamp, syncState: 'pending-sync' });
+    await recordChange(database, 'note', accountId, 'create');
+    return getAccountSummary(accountId, database) as Promise<AccountSummary>;
   });
-  await database.accounts.update(accountId, { updatedAt: timestamp, syncState: 'pending-sync' });
-  await recordChange(database, 'note', accountId, 'create');
-  return getAccountSummary(accountId, database) as Promise<AccountSummary>;
 }
 
 function normalizeBookmarkExcerpt(value: unknown): string | undefined {
@@ -419,11 +465,11 @@ export async function captureBookmark(
   input: BookmarkCaptureInput,
   database = db,
 ): Promise<Bookmark> {
-  const validated = await validateBookmarkCapture(accountId, input, database);
   return database.transaction(
     'rw',
     [database.accounts, database.bookmarks, database.changeLog],
     async () => {
+      const validated = await validateBookmarkCapture(accountId, input, database);
       const existing = await database.bookmarks
         .where('[accountId+postUrl]')
         .equals([accountId, validated.postUrl])
@@ -588,29 +634,39 @@ export async function deleteAccount(accountId: string, database = db): Promise<v
 }
 
 export async function assignTag(accountId: string, name: string, database = db): Promise<AccountSummary> {
-  const tag = await upsertTagByName(name, database);
-  const existing = await database.accountTags.where('[accountId+tagId]').equals([accountId, tag.id]).first();
+  return database.transaction('rw', accountTables(database), async () => {
+    if (!name.trim()) throw new Error('Name must not be blank');
+    const owner = await database.accounts.get(accountId);
+    if (!owner || owner.deletedAt) throw new Error('Account not found');
+    const tag = await upsertTagByName(name, database);
+    const existing = await database.accountTags.where('[accountId+tagId]').equals([accountId, tag.id]).first();
 
-  if (!existing) {
-    const join: AccountTag = { id: createId('account_tag'), accountId, tagId: tag.id, createdAt: nowIso() };
-    await database.accountTags.add(join);
-    await recordChange(database, 'account', accountId, 'update');
-  }
+    if (!existing) {
+      const join: AccountTag = { id: createId('account_tag'), accountId, tagId: tag.id, createdAt: nowIso() };
+      await database.accountTags.add(join);
+      await recordChange(database, 'account', accountId, 'update');
+    }
 
-  return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+    return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+  });
 }
 
 export async function assignFolder(accountId: string, name: string, database = db): Promise<AccountSummary> {
-  const folder = await upsertFolderByName(name, database);
-  const existing = await database.folderAccounts.where('[folderId+accountId]').equals([folder.id, accountId]).first();
+  return database.transaction('rw', accountTables(database), async () => {
+    if (!name.trim()) throw new Error('Name must not be blank');
+    const owner = await database.accounts.get(accountId);
+    if (!owner || owner.deletedAt) throw new Error('Account not found');
+    const folder = await upsertFolderByName(name, database);
+    const existing = await database.folderAccounts.where('[folderId+accountId]').equals([folder.id, accountId]).first();
 
-  if (!existing) {
-    const join: FolderAccount = { id: createId('folder_account'), folderId: folder.id, accountId, createdAt: nowIso() };
-    await database.folderAccounts.add(join);
-    await recordChange(database, 'account', accountId, 'update');
-  }
+    if (!existing) {
+      const join: FolderAccount = { id: createId('folder_account'), folderId: folder.id, accountId, createdAt: nowIso() };
+      await database.folderAccounts.add(join);
+      await recordChange(database, 'account', accountId, 'update');
+    }
 
-  return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+    return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+  });
 }
 
 export async function removeTag(accountId: string, tagId: string, database = db): Promise<AccountSummary> {
@@ -707,6 +763,7 @@ export async function getAccountSummary(accountId: string, database = db): Promi
 
     return {
       ...account,
+      accountRevision: accountRevision(account, accountTags, folderAccounts),
       groupingRevision: await getGroupingRevision(database),
       company: company && !company.deletedAt ? company : undefined,
       tags: active(tags.filter(Boolean) as Tag[]),
@@ -822,32 +879,30 @@ export async function listSearchPresets(database = db): Promise<SearchPreset[]> 
 }
 
 export async function exportBackup(database = db): Promise<BackupEnvelope> {
-  const [accounts, companies, tags, accountTags, folders, folderAccounts, notes, bookmarks, searchPresets, searchHistory, backups, changeLog] =
-    await Promise.all([
-      database.accounts.toArray(),
-      database.companies.toArray(),
-      database.tags.toArray(),
-      database.accountTags.toArray(),
-      database.folders.toArray(),
-      database.folderAccounts.toArray(),
-      database.notes.toArray(),
-      database.bookmarks.toArray(),
-      database.searchPresets.toArray(),
-      database.searchHistory.toArray(),
-      database.backups.toArray(),
-      database.changeLog.toArray(),
-    ]);
+  return database.transaction('r', database.tables, async () => {
+    const [accounts, companies, tags, accountTags, folders, folderAccounts, notes, bookmarks, searchPresets, searchHistory, backups, changeLog] =
+      await Promise.all([
+        database.accounts.toArray(),
+        database.companies.toArray(),
+        database.tags.toArray(),
+        database.accountTags.toArray(),
+        database.folders.toArray(),
+        database.folderAccounts.toArray(),
+        database.notes.toArray(),
+        database.bookmarks.toArray(),
+        database.searchPresets.toArray(),
+        database.searchHistory.toArray(),
+        database.backups.toArray(),
+        database.changeLog.toArray(),
+      ]);
 
-  return {
-    app: 'Contexto',
-    formatVersion: 2,
-    exportedAt: nowIso(),
-    data: { accounts, companies, tags, accountTags, folders, folderAccounts, notes, bookmarks, searchPresets, searchHistory, backups, changeLog },
-  };
-}
-
-function assertArray(value: unknown, label: string): asserts value is unknown[] {
-  if (!Array.isArray(value)) throw new Error(`Backup field ${label} must be an array`);
+    return {
+      app: 'Contexto',
+      formatVersion: 2,
+      exportedAt: nowIso(),
+      data: { accounts, companies, tags, accountTags, folders, folderAccounts, notes, bookmarks, searchPresets, searchHistory, backups, changeLog },
+    };
+  });
 }
 
 function validTimestamp(value: unknown): value is string {
@@ -886,71 +941,97 @@ function validateImportedBookmarks(
   }
 }
 
-export async function importBackup(envelope: BackupImportEnvelope, database = db): Promise<void> {
-  if (envelope.app !== 'Contexto' || ![1, 2].includes(envelope.formatVersion)) {
-    throw new Error('Unsupported Contexto backup format');
+export interface BackupPreview {
+  envelope: BackupEnvelope;
+  databaseRevision: string;
+  added: number;
+  unchanged: number;
+  conflicts: number;
+  currentRecords: number;
+  incomingRecords: number;
+}
+
+export interface BackupImportOptions {
+  mode?: 'merge' | 'restore';
+  expectedDatabaseRevision?: string;
+}
+
+function checkedBackup(value: unknown): BackupEnvelope {
+  const envelope = validateBackup(value);
+  validateImportedBookmarks(envelope.data.bookmarks, envelope.data.accounts);
+  return envelope;
+}
+
+function compareBackup(envelope: BackupEnvelope, current: BackupEnvelope): BackupPreview {
+  let added = 0, unchanged = 0, conflicts = 0, currentRecords = 0, incomingRecords = 0;
+  for (const table of backupTables) {
+    const saved = new Map(current.data[table].map((row) => [row.id, row]));
+    const identityFields: Record<string, string[]> = {
+      accounts: ['platform', 'normalizedHandle'], companies: ['normalizedName'], tags: ['normalizedName'],
+      folders: ['normalizedName'], accountTags: ['accountId', 'tagId'], folderAccounts: ['folderId', 'accountId'],
+      bookmarks: ['accountId', 'postUrl'],
+    };
+    const fields = identityFields[table];
+    const identity = (row: unknown) => canonicalRecord(fields?.map((field) => (row as Record<string, unknown>)[field]));
+    const identities = new Set(fields ? current.data[table].map(identity) : []);
+    const xIds = new Set(current.data.accounts.flatMap((row) => row.xUserId ? [row.xUserId] : []));
+    currentRecords += saved.size;
+    incomingRecords += envelope.data[table].length;
+    for (const row of envelope.data[table]) {
+      const previous = saved.get(row.id);
+      if (!previous) {
+        const xId = table === 'accounts' ? (row as Account).xUserId : undefined;
+        if ((fields && identities.has(identity(row))) || (xId && xIds.has(xId))) conflicts++;
+        else added++;
+      }
+      else if (canonicalRecord(row) === canonicalRecord(previous)) unchanged++;
+      else conflicts++;
+    }
   }
+  return { envelope, databaseRevision: canonicalRecord(current.data), added, unchanged, conflicts, currentRecords, incomingRecords };
+}
 
-  const data = envelope.data;
-  for (const [key, value] of Object.entries(data)) {
-    assertArray(value, key);
+export async function previewBackup(value: unknown, database = db): Promise<BackupPreview> {
+  return compareBackup(checkedBackup(value), await exportBackup(database));
+}
+
+export async function importBackup(value: unknown, database = db, options: BackupImportOptions = {}): Promise<void> {
+  const envelope = checkedBackup(value);
+  if (options.mode !== undefined && !['merge', 'restore'].includes(options.mode)) throw new Error('Unsupported import mode');
+  if (options.mode === 'restore' && options.expectedDatabaseRevision === undefined) {
+    throw new Error('Preview the restore and export a recovery backup first');
   }
-  const bookmarks: unknown[] = envelope.formatVersion === 2 ? envelope.data.bookmarks : [];
-  assertArray(bookmarks, 'bookmarks');
-  for (const account of data.accounts) validateXUserId(account.platform, account.xUserId);
-  validateImportedBookmarks(bookmarks, data.accounts);
-
-  await database.transaction(
-    'rw',
-    [
-      database.accounts,
-      database.companies,
-      database.tags,
-      database.accountTags,
-      database.folders,
-      database.folderAccounts,
-      database.notes,
-      database.bookmarks,
-      database.searchPresets,
-      database.searchHistory,
-      database.backups,
-      database.changeLog,
-    ],
-    async () => {
-      await Promise.all([
-        database.accounts.bulkPut(data.accounts),
-        database.companies.bulkPut(data.companies),
-        database.tags.bulkPut(data.tags),
-        database.accountTags.bulkPut(data.accountTags),
-        database.folders.bulkPut(data.folders),
-        database.folderAccounts.bulkPut(data.folderAccounts),
-        database.notes.bulkPut(data.notes),
-        database.bookmarks.bulkPut(bookmarks),
-        database.searchPresets.bulkPut(data.searchPresets),
-        database.searchHistory.bulkPut(data.searchHistory),
-        database.backups.bulkPut(data.backups),
-        database.changeLog.bulkPut(data.changeLog),
-      ]);
-
-      const backupRecord: BackupRecord = {
-        id: createId('backup'),
-        createdAt: nowIso(),
-        formatVersion: envelope.formatVersion,
-        itemCounts: {
-          ...Object.fromEntries(Object.entries(data).map(([key, value]) => [key, value.length])),
-          bookmarks: bookmarks.length,
-        },
-      };
-      await database.backups.put(backupRecord);
-      await database.changeLog.add({
-        id: createId('change'),
-        entityType: 'account',
-        entityId: backupRecord.id,
-        operation: 'import',
-        changedAt: nowIso(),
-      });
-    },
-  );
+  await database.transaction('rw', database.tables, async () => {
+    const current = await exportBackup(database);
+    const preview = compareBackup(envelope, current);
+    if (options.expectedDatabaseRevision !== undefined && options.expectedDatabaseRevision !== preview.databaseRevision) {
+      throw new Error('Local data changed since the import preview. Review the file again and export a fresh recovery backup.');
+    }
+    if (options.mode !== 'restore') {
+      if (preview.conflicts) throw new Error('Backup conflicts with saved records. No data was changed. Use an explicit full restore after exporting a recovery backup.');
+      // Validate the resulting graph as well, including same-identity/different-ID collisions.
+      const merged = Object.fromEntries(backupTables.map((table) => {
+        const rows = new Map<string, unknown>(current.data[table].map((row) => [row.id, row]));
+        for (const row of envelope.data[table]) rows.set(row.id, row);
+        return [table, [...rows.values()]];
+      }));
+      checkedBackup({ ...envelope, data: merged });
+    } else {
+      await Promise.all(database.tables.map((table) => table.clear()));
+    }
+    for (const table of backupTables) {
+      await database.table(table).bulkPut(envelope.data[table]);
+    }
+    const backupRecord: BackupRecord = {
+      id: createId('backup'), createdAt: nowIso(), formatVersion: envelope.formatVersion,
+      itemCounts: Object.fromEntries(backupTables.map((table) => [table, envelope.data[table].length])),
+    };
+    await database.backups.add(backupRecord);
+    await database.changeLog.add({
+      id: createId('change'), entityType: 'account', entityId: backupRecord.id,
+      operation: 'import', changedAt: nowIso(),
+    });
+  });
 }
 
 export async function resetDatabaseForTests(database: ContextoDatabase): Promise<void> {

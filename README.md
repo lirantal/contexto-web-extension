@@ -40,9 +40,7 @@ WXT writes the development extension to `.output/chrome-mv3` and keeps generated
 ## Build And Package
 
 ```sh
-npm run compile
-npm run test
-npm run build
+npm run check
 npm run zip
 ```
 
@@ -65,6 +63,7 @@ For day-to-day iteration, prefer `npm run dev` with a persistent browser profile
 - [Data model](docs/architecture/data-model.md)
 - [Platform adapters](docs/architecture/platform-adapters.md)
 - [Storage and sync](docs/architecture/storage-and-sync.md)
+- [Data integrity and development plan](docs/development/data-integrity.md)
 - [Security and privacy](docs/architecture/security-privacy.md)
 - [Development browser workflow](docs/development/browser-workflow.md)
 - Feature docs under [docs/features](docs/features)

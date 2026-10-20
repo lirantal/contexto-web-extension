@@ -161,8 +161,9 @@ describe('dashboard target handle history settings', () => {
     expect(mocks.assignTag).not.toHaveBeenCalled();
     expect(mocks.assignFolder).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Save metadata' }));
-    await waitFor(() => expect(mocks.assignFolder).toHaveBeenCalledWith('account-1', 'Conference follow-up'));
-    expect(mocks.assignTag).toHaveBeenCalledWith('account-1', 'speaker');
+    await waitFor(() => expect(mocks.updateAccount).toHaveBeenCalledWith('account-1', expect.objectContaining({ addTagNames: ['speaker'], addFolderNames: ['Conference follow-up'] })));
+    expect(mocks.assignTag).not.toHaveBeenCalled();
+    expect(mocks.assignFolder).not.toHaveBeenCalled();
     expect(screen.getByPlaceholderText('Add tag')).toHaveValue('');
     expect(screen.getByPlaceholderText('Add circle')).toHaveValue('');
   });
@@ -172,7 +173,7 @@ describe('dashboard target handle history settings', () => {
       id: 'account-1', platform: 'x', handle: 'founder', displayName: 'Founder',
       profileUrl: 'https://x.com/founder', tags: [], folders: [],
     }];
-    mocks.assignTag.mockRejectedValueOnce(new Error('Database unavailable'));
+    mocks.updateAccount.mockRejectedValueOnce(new Error('Database unavailable'));
     const user = userEvent.setup();
     renderDashboard();
     await user.type(screen.getByPlaceholderText('Add tag'), 'speaker');
