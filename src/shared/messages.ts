@@ -21,7 +21,7 @@ export type ContextoRequest =
   | { type: 'contexto:account:saveContext'; input: AccountContextSaveInput }
   | { type: 'contexto:account:update'; accountId: RecordId; patch: AccountUpdateInput }
   | { type: 'contexto:account:markCaughtUp'; accountId: RecordId }
-  | { type: 'contexto:account:saveGroupings'; accountId: RecordId; tagNames: string[]; folderNames: string[] }
+  | { type: 'contexto:account:saveGroupings'; groupingRevision?: string; accountId: RecordId; tagNames: string[]; folderNames: string[] }
   | { type: 'contexto:account:list'; filters?: AccountFilters }
   | { type: 'contexto:note:add'; accountId: RecordId; body: string }
   | { type: 'contexto:bookmark:lookup'; accountId: RecordId; postUrl: string }

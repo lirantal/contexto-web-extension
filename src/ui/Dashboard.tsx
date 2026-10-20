@@ -40,6 +40,7 @@ import {
 import type { ContextoSettingsPersistence } from '@/src/shared/quick-x-search-persistence';
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
 import { getAdjacentAccountId } from './account-navigation';
+import { ManageData } from './ManageData';
 import { AccountBookmarks } from './AccountBookmarks';
 import { AccountFilterField } from './AccountFilterField';
 import { FuzzyTextCombobox } from './FuzzyTextCombobox';
@@ -51,6 +52,7 @@ export function Dashboard({
 }: {
   settingsPersistence: ContextoSettingsPersistence;
 }) {
+  const [view, setView] = useState<'accounts' | 'manage'>('accounts');
   const [filters, setFilters] = useState<AccountFilters>({});
   const [selectedId, setSelectedId] = useState<string>();
   const [settings, setSettings] = useState<ContextoSettings>(defaultSettings);
@@ -67,6 +69,23 @@ export function Dashboard({
     filters.location,
   ]);
   const lookups = useLiveQuery(() => getLookups(), []);
+  useEffect(() => {
+    if (!lookups) return;
+    setFilters((current) => {
+      function prune(ids: string[] | undefined, options: { id: string }[]) {
+        if (!ids) return ids;
+        const available = new Set(options.map((option) => option.id));
+        const next = ids.filter((id) => available.has(id));
+        return next.length === ids.length ? ids : next;
+      }
+      const tagIds = prune(current.tagIds, lookups.tags);
+      const folderIds = prune(current.folderIds, lookups.folders);
+      const companyIds = prune(current.companyIds, lookups.companies);
+      return tagIds === current.tagIds && folderIds === current.folderIds && companyIds === current.companyIds
+        ? current : { ...current, tagIds, folderIds, companyIds };
+    });
+  }, [lookups]);
+
   const selected = useMemo(() => accounts?.find((account) => account.id === selectedId) ?? accounts?.[0], [accounts, selectedId]);
 
   useEffect(() => {
@@ -87,7 +106,7 @@ export function Dashboard({
   }, [accounts, selectedId]);
 
   useEffect(() => {
-    if (!accounts?.length) return;
+    if (view !== 'accounts' || !accounts?.length) return;
     const accountIds = accounts.map((account) => account.id);
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -111,7 +130,7 @@ export function Dashboard({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [accounts]);
+  }, [accounts, view]);
 
   useEffect(() => {
     activeRowRef.current?.scrollIntoView({ block: 'nearest' });
@@ -166,6 +185,8 @@ export function Dashboard({
     }
   }
 
+  if (view === 'manage') return <ManageData onBack={() => setView('accounts')} />;
+
   return (
     <main className="contexto-app">
       <aside className="sidebar">
@@ -176,6 +197,8 @@ export function Dashboard({
             <p>Relationship context for practitioner community work.</p>
           </div>
         </div>
+
+        <button type="button" className="manage-data-link" onClick={() => setView('manage')}>Manage data</button>
 
         <section className="panel compact-panel">
           <label className="field-label" htmlFor="account-query">Account search</label>

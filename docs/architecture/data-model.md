@@ -15,6 +15,10 @@ The current schema lives in `src/data/db.ts` and is versioned as Dexie version `
 - `backups`: local record of import events and backup metadata.
 - `changeLog`: append-only local mutation log for future sync.
 
+## Shared tag and folder management
+
+Dashboard management permanently deletes tag/folder definitions and their joins, or merges joins into another definition without duplicate assignments. Renaming preserves IDs. These operations update affected accounts and record entity/account mutations plus a `groupingCatalog` change-log entry in a single transaction. The sorted IDs of catalog entries form an opaque revision token. Account summaries and lookup responses read their data and revision in a consistent read transaction. Full-context and grouping-only saves compare the draft revision before writing; a stale or missing revision is rejected after the first catalog edit. No Dexie schema or backup format migration is required. See [Folders and tags](../features/folders-tags.md).
+
 ## Account deletion
 
 The dashboard's **Delete account** action is a permanent local delete. It removes the account, its notes, bookmarks (including previously soft-deleted bookmark rows), tag/folder joins, account-linked search history, and related change-log entries in one transaction. Shared companies, tags, and folders are retained because other accounts may use them; only this account's assignments are removed. There is no in-app undo, so export a backup first when recovery may be needed.

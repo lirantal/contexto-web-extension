@@ -1,4 +1,5 @@
 import { ContextoDatabase, db } from './db';
+import { assertGroupingRevision, getGroupingRevision } from './grouping-revision';
 import { buildXSearchQuery, normalizeXHandle, parseXPostUrl, parseXProfileUrl } from '../shared/platforms/x';
 import type {
   Account,
@@ -49,7 +50,7 @@ function active<T extends { deletedAt?: string }>(records: T[]): T[] {
   return records.filter((record) => !record.deletedAt);
 }
 
-async function recordChange(
+export async function recordChange(
   database: ContextoDatabase,
   entityType: ChangeEntityType,
   entityId: string,
@@ -299,6 +300,7 @@ export async function saveAccountGroupings(
   tagNames: string[],
   folderNames: string[],
   database = db,
+  groupingRevision?: string,
 ): Promise<AccountSummary> {
   if (!Array.isArray(tagNames) || !Array.isArray(folderNames)
     || !tagNames.every((name) => typeof name === 'string')
@@ -307,6 +309,7 @@ export async function saveAccountGroupings(
   }
   return database.transaction('rw', [database.accounts, database.tags, database.accountTags,
     database.folders, database.folderAccounts, database.changeLog, database.companies, database.notes], async () => {
+    await assertGroupingRevision(groupingRevision, database);
     const account = await database.accounts.get(accountId);
     if (!account || account.deletedAt) throw new Error('Account not found');
     await syncAccountTags(accountId, tagNames, database);
@@ -332,6 +335,7 @@ export async function saveAccountContext(input: AccountContextSaveInput, databas
       database.changeLog,
     ],
     async () => {
+      await assertGroupingRevision(input.groupingRevision, database);
       const account = await ensureAccountFromProfile(input.profile, database);
       const updated = await updateAccount(account.id, input.metadata, database);
       await syncAccountTags(updated.id, input.tagNames, database);
@@ -644,59 +648,66 @@ export async function removeFolder(accountId: string, folderId: string, database
 }
 
 export async function getLookups(database = db): Promise<LookupData> {
-  const [companies, tags, folders, accounts] = await Promise.all([
-    database.companies.orderBy('name').toArray(),
-    database.tags.orderBy('name').toArray(),
-    database.folders.orderBy('name').toArray(),
-    database.accounts.toArray(),
-  ]);
-  const accountsForSuggestions = active(accounts);
-  function distinctValues(field: 'location' | 'role'): string[] {
-    const valuesByNormalizedName = new Map<string, string>();
-    for (const account of accountsForSuggestions) {
-      const value = account[field]?.trim();
-      if (!value) continue;
-      const normalizedValue = value.toLocaleLowerCase();
-      const existingValue = valuesByNormalizedName.get(normalizedValue);
-      if (existingValue === undefined || value < existingValue) {
-        valuesByNormalizedName.set(normalizedValue, value);
+  return database.transaction('r', [database.companies, database.tags, database.folders, database.accounts, database.changeLog], async () => {
+    const [companies, tags, folders, accounts] = await Promise.all([
+      database.companies.orderBy('name').toArray(),
+      database.tags.orderBy('name').toArray(),
+      database.folders.orderBy('name').toArray(),
+      database.accounts.toArray(),
+    ]);
+    const accountsForSuggestions = active(accounts);
+    function distinctValues(field: 'location' | 'role'): string[] {
+      const valuesByNormalizedName = new Map<string, string>();
+      for (const account of accountsForSuggestions) {
+        const value = account[field]?.trim();
+        if (!value) continue;
+        const normalizedValue = value.toLocaleLowerCase();
+        const existingValue = valuesByNormalizedName.get(normalizedValue);
+        if (existingValue === undefined || value < existingValue) {
+          valuesByNormalizedName.set(normalizedValue, value);
+        }
       }
+      return [...valuesByNormalizedName.values()].sort((left, right) => left.localeCompare(right));
     }
-    return [...valuesByNormalizedName.values()].sort((left, right) => left.localeCompare(right));
-  }
 
-  return {
-    companies: active(companies),
-    tags: active(tags),
-    folders: active(folders),
-    locations: distinctValues('location'),
-    roles: distinctValues('role'),
-  };
+    return {
+      groupingRevision: await getGroupingRevision(database),
+      companies: active(companies),
+      tags: active(tags),
+      folders: active(folders),
+      locations: distinctValues('location'),
+      roles: distinctValues('role'),
+    };
+  });
 }
 
 export async function getAccountSummary(accountId: string, database = db): Promise<AccountSummary | undefined> {
-  const account = await database.accounts.get(accountId);
-  if (!account || account.deletedAt) return undefined;
+  return database.transaction('r', [database.accounts, database.companies, database.tags, database.folders,
+    database.accountTags, database.folderAccounts, database.notes, database.changeLog], async () => {
+    const account = await database.accounts.get(accountId);
+    if (!account || account.deletedAt) return undefined;
 
-  const [company, accountTags, folderAccounts, latestNote] = await Promise.all([
-    account.companyId ? database.companies.get(account.companyId) : undefined,
-    database.accountTags.where('accountId').equals(account.id).toArray(),
-    database.folderAccounts.where('accountId').equals(account.id).toArray(),
-    database.notes.where('accountId').equals(account.id).reverse().sortBy('createdAt').then((notes) => active(notes).at(0)),
-  ]);
+    const [company, accountTags, folderAccounts, latestNote] = await Promise.all([
+      account.companyId ? database.companies.get(account.companyId) : undefined,
+      database.accountTags.where('accountId').equals(account.id).toArray(),
+      database.folderAccounts.where('accountId').equals(account.id).toArray(),
+      database.notes.where('accountId').equals(account.id).reverse().sortBy('createdAt').then((notes) => active(notes).at(0)),
+    ]);
 
-  const [tags, folders] = await Promise.all([
-    Promise.all(accountTags.map((join) => database.tags.get(join.tagId))),
-    Promise.all(folderAccounts.map((join) => database.folders.get(join.folderId))),
-  ]);
+    const [tags, folders] = await Promise.all([
+      Promise.all(accountTags.map((join) => database.tags.get(join.tagId))),
+      Promise.all(folderAccounts.map((join) => database.folders.get(join.folderId))),
+    ]);
 
-  return {
-    ...account,
-    company: company && !company.deletedAt ? company : undefined,
-    tags: active(tags.filter(Boolean) as Tag[]),
-    folders: active(folders.filter(Boolean) as Folder[]),
-    latestNote,
-  };
+    return {
+      ...account,
+      groupingRevision: await getGroupingRevision(database),
+      company: company && !company.deletedAt ? company : undefined,
+      tags: active(tags.filter(Boolean) as Tag[]),
+      folders: active(folders.filter(Boolean) as Folder[]),
+      latestNote,
+    };
+  });
 }
 
 export async function listAccountSummaries(filters: AccountFilters = {}, database = db): Promise<AccountSummary[]> {

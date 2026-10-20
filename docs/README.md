@@ -19,7 +19,7 @@ These documents describe Contexto's current architecture, behavior, development 
 
 - [Account search](features/account-search.md) — dashboard account discovery and filtering.
 - [Backup and restore](features/backup-restore.md) — local data portability.
-- [Folders and tags](features/folders-tags.md) — metadata grouping behavior.
+- [Folders and tags](features/folders-tags.md) — metadata grouping behavior, dashboard management, and stale-draft protection.
 - [Message and profile search](features/message-profile-search.md) — X interaction-search workflows.
 - [Profile metadata](features/profile-metadata.md) — hover, profile, and editor interaction contracts.
 - [X search builder](features/x-search-builder.md) — the shared toolbar-popup and always-expanded X-sidebar search workflow.

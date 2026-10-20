@@ -29,7 +29,6 @@ async function setup(saveResponse: () => Promise<ContextoResponse>, lookupFails 
   render(<ContextoFeedContext profile={profile} send={send} onEdit={vi.fn()} />);
   const marker = await screen.findByRole('button', { name: 'Contexto context for Dev' });
   await user.click(marker);
-  await user.click(screen.getByRole('button', { name: 'Edit tags and folders' }));
   return { user, send, marker };
 }
 
@@ -72,7 +71,6 @@ describe('feed tag and folder editing', () => {
     await user.type(screen.getByRole('combobox', { name: 'Folders' }), 'Discard me');
     await user.click(marker);
     await user.click(marker);
-    await user.click(screen.getByRole('button', { name: 'Edit tags and folders' }));
     expect(screen.getByRole('combobox', { name: 'Folders' })).toHaveValue('');
   });
 

@@ -31,7 +31,7 @@ The full-profile editor is inline and remains visible after Save or Cancel. Save
 
 Website capture reads the scoped profile’s `a[data-testid="UserUrl"]`, excluding posts and bio-text links. Direct HTTP(S) destinations are retained. For X’s `t.co` links, a complete HTTP(S) title or visible website address is preferred (bare domains receive `https://`); truncated labels retain the shortened destination without guessing. Capture does not follow redirects. Website is editable in Identity and in the dashboard, and is persisted only on Save. Missing website metadata preserves an existing value.
 
-The dashboard exposes the same metadata in a larger offline editing view.
+The dashboard exposes the same metadata in a larger offline editing view. Its **Manage data** page can rename, merge, or permanently delete shared tags and folders. Older X drafts are rejected after these changes and retain their unsaved fields; **Reload saved values** explicitly discards the draft and loads current values. See [Folders and tags](folders-tags.md#open-editors-and-catalog-changes).
 
 ## Read-only metadata labels
 

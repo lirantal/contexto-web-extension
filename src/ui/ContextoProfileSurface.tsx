@@ -19,6 +19,7 @@ const emptyLookups: LookupData = { companies: [], tags: [], folders: [], locatio
 
 function draftFor(profile: ProfileSnapshot, account?: AccountSummary): AccountContextDraft {
   return {
+    groupingRevision: account?.groupingRevision,
     metadata: {
       displayName: account?.displayName ?? profile.displayName ?? profile.handle,
       role: account?.role ?? '',
@@ -67,7 +68,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
       const found = lookupResponse.lookupAccount;
       setAccount(found);
       const storedDraft = drafts.get(profile.handle);
-      setDraft(storedDraft ?? prefilledDraftFor(profile, found));
+      setDraft(storedDraft ?? { ...prefilledDraftFor(profile, found), groupingRevision: found?.groupingRevision ?? (lookupDataResponse.ok && 'lookups' in lookupDataResponse ? lookupDataResponse.lookups.groupingRevision : undefined) });
       setState('editing');
     }).catch((caught) => {
       if (!cancelled) { setError(caught instanceof Error ? caught.message : 'Could not load Contexto'); setState('lookup-error'); }
@@ -106,7 +107,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
     }
   }
   function cancelEditing() {
-    setDraft(draftFor(profile, account));
+    setDraft({ ...draftFor(profile, account), groupingRevision: account?.groupingRevision ?? lookups.groupingRevision });
     drafts.clear(profile.handle);
     setError('');
     setSuccess('');
@@ -155,7 +156,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
       {error && <p className="contexto-error" role="alert">{error}</p>}
       <div className="form-actions">
         <button className="primary-action" type="button" disabled={saving} onClick={saveContext}>{saving ? 'Saving…' : account ? 'Save changes' : 'Save to Contexto'}</button>
-        {error && <button type="button" disabled={saving} onClick={saveContext}>Retry save</button>}
+        {error && <><button type="button" disabled={saving} onClick={saveContext}>Retry save</button><button type="button" disabled={saving} onClick={() => { drafts.clear(profile.handle); setLookupAttempt((attempt) => attempt + 1); }}>Reload saved values</button></>}
         <button type="button" disabled={saving} onClick={cancelEditing}>Cancel</button>
       </div>
     </div>

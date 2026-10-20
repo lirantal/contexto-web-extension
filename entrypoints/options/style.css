@@ -660,3 +660,27 @@ textarea {
 .account-filter-field .chip button {
   flex: none;
 }
+
+.manage-data-link { width: 100%; margin-bottom: 12px; }
+.manage-data { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.management-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.management-heading h1 { margin: 0; }
+.management-content { display: grid; gap: 16px; margin: 16px 0; }
+.management-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.management-actions [aria-pressed="true"] { background: #e8f3f1; border-color: #0f7f76; color: #0c5e59; }
+.management-toolbar { display: grid; grid-template-columns: 2fr 1fr auto; align-items: end; }
+.management-table-scroll { overflow-x: auto; }
+.management-table { width: 100%; border-collapse: collapse; text-align: left; }
+.management-table caption { text-align: left; padding: 14px; font-weight: 700; }
+.management-table th, .management-table td { border-top: 1px solid #dde2dc; padding: 12px; overflow-wrap: anywhere; }
+.management-table th[scope="row"] { max-width: 300px; }
+.management-contact-list { max-height: 240px; overflow-y: auto; margin: 0; }
+.management-contact-list span { color: #667066; }
+.management-content h2, .management-content p { margin: 0; }
+.management-content fieldset { display: grid; gap: 14px; min-width: 0; border: 0; margin: 0; padding: 0; }
+button:disabled { cursor: default; opacity: 0.6; }
+@media (max-width: 700px) {
+  .manage-data { padding: 12px; }
+  .management-heading { align-items: flex-start; flex-direction: column; }
+  .management-toolbar { grid-template-columns: 1fr; }
+}

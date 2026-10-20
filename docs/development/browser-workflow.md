@@ -66,3 +66,7 @@ Run the relevant rows in both Chrome and Vivaldi when a change touches browser i
 | Quick X search themes | In both Chrome and Vivaldi, verify the popup and X sidebar builder in light and dark X/browser themes. |
 | Toolbar popup | Popup content and search controls render at the expected extension width; populated suggestion companies use Company:, empty values are omitted, and long unbroken company values wrap within the result. |
 | Extension reload and navigation | Reloaded content scripts remount cleanly without relying on an invalidated extension context. |
+
+## Manage data verification
+
+In the options dashboard, open Manage data and verify both Tags and Folders: search, sort by usage, filter unused values, view contacts, rename, merge with overlapping contacts, cancel deletion, and confirm deletion everywhere. Return to accounts and verify assignments and suggestions reflect the change. Keep a profile or feed grouping editor open while making a catalog edit in another tab: Save must fail without recreating the old value, retain the draft, and offer Reload saved values. Reload explicitly discards the draft; a subsequent Save succeeds.

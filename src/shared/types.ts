@@ -136,7 +136,8 @@ export type ChangeEntityType =
   | 'folder'
   | 'note'
   | 'bookmark'
-  | 'searchPreset';
+  | 'searchPreset'
+  | 'groupingCatalog';
 
 export interface ChangeLogEntry {
   id: RecordId;
@@ -169,6 +170,7 @@ export interface XPostSnapshot {
 }
 
 export interface AccountSummary extends Account {
+  groupingRevision?: string;
   company?: Company;
   tags: Tag[];
   folders: Folder[];
@@ -198,6 +200,7 @@ export interface AccountUpdateInput {
 }
 
 export interface AccountContextSaveInput {
+  groupingRevision?: string;
   profile: ProfileSnapshot;
   metadata: AccountUpdateInput;
   tagNames: string[];
@@ -218,6 +221,7 @@ export interface PopupSearchState {
 }
 
 export interface LookupData {
+  groupingRevision?: string;
   companies: Company[];
   tags: Tag[];
   folders: Folder[];

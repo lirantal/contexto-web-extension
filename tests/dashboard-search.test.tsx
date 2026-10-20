@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '@/src/data/db';
+import { listManagedGroupings, manageGrouping } from '@/src/data/grouping-management';
 import { listAccountSummaries, resetDatabaseForTests, saveAccountContext } from '@/src/data/repositories';
 import { Dashboard } from '@/src/ui/Dashboard';
 
@@ -29,6 +30,32 @@ afterEach(async () => {
 });
 
 describe('dashboard AND search', () => {
+  it('discards deleted filter IDs after a catalog edit in another dashboard', async () => {
+    await seed('filtered', ['Typo'], []);
+    await seed('unfiltered', [], []);
+    const user = userEvent.setup();
+    render(<Dashboard settingsPersistence={{ updateSettings: vi.fn() }} />);
+    await user.click(screen.getByText('Tags', { selector: 'summary' }));
+    await user.click(await screen.findByRole('checkbox', { name: 'Typo' }));
+    const results = screen.getByRole('region', { name: 'Accounts' });
+    await waitFor(() => expect(within(results).getAllByRole('button')).toHaveLength(1));
+    const catalog = await listManagedGroupings('tag');
+    await manageGrouping('tag', catalog.items[0].id, { type: 'delete' }, catalog.revision);
+    await waitFor(() => expect(within(results).getAllByRole('button')).toHaveLength(2));
+    expect(screen.queryByRole('button', { name: 'Remove Typo from Tags filters' })).not.toBeInTheDocument();
+  });
+
+  it('opens Manage data and returns to current contact results', async () => {
+    await seed('managed', ['Example'], []);
+    const user = userEvent.setup();
+    render(<Dashboard settingsPersistence={{ updateSettings: vi.fn() }} />);
+    await user.click(screen.getByRole('button', { name: 'Manage data' }));
+    expect(await screen.findByRole('heading', { name: 'Manage data' })).toBeVisible();
+    expect(await screen.findByRole('button', { name: 'Rename Example' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Back to accounts' }));
+    expect(await within(screen.getByRole('region', { name: 'Accounts' })).findByRole('button', { name: /@managed/ })).toBeVisible();
+  });
+
   it('shows contact dates and supplied X identity only in dashboard record details', async () => {
     const account = await seed('dated', [], []);
     const createdAt = '2025-01-02T03:04:05.000Z';

@@ -114,6 +114,8 @@ describe('ContextoFeedContext', () => {
     expect(within(panel).getByText('Ping Labs')).toBeVisible();
     expect(within(panel).getByText('How you know them:')).toBeVisible();
     expect(within(panel).getByText('Conference friend')).toBeVisible();
+    expect(within(panel).getByRole('combobox', { name: 'Tags' })).toBeVisible();
+    await user.click(within(screen.getByRole('group', { name: 'Edit tags and folders' })).getByRole('button', { name: 'Cancel' }));
     expect(within(panel).getByText('Tags:')).toBeVisible();
     expect(within(panel).getByText('Folders:')).toBeVisible();
     expect(within(panel).getByText('Latest note:')).toBeVisible();
@@ -204,6 +206,8 @@ describe('ContextoFeedContext', () => {
     renderFeed(account);
 
     await userEvent.click(await screen.findByRole('button', { name: /Contexto context for Theo/i }));
+
+    await userEvent.click(within(screen.getByRole('group', { name: 'Edit tags and folders' })).getByRole('button', { name: 'Cancel' }));
 
     expect(within(screen.getByTestId('contexto-feed-role')).getByText('Developer').textContent)
       .toBe('  Developer  ');
@@ -297,7 +301,7 @@ describe('ContextoFeedContext', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not save note');
     expect(note).toHaveValue('Remember the beta feedback');
 
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(within(screen.getByText('Add to Contexto').closest('section')!).getByRole('button', { name: 'Cancel' }));
     await user.click(screen.getByRole('button', { name: 'Add quick note' }));
     expect(screen.getByRole('textbox', { name: 'Relationship note' })).toHaveValue('');
     await user.type(screen.getByRole('textbox', { name: 'Relationship note' }), 'Discard me');
@@ -326,7 +330,7 @@ describe('ContextoFeedContext', () => {
 
     expect(screen.getByRole('button', { name: 'Saving note…' })).toBeDisabled();
     expect(screen.getByRole('textbox', { name: 'Relationship note' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    expect(within(screen.getByText('Add to Contexto').closest('section')!).getByRole('button', { name: 'Cancel' })).toBeDisabled();
     resolveNote({ ok: true, account: updated });
     expect(await screen.findByText('Note saved')).toBeVisible();
   });
@@ -339,7 +343,7 @@ describe('ContextoFeedContext', () => {
     await user.click(screen.getByRole('button', { name: 'Add quick note' }));
     expect(screen.queryByRole('button', { name: 'Capture this post' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(within(screen.getByText('Add to Contexto').closest('section')!).getByRole('button', { name: 'Cancel' }));
     await user.click(screen.getByRole('button', { name: 'Capture this post' }));
     expect(screen.queryByRole('button', { name: 'Add quick note' })).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Why are you saving this? (optional)' }))
@@ -544,7 +548,7 @@ describe('ContextoFeedContext', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not save bookmark');
     expect(reminder).toHaveValue('Possible podcast guest');
 
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(within(screen.getByText('Add to Contexto').closest('section')!).getByRole('button', { name: 'Cancel' }));
     await user.click(screen.getByRole('button', { name: 'Capture this post' }));
     expect(screen.getByRole('textbox', { name: /Why are you saving/ })).toHaveValue('');
     await user.type(screen.getByRole('textbox', { name: /Why are you saving/ }), 'Discard me');
@@ -573,7 +577,7 @@ describe('ContextoFeedContext', () => {
     await user.click(screen.getByRole('button', { name: 'Save bookmark' }));
     expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
     expect(screen.getByRole('textbox', { name: /Why are you saving/ })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    expect(within(screen.getByText('Add to Contexto').closest('section')!).getByRole('button', { name: 'Cancel' })).toBeDisabled();
     resolveCapture({ ok: true, bookmark: bookmarkRecord });
     expect(await screen.findByRole('button', { name: 'Bookmarked' })).toBeDisabled();
   });
