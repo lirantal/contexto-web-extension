@@ -189,6 +189,7 @@ export interface AccountFilters {
 }
 
 export interface AccountUpdateInput {
+  groupingRevision?: string;
   displayName?: string;
   role?: string;
   companyName?: string;

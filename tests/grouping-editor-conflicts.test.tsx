@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '@/src/data/db';
+import { listManagedData, manageData } from '@/src/data/data-management';
 import { listManagedGroupings, manageGrouping } from '@/src/data/grouping-management';
 import { getAccountByHandle, getLookups, resetDatabaseForTests, saveAccountContext, saveAccountGroupings } from '@/src/data/repositories';
 import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
@@ -36,7 +37,7 @@ it('preserves stale profile drafts through remount, rejects saves, and explicitl
   render(<ContextoProfileSurface {...props} />);
   expect(await screen.findByLabelText('Role')).toHaveValue('Unsaved role');
   await user.click(screen.getByRole('button', { name: 'Save changes' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('Tags or folders changed');
+  expect(await screen.findByRole('alert')).toHaveTextContent('Shared data changed');
   expect(screen.getByLabelText('Role')).toHaveValue('Unsaved role');
   expect(close).not.toHaveBeenCalled();
   expect(await db.tags.count()).toBe(0);
@@ -58,7 +59,7 @@ it('blocks stale feed folders and allows an explicit reload and successful retry
   const catalog = await listManagedGroupings('folder');
   await manageGrouping('folder', catalog.items[0].id, { type: 'rename', name: 'Fixed' }, catalog.revision);
   await user.click(await screen.findByRole('button', { name: 'Save tags and folders' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('Tags or folders changed');
+  expect(await screen.findByRole('alert')).toHaveTextContent('Shared data changed');
   expect(saved).not.toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Remove Typo from Folders' })).toBeVisible();
   await user.click(screen.getByRole('button', { name: 'Reload saved values' }));
@@ -80,4 +81,32 @@ it('keeps the loaded catalog revision when cancelling an unsaved inline contact'
   await user.click(screen.getByRole('button', { name: 'Save to Contexto' }));
   expect(await screen.findByText('Saved to Contexto')).toBeVisible();
   expect((await getAccountByHandle('x', 'newcontact'))!.role).toBe('');
+});
+
+it.each(['company', 'role', 'location'] as const)('keeps stale X %s drafts open until current metadata is reloaded', async (kind) => {
+  const account = await saveAccountContext({ profile, metadata: { companyName: 'Typo Co', role: 'Old role', location: 'Old place' }, tagNames: [], folderNames: [] });
+  const user = userEvent.setup();
+  const close = vi.fn();
+  render(<ContextoProfileSurface profile={{ ...profile, location: kind === 'location' ? 'Old place' : undefined }} kind="full-profile" send={send} drafts={new AccountDraftStore()} onRequestClose={close} />);
+  await user.type(await screen.findByLabelText('Display name'), ' unsaved');
+  const catalog = await listManagedData(kind);
+  await manageData(kind, kind === 'company' ? account.companyId! : kind === 'role' ? 'old role' : 'old place',
+    kind === 'role' ? { type: 'replace', value: 'Correct role' } : kind === 'company' ? { type: 'delete' } : { type: 'clear' }, catalog.revision);
+  await user.click(screen.getByRole('button', { name: 'Save changes' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Shared data changed');
+  expect(screen.getByLabelText('Display name')).toHaveValue('dev unsaved');
+  expect(close).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: 'Reload saved values' }));
+  expect(await screen.findByLabelText('Display name')).toHaveValue('dev');
+  expect(screen.getByLabelText(kind === 'company' ? 'Company' : kind === 'role' ? 'Role' : 'Location')).toHaveValue(kind === 'role' ? 'Correct role' : '');
+  if (kind === 'location') {
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByLabelText('Location')).toHaveValue('');
+    expect(close).toHaveBeenCalledOnce();
+    close.mockClear();
+  }
+  await user.click(screen.getByRole('button', { name: 'Save changes' }));
+  await screen.findByText('Saved to Contexto');
+  expect(close).toHaveBeenCalledOnce();
+  if (kind === 'company') expect(await db.companies.count()).toBe(0);
 });

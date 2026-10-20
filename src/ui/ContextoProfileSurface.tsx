@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { ContextoRequest, ContextoResponse } from '@/src/shared/messages';
 import type { AccountSummary, LookupData, ProfileSnapshot } from '@/src/shared/types';
 import type { XSurfaceKind } from '@/src/x/extract-profile';
@@ -17,14 +17,14 @@ export interface ContextoProfileSurfaceProps {
 
 const emptyLookups: LookupData = { companies: [], tags: [], folders: [], locations: [], roles: [] };
 
-function draftFor(profile: ProfileSnapshot, account?: AccountSummary): AccountContextDraft {
+function draftFor(profile: ProfileSnapshot, account?: AccountSummary, savedOnly = false): AccountContextDraft {
   return {
     groupingRevision: account?.groupingRevision,
     metadata: {
       displayName: account?.displayName ?? profile.displayName ?? profile.handle,
       role: account?.role ?? '',
-      website: account?.website ?? profile.website ?? '',
-      companyName: account?.company?.name ?? '', location: account?.location ?? profile.location ?? '',
+      website: account?.website ?? (savedOnly ? '' : profile.website) ?? '',
+      companyName: account?.company?.name ?? '', location: account?.location ?? (savedOnly ? '' : profile.location) ?? '',
       relationshipSource: account?.relationshipSource ?? '',
     },
     tagNames: account?.tags.map((tag) => tag.name) ?? [],
@@ -48,6 +48,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
   const [lookupAttempt, setLookupAttempt] = useState(0);
+  const reloadSavedOnly = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,7 +69,8 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
       const found = lookupResponse.lookupAccount;
       setAccount(found);
       const storedDraft = drafts.get(profile.handle);
-      setDraft(storedDraft ?? { ...prefilledDraftFor(profile, found), groupingRevision: found?.groupingRevision ?? (lookupDataResponse.ok && 'lookups' in lookupDataResponse ? lookupDataResponse.lookups.groupingRevision : undefined) });
+      setDraft(storedDraft ?? { ...(reloadSavedOnly.current ? draftFor(profile, found, true) : prefilledDraftFor(profile, found)), groupingRevision: found?.groupingRevision ?? (lookupDataResponse.ok && 'lookups' in lookupDataResponse ? lookupDataResponse.lookups.groupingRevision : undefined) });
+      reloadSavedOnly.current = false;
       setState('editing');
     }).catch((caught) => {
       if (!cancelled) { setError(caught instanceof Error ? caught.message : 'Could not load Contexto'); setState('lookup-error'); }
@@ -97,7 +99,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
       }
       const response = await send({ type: 'contexto:account:saveContext', input: { profile, ...context, tagNames: includePending(draft.tagNames, tagQuery), folderNames: includePending(draft.folderNames, folderQuery) } });
       if (response.ok && 'account' in response && response.account) {
-        drafts.clear(profile.handle); setAccount(response.account); setDraft(draftFor(profile, response.account)); setSuccess('Saved to Contexto'); onRequestClose?.(); return;
+        drafts.clear(profile.handle); setAccount(response.account); setDraft(draftFor(profile, response.account, true)); setSuccess('Saved to Contexto'); onRequestClose?.(); return;
       }
       setError(!response.ok ? response.error : 'Contexto did not return the saved account');
     } catch (caught) {
@@ -107,7 +109,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
     }
   }
   function cancelEditing() {
-    setDraft({ ...draftFor(profile, account), groupingRevision: account?.groupingRevision ?? lookups.groupingRevision });
+    setDraft({ ...draftFor(profile, account, true), groupingRevision: account?.groupingRevision ?? lookups.groupingRevision });
     drafts.clear(profile.handle);
     setError('');
     setSuccess('');
@@ -156,7 +158,7 @@ export function ContextoProfileSurface({ profile, kind, send, drafts, onRequestC
       {error && <p className="contexto-error" role="alert">{error}</p>}
       <div className="form-actions">
         <button className="primary-action" type="button" disabled={saving} onClick={saveContext}>{saving ? 'Saving…' : account ? 'Save changes' : 'Save to Contexto'}</button>
-        {error && <><button type="button" disabled={saving} onClick={saveContext}>Retry save</button><button type="button" disabled={saving} onClick={() => { drafts.clear(profile.handle); setLookupAttempt((attempt) => attempt + 1); }}>Reload saved values</button></>}
+        {error && <><button type="button" disabled={saving} onClick={saveContext}>Retry save</button><button type="button" disabled={saving} onClick={() => { drafts.clear(profile.handle); reloadSavedOnly.current = true; setLookupAttempt((attempt) => attempt + 1); }}>Reload saved values</button></>}
         <button type="button" disabled={saving} onClick={cancelEditing}>Cancel</button>
       </div>
     </div>

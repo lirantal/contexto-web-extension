@@ -12,7 +12,7 @@ Saving context in any X editor or selecting **Save metadata** in the dashboard a
 
 ## Manage shared values
 
-Open **Manage data** from the dashboard to manage **Tags** and **Folders** in the current browser profile. Companies and free-text metadata are outside this first release.
+Open **Manage data** from the dashboard to manage **Tags** and **Folders** in the current browser profile. The same page also manages companies and bulk role/location cleanup; see [Manage data](data-management.md).
 
 Each searchable table shows all active definitions, including unused values, and the number of active contacts using each one. Sort by name or most contacts, filter **Unused only**, or select **View contacts** for an affected-contact preview.
 
@@ -26,8 +26,8 @@ Export a backup through dashboard Settings if you need a recovery copy. Imports 
 
 ## Open editors and catalog changes
 
-Account summaries and lookup data include a catalog revision. X profile drafts retain the revision they originally loaded, including across remounts; the feed grouping editor retains its account snapshot revision. Rename, merge, and global deletion invalidate earlier revisions. Saving a stale draft rejects before any writes, preserving the draft and keeping the editor open so removed names cannot silently be recreated.
+Account summaries and lookup data include a catalog revision. X profile drafts retain the revision they originally loaded, including across remounts; the feed grouping editor retains its account snapshot revision. All Manage data operations invalidate earlier revisions. Saving a stale draft rejects before any writes, preserving the draft and keeping the editor open so removed names cannot silently be recreated.
 
-Use **Reload saved values** after a failed save to explicitly discard the draft and load current metadata/assignments before retrying. In a profile editor, Cancel retains the established close behavior. The revision is derived from catalog mutation entries in the existing change log and survives backup/restore; ordinary assignment edits do not invalidate other editors.
+Use **Reload saved values** after a failed save to explicitly discard the draft and load current metadata/assignments before retrying. In a profile editor, Cancel retains the established close behavior. The revision is derived from catalog mutation entries in the existing change log and survives backup/restore; ordinary assignment edits do not invalidate other editors. Dashboard metadata saves use the same protection. See [Manage data](data-management.md#consistency-open-drafts-and-recovery).
 
 The saved-contact feed badge popup also supports **Edit tags and folders** without opening the full editor. Its explicit **Save tags and folders** writes assignments only, includes pending input, and keeps the popup open. Cancel or panel dismissal discards unsaved grouping edits. See [Saved-contact feed context](feed-saved-contact-context.md).

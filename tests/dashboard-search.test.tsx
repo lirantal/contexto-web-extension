@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '@/src/data/db';
+import { listManagedData, manageData } from '@/src/data/data-management';
 import { listManagedGroupings, manageGrouping } from '@/src/data/grouping-management';
-import { listAccountSummaries, resetDatabaseForTests, saveAccountContext } from '@/src/data/repositories';
+import { getAccountSummary, listAccountSummaries, resetDatabaseForTests, saveAccountContext } from '@/src/data/repositories';
 import { Dashboard } from '@/src/ui/Dashboard';
 
 vi.mock('@/src/shared/settings', () => ({
@@ -118,4 +119,29 @@ describe('dashboard AND search', () => {
     expect(screen.getByRole('checkbox', { name: 'devrel' })).not.toBeChecked();
     expect(screen.getByRole('button', { name: 'Clear filters' })).toBeDisabled();
   });
+});
+
+it.each(['company', 'role', 'location'] as const)('rejects stale dashboard %s drafts and reloads current metadata before retry', async (kind) => {
+  const account = await saveAccountContext({
+    profile: { platform: 'x', handle: 'managed', displayName: 'Managed', profileUrl: 'https://x.com/managed' },
+    metadata: { companyName: 'Typo Co', role: 'Old role', location: 'Old place' }, tagNames: [], folderNames: [],
+  });
+  const user = userEvent.setup();
+  render(<Dashboard settingsPersistence={{ updateSettings: vi.fn() }} />);
+  const displayName = await screen.findByLabelText('Display name');
+  await user.type(displayName, ' unsaved');
+  const catalog = await listManagedData(kind);
+  await manageData(kind, kind === 'company' ? account.companyId! : kind === 'role' ? 'old role' : 'old place',
+    kind === 'role' ? { type: 'replace', value: 'Correct role' } : kind === 'company' ? { type: 'delete' } : { type: 'clear' }, catalog.revision);
+  await user.click(screen.getByRole('button', { name: 'Save metadata' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Shared data changed');
+  expect(displayName).toHaveValue('Managed unsaved');
+  expect((await getAccountSummary(account.id))!.displayName).toBe('Managed');
+  await user.click(screen.getByRole('button', { name: 'Reload saved values' }));
+  await waitFor(() => expect(displayName).toHaveValue('Managed'));
+  expect(screen.getByLabelText(kind === 'company' ? 'Company' : kind === 'role' ? 'Role' : 'Location', { selector: 'input' })).toHaveValue(kind === 'role' ? 'Correct role' : '');
+  await user.type(displayName, ' updated');
+  await user.click(screen.getByRole('button', { name: 'Save metadata' }));
+  await waitFor(async () => expect((await getAccountSummary(account.id))!.displayName).toBe('Managed updated'));
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });

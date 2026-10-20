@@ -197,28 +197,34 @@ export async function getAccountByHandle(platform: Platform, handle: string, dat
 }
 
 export async function updateAccount(accountId: string, input: AccountUpdateInput, database = db): Promise<AccountSummary> {
-  const timestamp = nowIso();
-  const patch: Partial<Account> = {
-    updatedAt: timestamp,
-    syncState: 'pending-sync',
-  };
+  return database.transaction('rw', [database.accounts, database.companies, database.tags, database.folders,
+    database.accountTags, database.folderAccounts, database.notes, database.changeLog], async () => {
+    await assertGroupingRevision(input.groupingRevision, database);
+    const account = await database.accounts.get(accountId);
+    if (!account || account.deletedAt) throw new Error('Account not found');
+    const timestamp = nowIso();
+    const patch: Partial<Account> = {
+      updatedAt: timestamp,
+      syncState: 'pending-sync',
+    };
 
-  if (input.displayName !== undefined) patch.displayName = input.displayName.trim();
-  if (input.role !== undefined) patch.role = input.role.trim();
-  if (input.location !== undefined) patch.location = input.location.trim();
-  if (input.relationshipSource !== undefined) patch.relationshipSource = input.relationshipSource.trim();
-  if (input.website !== undefined) patch.website = input.website.trim();
-  if (input.bioSnapshot !== undefined) patch.bioSnapshot = input.bioSnapshot.trim();
-  if (input.companyId !== undefined) patch.companyId = input.companyId;
-  if (input.companyName !== undefined && !input.companyName.trim()) patch.companyId = undefined;
-  if (input.companyName?.trim()) {
-    const company = await upsertCompanyByName(input.companyName, database);
-    patch.companyId = company.id;
-  }
+    if (input.displayName !== undefined) patch.displayName = input.displayName.trim();
+    if (input.role !== undefined) patch.role = input.role.trim();
+    if (input.location !== undefined) patch.location = input.location.trim();
+    if (input.relationshipSource !== undefined) patch.relationshipSource = input.relationshipSource.trim();
+    if (input.website !== undefined) patch.website = input.website.trim();
+    if (input.bioSnapshot !== undefined) patch.bioSnapshot = input.bioSnapshot.trim();
+    if (input.companyId !== undefined) patch.companyId = input.companyId;
+    if (input.companyName !== undefined && !input.companyName.trim()) patch.companyId = undefined;
+    if (input.companyName?.trim()) {
+      const company = await upsertCompanyByName(input.companyName, database);
+      patch.companyId = company.id;
+    }
 
-  await database.accounts.update(accountId, patch);
-  await recordChange(database, 'account', accountId, 'update');
-  return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+    await database.accounts.update(accountId, patch);
+    await recordChange(database, 'account', accountId, 'update');
+    return getAccountSummary(accountId, database) as Promise<AccountSummary>;
+  });
 }
 
 export async function markAccountCaughtUp(
@@ -337,7 +343,7 @@ export async function saveAccountContext(input: AccountContextSaveInput, databas
     async () => {
       await assertGroupingRevision(input.groupingRevision, database);
       const account = await ensureAccountFromProfile(input.profile, database);
-      const updated = await updateAccount(account.id, input.metadata, database);
+      const updated = await updateAccount(account.id, { ...input.metadata, groupingRevision: input.groupingRevision }, database);
       await syncAccountTags(updated.id, input.tagNames, database);
       await syncAccountFolders(updated.id, input.folderNames, database);
       return getAccountSummary(updated.id, database) as Promise<AccountSummary>;

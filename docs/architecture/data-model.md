@@ -15,9 +15,9 @@ The current schema lives in `src/data/db.ts` and is versioned as Dexie version `
 - `backups`: local record of import events and backup metadata.
 - `changeLog`: append-only local mutation log for future sync.
 
-## Shared tag and folder management
+## Shared value management
 
-Dashboard management permanently deletes tag/folder definitions and their joins, or merges joins into another definition without duplicate assignments. Renaming preserves IDs. These operations update affected accounts and record entity/account mutations plus a `groupingCatalog` change-log entry in a single transaction. The sorted IDs of catalog entries form an opaque revision token. Account summaries and lookup responses read their data and revision in a consistent read transaction. Full-context and grouping-only saves compare the draft revision before writing; a stale or missing revision is rejected after the first catalog edit. No Dexie schema or backup format migration is required. See [Folders and tags](../features/folders-tags.md).
+Dashboard management permanently deletes tag/folder definitions and their joins, or merges joins into another definition without duplicate assignments. Renaming preserves IDs. These operations update affected accounts and record entity/account mutations plus a `groupingCatalog` change-log entry in a single transaction. The sorted IDs of catalog entries form an opaque revision token. Account summaries and lookup responses read their data and revision in a consistent read transaction. The same marker covers company rename/merge/delete and bulk role/location replacement/clearing. Companies keep stable IDs on rename; merge reassigns source references, and deletion clears all references. Free-text cleanup writes matching active and inactive account rows directly. Full-context, dashboard metadata, and grouping-only saves compare the draft revision before writing; a stale or missing revision is rejected after the first catalog edit. No Dexie schema or backup format migration is required. See [Manage data](../features/data-management.md) and [Folders and tags](../features/folders-tags.md).
 
 ## Account deletion
 
@@ -37,7 +37,7 @@ The important uniqueness constraints are:
 
 ## Sync Readiness
 
-Every user-edited core record uses stable UUID-based IDs and timestamps. Most synchronized deletes should remain soft deletes when remote sync is introduced so another client can converge without losing intent. The dashboard account deletion action is the explicit local-data erasure exception and intentionally removes the account-owned rows rather than leaving a tombstone.
+Every user-edited core record uses stable UUID-based IDs and timestamps. Most synchronized deletes should remain soft deletes when remote sync is introduced so another client can converge without losing intent. Dashboard account deletion and Manage data shared-value deletion are explicit local-data erasure exceptions: they permanently remove account-owned rows or shared definitions and references rather than leaving tombstones.
 
 Bookmarks remain separate from account notes and from `AccountSummary`. Focused lookup/list operations avoid loading every bookmark during ordinary account searches and feed relationship lookups.
 

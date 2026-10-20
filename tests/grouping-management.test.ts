@@ -104,9 +104,9 @@ for (const kind of ['tag', 'folder'] as const) describe(`${kind} management`, ()
     const before = (await exportBackup(database)).data;
     const tags = kind === 'tag' ? ['Typo'] : [];
     const folders = kind === 'folder' ? ['Typo'] : [];
-    await expect(saveAccountGroupings(f.first.id, tags, folders, database, draft.groupingRevision)).rejects.toThrow('Tags or folders changed');
+    await expect(saveAccountGroupings(f.first.id, tags, folders, database, draft.groupingRevision)).rejects.toThrow('Shared data changed');
     await expect(saveAccountContext({ profile: { platform: 'x', handle: 'newcontact', profileUrl: 'https://x.com/newcontact' },
-      metadata: { role: 'Unsaved' }, tagNames: tags, folderNames: folders, groupingRevision: draft.groupingRevision }, database)).rejects.toThrow('Tags or folders changed');
+      metadata: { role: 'Unsaved' }, tagNames: tags, folderNames: folders, groupingRevision: draft.groupingRevision }, database)).rejects.toThrow('Shared data changed');
     expect((await exportBackup(database)).data).toEqual(before);
     const current = (await getLookups(database)).groupingRevision;
     const saved = await saveAccountGroupings(f.first.id, [], [], database, current);
@@ -117,13 +117,13 @@ for (const kind of ['tag', 'folder'] as const) describe(`${kind} management`, ()
   it('invalidates other management forms and retains protection through backups', async () => {
     const f = await fixture();
     await manageGrouping(kind, f.source.id, { type: 'delete' }, f.revision, database);
-    await expect(manageGrouping(kind, f.target.id, { type: 'rename', name: 'Changed' }, f.revision, database)).rejects.toThrow('Tags or folders changed');
+    await expect(manageGrouping(kind, f.target.id, { type: 'rename', name: 'Changed' }, f.revision, database)).rejects.toThrow('Shared data changed');
     const backup = await exportBackup(database);
     const revision = (await getLookups(database)).groupingRevision;
     await resetDatabaseForTests(database);
     await importBackup(backup, database);
     expect((await getLookups(database)).groupingRevision).toBe(revision);
-    await expect(saveAccountGroupings(f.first.id, ['Typo'], [], database)).rejects.toThrow('Tags or folders changed');
+    await expect(saveAccountGroupings(f.first.id, ['Typo'], [], database)).rejects.toThrow('Shared data changed');
   });
 });
 

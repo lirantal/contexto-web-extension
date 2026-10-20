@@ -22,6 +22,7 @@ import {
   ensureAccountFromProfile,
   exportBackup,
   getLookups,
+  getAccountSummary,
   importBackup,
   listAccountSummaries,
   markAccountCaughtUp,
@@ -323,6 +324,18 @@ function EmptyDetail() {
   );
 }
 
+function metadataDraftFor(account: AccountSummary) {
+  return {
+    displayName: account.displayName,
+    role: account.role ?? '',
+    companyName: account.company?.name ?? '',
+    location: account.location ?? '',
+    website: account.website ?? '',
+    relationshipSource: account.relationshipSource ?? '',
+    bioSnapshot: account.bioSnapshot ?? '',
+  };
+}
+
 function AccountDetail({
   account,
   settings,
@@ -336,15 +349,8 @@ function AccountDetail({
   locationSuggestions: string[];
   roleSuggestions: string[];
 }) {
-  const [draft, setDraft] = useState({
-    displayName: account.displayName,
-    role: account.role ?? '',
-    companyName: account.company?.name ?? '',
-    location: account.location ?? '',
-    website: account.website ?? '',
-    relationshipSource: account.relationshipSource ?? '',
-    bioSnapshot: account.bioSnapshot ?? '',
-  });
+  const [draft, setDraft] = useState(() => metadataDraftFor(account));
+  const [draftRevision, setDraftRevision] = useState(account.groupingRevision);
   const [note, setNote] = useState('');
   const [tagName, setTagName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -362,22 +368,16 @@ function AccountDetail({
   const catchUpUrl = buildXCatchUpSearchUrl(account.handle, account.lastCatchUpAt);
 
   useEffect(() => {
-    setDraft({
-      displayName: account.displayName,
-      role: account.role ?? '',
-      companyName: account.company?.name ?? '',
-      location: account.location ?? '',
-      website: account.website ?? '',
-      relationshipSource: account.relationshipSource ?? '',
-      bioSnapshot: account.bioSnapshot ?? '',
-    });
+    setDraft(metadataDraftFor(account));
+    setDraftRevision(account.groupingRevision);
   }, [account.id]);
 
   async function save() {
     setSaving(true);
     setSaveError('');
     try {
-      await updateAccount(account.id, draft);
+      const saved = await updateAccount(account.id, { ...draft, groupingRevision: draftRevision });
+      setDraftRevision(saved.groupingRevision);
       await addTagAndClear();
       await addFolderAndClear();
     } catch (error) {
@@ -385,6 +385,19 @@ function AccountDetail({
     } finally {
       setSaving(false);
     }
+  }
+
+  async function reloadSavedMetadata() {
+    setSaving(true); setSaveError('');
+    try {
+      const current = await getAccountSummary(account.id);
+      if (!current) throw new Error('Contact no longer exists.');
+      setDraft(metadataDraftFor(current));
+      setDraftRevision(current.groupingRevision);
+      setTagName(''); setFolderName('');
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Could not reload saved values');
+    } finally { setSaving(false); }
   }
 
   async function addTagAndClear() {
@@ -493,7 +506,7 @@ function AccountDetail({
         </div>
         <label>Bio snapshot<textarea rows={3} value={draft.bioSnapshot} onChange={(event) => setDraft({ ...draft, bioSnapshot: event.target.value })} /></label>
         <button className="primary-action" disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save metadata'}</button>
-        {saveError && <p role="alert">{saveError}</p>}
+        {saveError && <><p role="alert">{saveError}</p><button type="button" disabled={saving} onClick={reloadSavedMetadata}>Reload saved values</button></>}
       </section>
 
       <section className="panel detail-section split-section">

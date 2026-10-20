@@ -35,6 +35,7 @@ vi.mock('@/src/data/repositories', () => ({
   ensureAccountFromProfile: vi.fn(),
   exportBackup: vi.fn(),
   getLookups: vi.fn(),
+  getAccountSummary: vi.fn(),
   importBackup: vi.fn(),
   listAccountSummaries: vi.fn(),
   listBookmarks: vi.fn().mockResolvedValue([]),
@@ -81,6 +82,7 @@ describe('dashboard target handle history settings', () => {
       ...patch,
     }));
     mocks.clearTargetHistory.mockResolvedValue(undefined);
+    mocks.updateAccount.mockImplementation(async () => mocks.accounts[0]);
     mocks.markAccountCaughtUp.mockResolvedValue(undefined);
   });
 

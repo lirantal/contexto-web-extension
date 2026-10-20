@@ -11,7 +11,7 @@ The extension is built with [WXT](https://wxt.dev/), React, TypeScript, and Inde
 - Rich contact bookmarks captured from supported X posts with editable reminders, Handled/Reopen tracking, and dashboard review/removal.
 - Explicit per-contact catch-up checkpoints with live X searches for posts since the last review.
 - Local IndexedDB database for accounts, companies, tags, folders, notes, search history, and backups.
-- Dashboard/options page for offline account search, metadata editing, filtering, import, and export.
+- Dashboard/options page for offline account search, metadata editing, filtering, shared-value management, bulk role/location cleanup, import, and export.
 - One persisted Quick X search builder in both the toolbar popup and the always-expanded Contexto section in X's right sidebar, with keyword and date filters.
 - X search helpers for messages/posts from you to them, them to you, profile posts, direct mentions, and keyword/date constraints.
 - JSON backup/restore so local data can be moved or recovered.
