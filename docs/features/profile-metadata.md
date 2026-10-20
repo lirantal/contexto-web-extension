@@ -38,3 +38,9 @@ The dashboard exposes the same metadata in a larger offline editing view.
 Compact read-only summaries use visible labels for every saved metadata value they display. The canonical labels are **Role**, **Company**, **How you know them**, **Tags**, **Folders**, and **Latest note**. Empty fields omit both label and value. Display names, X handles, saved state, timestamps, and action/status text retain their existing identity or status presentation.
 
 This convention applies to the X feed panel, X hover summary, dashboard read-only account metadata, and toolbar-popup account suggestions. It does not cause a surface to display metadata that the surface previously omitted.
+
+## Contact record details (dashboard only)
+
+The dashboard displays read-only **Added to Contexto** and **Last updated in Contexto** dates with local date/time formatting, plus **X user ID** when supplied. These use the existing contact timestamps, not the X account's join date. Invalid legacy dates display Unknown. These details are absent from embedded X forms.
+
+The optional numeric X user ID is stored as a string. Current DOM capture has no reliable, identity-scoped ID evidence, so ordinary profile saves leave it unset and preserve any previously imported ID. Contexto does not infer user IDs from avatar URLs or Post IDs or make extra API requests to obtain them. Future API imports can supply the ID through a profile snapshot; see [Data model](../architecture/data-model.md#x-identity-and-contact-dates).

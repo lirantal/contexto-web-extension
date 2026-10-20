@@ -439,6 +439,22 @@ function AccountDetail({
         </div>
       </header>
 
+      <section className="panel detail-section" aria-label="Contact record details">
+        <h3>Contact record details</h3>
+        {account.platform === 'x' && account.xUserId && <p><strong>X user ID:</strong> {account.xUserId}</p>}
+        {([
+          ['Added to Contexto', account.createdAt],
+          ['Last updated in Contexto', account.updatedAt],
+        ] as const).map(([label, timestamp]) => (
+          <p key={label}>
+            <strong>{label}:</strong>{' '}
+            {Number.isNaN(Date.parse(timestamp)) ? 'Unknown' : <time dateTime={timestamp}>
+              {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(timestamp))}
+            </time>}
+          </p>
+        ))}
+      </section>
+
       <section className="panel detail-section">
         <h3>Profile metadata</h3>
         <div className="form-grid two-columns">

@@ -29,6 +29,20 @@ afterEach(async () => {
 });
 
 describe('dashboard AND search', () => {
+  it('shows contact dates and supplied X identity only in dashboard record details', async () => {
+    const account = await seed('dated', [], []);
+    const createdAt = '2025-01-02T03:04:05.000Z';
+    const updatedAt = '2026-02-03T04:05:06.000Z';
+    await db.accounts.update(account.id, { xUserId: '1234567890123456789', createdAt, updatedAt });
+    render(<Dashboard settingsPersistence={{ updateSettings: vi.fn() }} />);
+    const details = await screen.findByRole('region', { name: 'Contact record details' });
+    expect(within(details).getByText('1234567890123456789')).toBeVisible();
+    expect(within(details).getByText('Added to Contexto:')).toBeVisible();
+    expect(within(details).getByText('Last updated in Contexto:')).toBeVisible();
+    expect([...details.querySelectorAll('time')].map((element) => element.dateTime)).toEqual([createdAt, updatedAt]);
+    expect(screen.queryByLabelText('X user ID')).not.toBeInTheDocument();
+  });
+
   it('requires all tags, all folders, company, and query together', async () => {
     await seed('complete', ['devrel', 'speaker', 'security'], ['Friends', 'Conference']);
     await seed('partialtag', ['devrel', 'speaker'], ['Friends', 'Conference']);

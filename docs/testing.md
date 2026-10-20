@@ -58,3 +58,5 @@ Feed grouping-editor tests cover existing assignments, empty fields, suggestion 
 ## Manual browser checks
 
 Synthetic tests cannot reproduce every X or browser lifecycle. Run the matrix in [Browser Development Workflow](development/browser-workflow.md) while signed in to X in both Chrome and Vivaldi after changing content-script mounting, X selectors, popup layout, Shadow DOM behavior, or extension lifecycle handling. For Quick X search, this includes light and dark themes; saved-account suggestions and free-form targets; target-present and targetless searches; successful and failed launches; popup/sidebar state restoration; X rerenders; and extension reload.
+
+Account identity coverage verifies optional X IDs, precision-preserving persistence, preservation on ID-less saves, conflict/invalid-ID rejection, backup round trips, and preservation of contact creation dates. Dashboard coverage verifies read-only ID and contact timestamps. Existing tags support multiple List-derived labels without List entities.

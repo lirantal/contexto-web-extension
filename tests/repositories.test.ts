@@ -35,6 +35,41 @@ afterEach(async () => {
 });
 
 describe('Contexto repositories', () => {
+  it('preserves imported X identity and contact dates through saves and backups', async () => {
+    const profile = { platform: 'x' as const, handle: 'dev', profileUrl: 'https://x.com/dev' };
+    const original = await ensureAccountFromProfile(profile, database);
+    const createdAt = '2025-01-02T03:04:05.000Z';
+    await database.accounts.update(original.id, { createdAt });
+    const supplied = await ensureAccountFromProfile({ ...profile, xUserId: '1234567890123456789' }, database);
+    expect(supplied).toMatchObject({ id: original.id, xUserId: '1234567890123456789', createdAt });
+    const saved = await saveAccountContext({ profile, metadata: { role: 'Engineer' },
+      tagNames: ['API List A', 'API List B'], folderNames: [] }, database);
+    expect(saved).toMatchObject({ xUserId: supplied.xUserId, createdAt });
+    expect(saved.tags.map((tag) => tag.name).sort()).toEqual(['API List A', 'API List B']);
+    expect(Date.parse(saved.updatedAt)).toBeGreaterThan(Date.parse(createdAt));
+    const backup = await exportBackup(database);
+    await resetDatabaseForTests(database);
+    await importBackup(backup, database);
+    expect(await getAccountByHandle('x', 'dev', database)).toMatchObject({
+      xUserId: supplied.xUserId, createdAt, updatedAt: saved.updatedAt,
+    });
+  });
+
+  it('rejects invalid and conflicting X IDs before changing a contact', async () => {
+    const profile = { platform: 'x' as const, handle: 'dev', profileUrl: 'https://x.com/dev' };
+    for (const xUserId of ['', '0', '-1', '1.5', '1e10', '12345678901234567890', 123]) {
+      await expect(ensureAccountFromProfile({ ...profile, xUserId: xUserId as string }, database)).rejects.toThrow('X user ID');
+    }
+    expect(await database.accounts.count()).toBe(0);
+    const account = await ensureAccountFromProfile({ ...profile, xUserId: '123' }, database);
+    await expect(ensureAccountFromProfile({ ...profile, xUserId: '456' }, database)).rejects.toThrow('conflicts');
+    expect(await getAccountByHandle('x', 'dev', database)).toEqual(account);
+    const backup = await exportBackup(database);
+    backup.data.accounts[0].xUserId = 'invalid';
+    await expect(importBackup(backup, database)).rejects.toThrow('X user ID');
+    expect(await getAccountByHandle('x', 'dev', database)).toEqual(account);
+  });
+
   it('saves grouping assignments without changing identity or relationship metadata', async () => {
     const account = await ensureAccountFromProfile({ platform: 'x', handle: 'dev', displayName: 'Custom name',
       profileUrl: 'https://x.com/dev', website: 'https://example.com', bioSnapshot: 'Saved bio' }, database);

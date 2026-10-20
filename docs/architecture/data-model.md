@@ -42,3 +42,11 @@ Bookmark completion is represented by the optional `completedAt` timestamp on th
 The catch-up checkpoint is an optional account field rather than a new table or index. It therefore remains compatible with the existing Dexie schema and backup format: account export/import naturally carries the ISO timestamp.
 
 The profile website is an optional account field carried by existing account backup export/import; it requires no new index or schema version.
+
+## X identity and contact dates
+
+Accounts and profile snapshots accept optional `xUserId`: a positive decimal string of up to 19 digits, never a JavaScript number. Profile saves preserve an existing ID when the snapshot omits it and reject a conflicting supplied ID for the same saved handle. Backup import validates supplied IDs before writing; backup formats 1 and 2 remain supported. This optional field needs no index or Dexie schema migration. Account lookup remains handle-based; rename reconciliation and bulk API ingestion belong to the future importer.
+
+`createdAt` and `updatedAt` already record the local contact's creation and most recent account update, including relationship activity that touches the account. They are not X's account creation date or profile observation timestamps. The dashboard shows them as **Added to Contexto** and **Last updated in Contexto**; embedded forms do not display them.
+
+Future imports target people and relationships. List-derived labels use the existing many-to-many tags, including multiple labels for overlapping memberships. Contexto does not introduce List records or membership management.

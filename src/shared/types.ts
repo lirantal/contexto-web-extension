@@ -11,6 +11,8 @@ export interface TimestampedRecord {
 
 export interface Account extends TimestampedRecord {
   platform: Platform;
+  /** X numeric user ID as a string to preserve precision; absent until reliably supplied. */
+  xUserId?: string;
   handle: string;
   normalizedHandle: string;
   displayName: string;
@@ -146,6 +148,8 @@ export interface ChangeLogEntry {
 
 export interface ProfileSnapshot {
   platform: Platform;
+  /** X numeric user ID as a string to preserve precision; absent until reliably supplied. */
+  xUserId?: string;
   handle: string;
   displayName?: string;
   profileUrl: string;

@@ -133,13 +133,25 @@ async function upsertFolderByName(name: string, database = db): Promise<Folder> 
   return folder;
 }
 
+function validateXUserId(platform: Platform, value: unknown): void {
+  if (value === undefined) return;
+  if (platform !== 'x' || typeof value !== 'string' || !/^[1-9][0-9]{0,18}$/.test(value)) {
+    throw new Error('X user ID must be a positive numeric string of up to 19 digits on an X account');
+  }
+}
+
 export async function ensureAccountFromProfile(profile: ProfileSnapshot, database = db): Promise<AccountSummary> {
+  validateXUserId(profile.platform, profile.xUserId);
   const normalizedHandle = normalizeHandle(profile.platform, profile.handle);
   const existing = await database.accounts.where('[platform+normalizedHandle]').equals([profile.platform, normalizedHandle]).first();
   const timestamp = nowIso();
 
   if (existing) {
+    if (existing.xUserId && profile.xUserId && existing.xUserId !== profile.xUserId) {
+      throw new Error('X user ID conflicts with the saved account');
+    }
     const patch: Partial<Account> = {
+      xUserId: profile.xUserId ?? existing.xUserId,
       displayName: profile.displayName?.trim() || existing.displayName || profile.handle,
       profileUrl: profile.profileUrl,
       avatarUrl: profile.avatarUrl || existing.avatarUrl,
@@ -158,6 +170,7 @@ export async function ensureAccountFromProfile(profile: ProfileSnapshot, databas
   const account: Account = {
     id: createId('account'),
     platform: profile.platform,
+    xUserId: profile.xUserId,
     handle: profile.handle.replace(/^@/, ''),
     normalizedHandle,
     displayName: profile.displayName?.trim() || profile.handle.replace(/^@/, ''),
@@ -867,6 +880,7 @@ export async function importBackup(envelope: BackupImportEnvelope, database = db
   }
   const bookmarks: unknown[] = envelope.formatVersion === 2 ? envelope.data.bookmarks : [];
   assertArray(bookmarks, 'bookmarks');
+  for (const account of data.accounts) validateXUserId(account.platform, account.xUserId);
   validateImportedBookmarks(bookmarks, data.accounts);
 
   await database.transaction(
