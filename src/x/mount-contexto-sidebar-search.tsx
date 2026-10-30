@@ -35,6 +35,11 @@ export function mountContextoSidebarSearch({
   style.textContent = css;
   const app = document.createElement('div');
   shadow.append(style, app);
+  // Closed Shadow DOM hides the editable target from X. Stop bubbling after
+  // React handles keys, preserving typing, Tab navigation, and other defaults.
+  const stopKeyboardPropagation = (event: Event) => event.stopPropagation();
+  const keyboardEvents = ['keydown', 'keypress', 'keyup'] as const;
+  for (const type of keyboardEvents) mountHost.addEventListener(type, stopKeyboardPropagation);
   nativeBranch.before(mountHost);
 
   const root = createRoot(app);
@@ -45,6 +50,7 @@ export function mountContextoSidebarSearch({
   render();
 
   const cleanup: XSidebarSearchCleanup = () => {
+    for (const type of keyboardEvents) mountHost.removeEventListener(type, stopKeyboardPropagation);
     root.unmount();
     mountHost.remove();
   };

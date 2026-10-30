@@ -12,14 +12,18 @@ These documents describe Contexto's current architecture, behavior, development 
 
 ## Development and testing
 
+- [Private X Lists export](development/x-lists-export.md) — workflow/cost table, configuration files, container OAuth setup, List exclusions, resumable downloads, Circle/tag mapping, and offline Contexto import generation.
+
 - [Browser development workflow](development/browser-workflow.md) — WXT development, unpacked installs, and the manual browser QA matrix.
+- [Data integrity and development plan](development/data-integrity.md) — preservation rules, hardening plan, recovery limits, and verification.
 - [Testing](testing.md) — automated checks, X fixtures, interaction lifecycle coverage, and manual verification expectations.
 
 ## Features
 
 - [Account search](features/account-search.md) — dashboard account discovery and filtering.
 - [Backup and restore](features/backup-restore.md) — local data portability.
-- [Folders and tags](features/folders-tags.md) — metadata grouping behavior.
+- [Manage data](features/data-management.md) — company management and bulk role/location cleanup, previews, and draft protection.
+- [Circles and tags](features/folders-tags.md) — metadata grouping behavior, dashboard management, and stale-draft protection.
 - [Message and profile search](features/message-profile-search.md) — X interaction-search workflows.
 - [Profile metadata](features/profile-metadata.md) — hover, profile, and editor interaction contracts.
 - [X search builder](features/x-search-builder.md) — the shared toolbar-popup and always-expanded X-sidebar search workflow.

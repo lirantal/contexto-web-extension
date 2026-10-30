@@ -18,7 +18,9 @@ IndexedDB data persists while the extension remains installed in the same browse
 
 The MVP includes JSON export/import from the dashboard. Backups should be taken before risky browser-profile changes, extension reinstallations, or large schema migrations.
 
-Current exports use backup format version 2 and include bookmarks. Import remains compatible with format version 1 by treating bookmarks as an empty collection. Version 2 bookmark records are validated for owning-account, canonical URL, author, timestamp, and bounded-text integrity before the import transaction writes any data.
+Current exports use backup format 2 and include whole records from every database table in one consistent read transaction. Import supports formats 1/2 with complete record/reference validation, a conflict-refusing safe merge, and explicit atomic full restore. Dashboard imports require a reviewed preview and verified recovery-file export. See [Backup and restore](../features/backup-restore.md).
+
+Disabling/re-enabling or reloading the same installation should retain committed data; unsaved drafts are memory-only. Keep the extension ID and persistent browser profile stable during development. Uninstall, profile removal, or device failure requires an external recovery file. There is no automatic external backup or remote sync. The `unlimitedStorage` permission protects against ordinary Chromium quota/eviction, not these lifecycle events.
 
 ## Future Remote Sync
 

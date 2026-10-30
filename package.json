@@ -5,6 +5,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "x:lists": "node scripts/x-lists/cli.mjs",
     "dev": "wxt -b chrome",
     "dev:chrome": "wxt -b chrome",
     "dev:vivaldi": "wxt -b chrome",
@@ -16,7 +17,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "test:integrity": "vitest run tests/data-integrity.test.ts tests/repositories.test.ts tests/backup-controls.test.tsx tests/grouping-editor-conflicts.test.tsx tests/data-management.test.ts tests/grouping-management.test.ts",
+    "check": "npm run compile && npm test && npm run build && npm run verify:popup",
+    "verify:integrity": "node scripts/verify-data-integrity.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.4",
@@ -27,13 +31,14 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
-    "cross-env": "^7.0.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@wxt-dev/module-react": "^1.1.5",
+    "@xdevplatform/xdk": "0.6.6",
+    "cross-env": "^7.0.3",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
     "typescript": "^5.9.3",

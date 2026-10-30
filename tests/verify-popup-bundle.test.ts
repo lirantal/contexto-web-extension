@@ -32,6 +32,16 @@ describe('release bundle verifier', () => {
   });
 
 
+  it('rejects generated modulepreload hints in the popup', async () => {
+    const output = await createBundleFixture({ 'popup.js': 'export {}' });
+    await writeFile(join(output, 'popup.html'), `
+      <script type="module" src="/chunks/popup.js"></script>
+      <link rel="modulepreload" crossorigin href="/chunks/runtime.js">
+    `);
+
+    await expect(verifyPopupBundle(output)).rejects.toThrow('popup.html contains modulepreload hints');
+  });
+
   it('rejects classic JSX metadata from the popup entry', async () => {
     const output = await createBundleFixture({
       'popup.js': 'createElement("div", { __self: this })',

@@ -35,6 +35,76 @@ afterEach(async () => {
 });
 
 describe('Contexto repositories', () => {
+  it('preserves observations on sparse saves and round trips, accepts zero/false, and rejects malformed data atomically', async () => {
+    const profile = { platform: 'x' as const, handle: 'observed', profileUrl: 'https://x.com/observed' };
+    const date = '2026-10-20T00:00:00.000Z';
+    const account = await ensureAccountFromProfile({ ...profile, followersCount: 0, followingCount: 42,
+      followersCountObservedAt: date, followingCountObservedAt: date, followsYou: false,
+      followsYouViewerHandle: 'viewer', followsYouViewerId: '123', followsYouObservedAt: date }, database);
+    await saveAccountContext({ profile, metadata: { role: 'Engineer' }, tagNames: [], folderNames: [] }, database);
+    await ensureAccountFromProfile({ ...profile, followersCount: 100, followersCountObservedAt: '2026-10-20T01:00:00+02:00' }, database);
+    expect(await getAccountByHandle('x', 'observed', database)).toMatchObject({ followersCount: 0, followingCount: 42, followsYou: false });
+    await ensureAccountFromProfile({ ...profile, followsYou: true, followsYouViewerHandle: 'viewer', followsYouObservedAt: '2026-10-21T00:00:00Z' }, database);
+    expect(await getAccountByHandle('x', 'observed', database)).toMatchObject({ followsYou: true, followsYouViewerId: '123' });
+    const backup = await exportBackup(database);
+    await expect(ensureAccountFromProfile({ ...profile, displayName: 'Wrong', followersCount: -1 }, database)).rejects.toThrow('counts');
+    expect(await exportBackup(database)).toMatchObject({ data: backup.data });
+    const fresh = new ContextoDatabase('ObservationRoundtripTest');
+    try {
+      await importBackup(backup, fresh);
+      expect(await getAccountByHandle('x', 'observed', fresh)).toMatchObject({ id: account.id, createdAt: account.createdAt,
+        followersCount: 0, followingCount: 42, followsYou: true, followsYouViewerHandle: 'viewer', followsYouViewerId: '123' });
+      backup.data.accounts[0].followersCount = -1;
+      await expect(importBackup(backup, fresh)).rejects.toThrow('counts');
+    } finally { await fresh.delete(); }
+  });
+
+  it('combines relationship and inclusive audience ranges, excluding unknowns and other viewers', async () => {
+    for (const [handle, followsYou, followersCount] of [['yesuser', true, 100], ['nouser', false, 0]] as const) {
+      await ensureAccountFromProfile({ platform: 'x', handle, profileUrl: `https://x.com/${handle}`,
+        followsYou, followsYouViewerHandle: 'viewer', followersCount, followingCount: 10 }, database);
+    }
+    await ensureAccountFromProfile({ platform: 'x', handle: 'unknownuser', profileUrl: 'https://x.com/unknownuser' }, database);
+    expect((await listAccountSummaries({ followsYou: 'yes', followsYouViewerHandle: 'viewer', minFollowers: 100, maxFollowing: 10 }, database)).map(row => row.handle)).toEqual(['yesuser']);
+    expect((await listAccountSummaries({ followsYou: 'no', followsYouViewerHandle: 'viewer', maxFollowers: 0 }, database)).map(row => row.handle)).toEqual(['nouser']);
+    expect(await listAccountSummaries({ followsYou: 'yes', followsYouViewerHandle: 'other' }, database)).toEqual([]);
+    expect((await listAccountSummaries({ followsYou: 'unknown', followsYouViewerHandle: 'viewer' }, database)).map(row => row.handle)).toEqual(['unknownuser']);
+  });
+  it('preserves imported X identity and contact dates through saves and backups', async () => {
+    const profile = { platform: 'x' as const, handle: 'dev', profileUrl: 'https://x.com/dev' };
+    const original = await ensureAccountFromProfile(profile, database);
+    const createdAt = '2025-01-02T03:04:05.000Z';
+    await database.accounts.update(original.id, { createdAt });
+    const supplied = await ensureAccountFromProfile({ ...profile, xUserId: '1234567890123456789' }, database);
+    expect(supplied).toMatchObject({ id: original.id, xUserId: '1234567890123456789', createdAt });
+    const saved = await saveAccountContext({ profile, metadata: { role: 'Engineer' },
+      tagNames: ['API List A', 'API List B'], folderNames: [] }, database);
+    expect(saved).toMatchObject({ xUserId: supplied.xUserId, createdAt });
+    expect(saved.tags.map((tag) => tag.name).sort()).toEqual(['API List A', 'API List B']);
+    expect(Date.parse(saved.updatedAt)).toBeGreaterThan(Date.parse(createdAt));
+    const backup = await exportBackup(database);
+    await resetDatabaseForTests(database);
+    await importBackup(backup, database);
+    expect(await getAccountByHandle('x', 'dev', database)).toMatchObject({
+      xUserId: supplied.xUserId, createdAt, updatedAt: saved.updatedAt,
+    });
+  });
+
+  it('rejects invalid and conflicting X IDs before changing a contact', async () => {
+    const profile = { platform: 'x' as const, handle: 'dev', profileUrl: 'https://x.com/dev' };
+    for (const xUserId of ['', '0', '-1', '1.5', '1e10', '12345678901234567890', 123]) {
+      await expect(ensureAccountFromProfile({ ...profile, xUserId: xUserId as string }, database)).rejects.toThrow('X user ID');
+    }
+    expect(await database.accounts.count()).toBe(0);
+    const account = await ensureAccountFromProfile({ ...profile, xUserId: '123' }, database);
+    await expect(ensureAccountFromProfile({ ...profile, xUserId: '456' }, database)).rejects.toThrow('conflicts');
+    expect(await getAccountByHandle('x', 'dev', database)).toEqual(account);
+    const backup = await exportBackup(database);
+    backup.data.accounts[0].xUserId = 'invalid';
+    await expect(importBackup(backup, database)).rejects.toThrow('X user ID');
+    expect(await getAccountByHandle('x', 'dev', database)).toEqual(account);
+  });
+
   it('saves grouping assignments without changing identity or relationship metadata', async () => {
     const account = await ensureAccountFromProfile({ platform: 'x', handle: 'dev', displayName: 'Custom name',
       profileUrl: 'https://x.com/dev', website: 'https://example.com', bioSnapshot: 'Saved bio' }, database);
@@ -156,7 +226,7 @@ describe('Contexto repositories', () => {
     }
   });
 
-  it('discards legacy profession and position values during the database upgrade', async () => {
+  it('preserves legacy profession and position and maps both into role during the database upgrade', async () => {
     const name = `ContextoLegacyRoleMigration-${globalThis.crypto.randomUUID()}`;
     const legacy = new Dexie(name);
     legacy.version(1).stores({
@@ -183,9 +253,7 @@ describe('Contexto repositories', () => {
     try {
       const account = await upgraded.accounts.get('account_legacy');
       expect(account).toMatchObject({ displayName: 'Legacy User', location: 'Berlin' });
-      expect(account).not.toHaveProperty('profession');
-      expect(account).not.toHaveProperty('position');
-      expect(account).not.toHaveProperty('role');
+      expect(account).toMatchObject({ profession: 'Developer', position: 'CTO', role: 'CTO · Developer' });
     } finally {
       await upgraded.delete();
     }
@@ -296,11 +364,11 @@ describe('Contexto repositories', () => {
 
   it.each(['location', 'role'] as const)('lists distinct active saved %s values as reusable lookups', async (field) => {
     const locations = [
-      ['berlin-primary', ' Berlin '],
-      ['berlin-duplicate', 'berlin'],
-      ['san-francisco', 'San Francisco'],
-      ['blank-location', '   '],
-      ['deleted-location', 'London'],
+      ['berlin_primary', ' Berlin '],
+      ['berlin_other', 'berlin'],
+      ['san_francisco', 'San Francisco'],
+      ['blank_location', '   '],
+      ['deleted_loc', 'London'],
     ] as const;
 
     for (const [handle, location] of locations) {
@@ -310,7 +378,7 @@ describe('Contexto repositories', () => {
       );
       await database.accounts.update(account.id, {
         [field]: location,
-        ...(handle === 'deleted-location' ? { deletedAt: '2026-07-12T00:00:00.000Z' } : {}),
+        ...(handle === 'deleted_loc' ? { deletedAt: '2026-07-12T00:00:00.000Z' } : {}),
       });
     }
 

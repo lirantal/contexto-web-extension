@@ -1,5 +1,7 @@
 # Testing
 
+Standalone X export fixtures: `npx vitest run tests/x-lists-export.test.js`. These intercept X's official SDK transport and verify export/resume, OAuth handling, many-to-many conversion, and the actual Contexto backup restore path without live/paid requests. See the [CLI guide](development/x-lists-export.md).
+
 ## Automated checks
 
 Run the following before handing off a release build:
@@ -11,7 +13,11 @@ npm run build
 npm run verify:popup
 ```
 
-Use focused Vitest commands while iterating, then run the complete suite before completion.
+Use focused Vitest commands while iterating, then run the complete suite before completion. `npm run check` runs all four release checks above.
+
+For persistence, model, import, or draft-save changes, run `npm run test:integrity`. It covers upgrades from database versions 1–3, legacy/unknown field preservation, complete-table JSON round trips, concurrent exports, atomic failure rollback, contact ownership, malformed backup records and relationships, identity collisions, conflict-safe merge, full restore, stale previews, and stale contact drafts.
+
+After building, run `npm run verify:integrity` with Playwright Chromium and its host dependencies installed. This uses the actual extension with a disposable profile and synthetic data, saves and reads real JSON downloads, checks safe merge, verifies that another dashboard tab cannot overwrite newer metadata, performs a full restore that removes later-added contacts, and checks records and unknown fields after restarting the browser with the same profile. It makes no live X requests and removes its temporary profile/downloads on exit. This complements live Chrome/Vivaldi checks; it does not automate disable/uninstall. See [Data integrity](development/data-integrity.md) for future-release preservation rules.
 
 After sidebar placement or scrolling changes, build the extension and run `npm run verify:sidebar` with Playwright Chromium installed (`npx playwright install chromium`). This loads the actual built extension in a temporary browser profile against locally routed X fixtures with constrained and pinned native-search shells. It reproduces clipping at the previous insertion point, then checks that the workspace clears the pinned search header, the first label is unobscured using hit testing, the workspace fits the viewport, the last action is reachable and launches, and native X search remains usable. On profile and conversation fixture routes, it scrolls the page down and back up to check that the workspace stays at its 72-pixel sticky offset and its first label remains unobscured in light/dark themes at 900-, 600-, and 360-pixel window heights. Search-tab destinations are recorded and replaced with blank tabs to avoid live X requests. It inspects the production closed Shadow DOM through Chromium's debugging protocol; no X login is needed. Browser fixture checks complement the live X matrix below.
 
@@ -58,3 +64,11 @@ Feed grouping-editor tests cover existing assignments, empty fields, suggestion 
 ## Manual browser checks
 
 Synthetic tests cannot reproduce every X or browser lifecycle. Run the matrix in [Browser Development Workflow](development/browser-workflow.md) while signed in to X in both Chrome and Vivaldi after changing content-script mounting, X selectors, popup layout, Shadow DOM behavior, or extension lifecycle handling. For Quick X search, this includes light and dark themes; saved-account suggestions and free-form targets; target-present and targetless searches; successful and failed launches; popup/sidebar state restoration; X rerenders; and extension reload.
+
+Account identity coverage verifies optional X IDs, precision-preserving persistence, preservation on ID-less saves, conflict/invalid-ID rejection, backup round trips, and preservation of contact creation dates. Dashboard coverage verifies read-only ID and contact timestamps. Existing tags support multiple List-derived labels without List entities.
+
+Shared grouping management coverage verifies tag/circle usage counts and inactive-contact exclusion; search, sorting, unused filters, affected-contact previews, rename collision-to-merge, merge union/deduplication, explicit deletion confirmation and Cancel, unused-definition deletion, and retry/pending controls. Repository tests verify all-join hard deletion, unchanged unrelated data, transactional rollback on late failures, stale management/full-context/grouping-only rejection before writes, and revision backup preservation. Editor integration tests use the actual repositories to verify draft retention across remount, failed-save lifecycle, explicit Reload saved values, and successful retry.
+
+Company management coverage verifies unused records, active/inactive usage, rename identity/details preservation, merge reassignment and destination website/notes rules, deletion with reference clearing, validation, rollback, and backup compatibility. Role/location cleanup coverage verifies case/trim grouping, active/inactive matches, existing/new replacement, clear confirmation and Cancel, blank rejection, unrelated-field preservation, suggestion refresh, pending/error/retry behavior, and transactional rollback. Real-repository editor tests reject stale X and dashboard company/role/location drafts, retain input, and reload authoritative values before retry; explicit X reload must not reintroduce cleared metadata from an older profile snapshot.
+
+For X audience observations, `tests/x-profile-extraction.test.ts` exercises the synthetic profile fixture, exact counts, zero, abbreviated counts, missing viewer, and absent-badge unknown behavior. Repository and exporter tests cover viewer-specific filtering, false/zero, sparse/older saves, transactional validation, and backup round trips; dashboard search tests exercise the controls. When validating against a signed-in X page, check the viewer identity, exact follower/following links and positive badge; save explicitly, then verify dashboard details. Missing/ambiguous DOM evidence must preserve previously imported values. Live X DOM validation requires a signed-in browser and is separate from synthetic tests.

@@ -273,7 +273,7 @@ export function ContextoFeedContext({ profile, post, send, onEdit, panelContaine
           </div>
         </div>}
         {!editingGroupings && folders.length > 0 && <div className="contexto-metadata-field" data-testid="contexto-feed-folders">
-          <span className="contexto-metadata-label">Folders:</span>
+          <span className="contexto-metadata-label">Circles:</span>
           <div className="contexto-feed-values contexto-metadata-value">
             {folders.map((folder) => <span className="chip folder-chip" key={folder.id}>{folder.name}</span>)}
           </div>
@@ -286,13 +286,13 @@ export function ContextoFeedContext({ profile, post, send, onEdit, panelContaine
           onSaved={(updated) => {
             setAccount(updated);
             setEditingGroupings(false);
-            setGroupingsSuccess('Tags and folders saved');
+            setGroupingsSuccess('Tags and circles saved');
           }}
           onCancel={() => setEditingGroupings(false)}
         /> : <button type="button" onClick={() => {
           setGroupingsSuccess('');
           setEditingGroupings(true);
-        }}>Edit tags and folders</button>}
+        }}>Edit tags and circles</button>}
         {groupingsSuccess && <p className="contexto-success" aria-live="polite">{groupingsSuccess}</p>}
       </section>
       <section className="contexto-feed-section contexto-feed-local-actions" aria-labelledby={`${panelId}-local`}>

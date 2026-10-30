@@ -1,3 +1,4 @@
+import { preserveLegacyAccountFields } from './legacy-account';
 import Dexie, { type EntityTable } from 'dexie';
 import type {
   Account,
@@ -61,8 +62,7 @@ export class ContextoDatabase extends Dexie {
       changeLog: 'id, entityType, entityId, changedAt',
     }).upgrade(async (transaction) => {
       await transaction.table('accounts').toCollection().modify((account: Record<string, unknown>) => {
-        delete account.profession;
-        delete account.position;
+        preserveLegacyAccountFields(account);
       });
     });
 
@@ -80,6 +80,10 @@ export class ContextoDatabase extends Dexie {
       searchHistory: 'id, platform, accountId, createdAt',
       backups: 'id, createdAt',
       changeLog: 'id, entityType, entityId, changedAt',
+    });
+    // Normalize legacy fields restored into an already-upgraded database.
+    this.version(4).stores({}).upgrade(async (transaction) => {
+      await transaction.table('accounts').toCollection().modify(preserveLegacyAccountFields);
     });
   }
 }

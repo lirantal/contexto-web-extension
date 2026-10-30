@@ -1,6 +1,6 @@
 # Contexto
 
-Contexto is a local-first browser extension for lightweight CRM and social relationship management on X/Twitter. It is built for Developer Relations and Developer Advocacy workflows where the useful context lives around people: how you met, what they work on, what company they are attached to, notes, tags, folders, and fast ways to search previous public X interactions.
+Contexto is a local-first browser extension for lightweight CRM and social relationship management on X/Twitter. It is built for Developer Relations and Developer Advocacy workflows where the useful context lives around people: how you met, what they work on, what company they are attached to, notes, tags, circles, and fast ways to search previous public X interactions.
 
 The extension is built with [WXT](https://wxt.dev/), React, TypeScript, and IndexedDB through Dexie. Chrome and Vivaldi are the MVP browser targets.
 
@@ -10,8 +10,8 @@ The extension is built with [WXT](https://wxt.dev/), React, TypeScript, and Inde
 - Saved-contact feed markers with compact relationship context, inline quick notes, and a path into the full editor.
 - Rich contact bookmarks captured from supported X posts with editable reminders, Handled/Reopen tracking, and dashboard review/removal.
 - Explicit per-contact catch-up checkpoints with live X searches for posts since the last review.
-- Local IndexedDB database for accounts, companies, tags, folders, notes, search history, and backups.
-- Dashboard/options page for offline account search, metadata editing, filtering, import, and export.
+- Local IndexedDB database for accounts, companies, tags, circles, notes, search history, and backups.
+- Dashboard/options page for offline account search, metadata editing, filtering, shared-value management, bulk role/location cleanup, import, and export.
 - One persisted Quick X search builder in both the toolbar popup and the always-expanded Contexto section in X's right sidebar, with keyword and date filters.
 - X search helpers for messages/posts from you to them, them to you, profile posts, direct mentions, and keyword/date constraints.
 - JSON backup/restore so local data can be moved or recovered.
@@ -40,9 +40,7 @@ WXT writes the development extension to `.output/chrome-mv3` and keeps generated
 ## Build And Package
 
 ```sh
-npm run compile
-npm run test
-npm run build
+npm run check
 npm run zip
 ```
 
@@ -60,11 +58,14 @@ For day-to-day iteration, prefer `npm run dev` with a persistent browser profile
 
 ## Documentation
 
+For a standalone export of your private X List members into a fresh Contexto installation, see the [X Lists CLI guide](docs/development/x-lists-export.md). Run `npm run x:lists -- --help` for commands.
+
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Data model](docs/architecture/data-model.md)
 - [Platform adapters](docs/architecture/platform-adapters.md)
 - [Storage and sync](docs/architecture/storage-and-sync.md)
+- [Data integrity and development plan](docs/development/data-integrity.md)
 - [Security and privacy](docs/architecture/security-privacy.md)
 - [Development browser workflow](docs/development/browser-workflow.md)
 - Feature docs under [docs/features](docs/features)

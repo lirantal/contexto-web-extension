@@ -1,7 +1,7 @@
 import React, { useId, useState } from 'react';
 
 interface AccountFilterFieldProps {
-  label: 'Folders' | 'Tags' | 'Companies';
+  label: 'Circles' | 'Tags' | 'Companies';
   options: { id: string; name: string }[];
   selectedIds: string[];
   onChange(ids: string[]): void;
@@ -36,7 +36,7 @@ export function AccountFilterField({ label, options, selectedIds, onChange }: Ac
       {selectedIds.length > 0 && (
         <div className="chip-row" aria-label={`Selected ${label.toLowerCase()}`}>
           {selectedIds.map((id) => (
-            <span className={`chip ${label === 'Folders' ? 'folder-chip' : ''}`} key={id}>
+            <span className={`chip ${label === 'Circles' ? 'folder-chip' : ''}`} key={id}>
               <span>{options.find((option) => option.id === id)?.name ?? 'Unavailable filter'}</span>
               <button type="button" aria-label={`Remove ${options.find((option) => option.id === id)?.name ?? 'unavailable filter'} from ${label} filters`}
                 onClick={() => onChange(selectedIds.filter((selectedId) => selectedId !== id))}>×</button>

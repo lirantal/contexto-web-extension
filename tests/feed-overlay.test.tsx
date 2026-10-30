@@ -69,7 +69,6 @@ describe('feed relationship overlay', () => {
       expect(overlayRoot.queryByRole('dialog')).toBeNull();
 
       fireEvent.click(marker);
-      fireEvent.click(overlayRoot.getByRole('button', { name: 'Edit tags and folders' }));
       const tagsInput = overlayRoot.getByRole('combobox', { name: 'Tags' });
       expect(overlay.shadowRoot?.activeElement).toBe(tagsInput);
       fireEvent.pointerDown(tagsInput, { composed: true });

@@ -47,3 +47,9 @@ LinkedIn and Reddit should add their own adapter modules with the same responsib
 - Keep DOM extraction in the platform content script, not in shared repositories.
 
 The `Account.platform` field already accepts `x`, `linkedin`, and `reddit`, but only `x` is implemented in the MVP UI.
+
+## Audience and relationship evidence
+
+The X boundary accepts exact nonnegative integer counts (including comma-grouped thousands) from spans in follower/following links for the resolved handle's exact path. Follower paths may end in `followers` or `verified_followers`; following uses `following`. It excludes posts and bio links and omits conflicting or abbreviated values rather than estimating.
+
+A `userFollowIndicator` with English **Follows you** text must belong to the single matching `UserName` subtree, outside buttons/posts. Relationship capture additionally requires one unambiguous viewer profile link from navigation's `AppTabBar_Profile_Link`. Other DOM shapes/locales or absent badges yield unknown. The synthetic `profile-audience-observations.html` fixture documents the supported structure; it is not a claim that every current X rendering has this structure.

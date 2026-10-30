@@ -3,15 +3,13 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import {
   ArchiveRestore,
   Building2,
-  Download,
   ExternalLink,
-  FolderPlus,
+  UsersRound,
   RefreshCw,
   Search,
   Settings,
   Tag,
   Trash2,
-  Upload,
   UserPlus,
 } from 'lucide-react';
 import {
@@ -20,9 +18,8 @@ import {
   assignTag,
   deleteAccount,
   ensureAccountFromProfile,
-  exportBackup,
   getLookups,
-  importBackup,
+  getAccountSummary,
   listAccountSummaries,
   markAccountCaughtUp,
   recordSearch,
@@ -40,6 +37,8 @@ import {
 import type { ContextoSettingsPersistence } from '@/src/shared/quick-x-search-persistence';
 import type { AccountFilters, AccountSummary, ContextoSettings, SearchDirection, XSearchFilters } from '@/src/shared/types';
 import { getAdjacentAccountId } from './account-navigation';
+import { ManageData } from './ManageData';
+import { BackupControls } from './BackupControls';
 import { AccountBookmarks } from './AccountBookmarks';
 import { AccountFilterField } from './AccountFilterField';
 import { FuzzyTextCombobox } from './FuzzyTextCombobox';
@@ -51,6 +50,7 @@ export function Dashboard({
 }: {
   settingsPersistence: ContextoSettingsPersistence;
 }) {
+  const [view, setView] = useState<'accounts' | 'manage'>('accounts');
   const [filters, setFilters] = useState<AccountFilters>({});
   const [selectedId, setSelectedId] = useState<string>();
   const [settings, setSettings] = useState<ContextoSettings>(defaultSettings);
@@ -59,14 +59,32 @@ export function Dashboard({
   const [status, setStatus] = useState('');
   const activeRowRef = useRef<HTMLButtonElement>(null);
 
-  const accounts = useLiveQuery(() => listAccountSummaries(filters), [
+  const accounts = useLiveQuery(() => listAccountSummaries({ ...filters, followsYouViewerHandle: normalizeXHandle(settings.myXHandle) }), [
     filters.query,
     filters.tagIds,
     filters.folderIds,
     filters.companyIds,
     filters.location,
+    filters.followsYou, settings.myXHandle, filters.minFollowers, filters.maxFollowers, filters.minFollowing, filters.maxFollowing,
   ]);
   const lookups = useLiveQuery(() => getLookups(), []);
+  useEffect(() => {
+    if (!lookups) return;
+    setFilters((current) => {
+      function prune(ids: string[] | undefined, options: { id: string }[]) {
+        if (!ids) return ids;
+        const available = new Set(options.map((option) => option.id));
+        const next = ids.filter((id) => available.has(id));
+        return next.length === ids.length ? ids : next;
+      }
+      const tagIds = prune(current.tagIds, lookups.tags);
+      const folderIds = prune(current.folderIds, lookups.folders);
+      const companyIds = prune(current.companyIds, lookups.companies);
+      return tagIds === current.tagIds && folderIds === current.folderIds && companyIds === current.companyIds
+        ? current : { ...current, tagIds, folderIds, companyIds };
+    });
+  }, [lookups]);
+
   const selected = useMemo(() => accounts?.find((account) => account.id === selectedId) ?? accounts?.[0], [accounts, selectedId]);
 
   useEffect(() => {
@@ -87,7 +105,7 @@ export function Dashboard({
   }, [accounts, selectedId]);
 
   useEffect(() => {
-    if (!accounts?.length) return;
+    if (view !== 'accounts' || !accounts?.length) return;
     const accountIds = accounts.map((account) => account.id);
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -111,7 +129,7 @@ export function Dashboard({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [accounts]);
+  }, [accounts, view]);
 
   useEffect(() => {
     activeRowRef.current?.scrollIntoView({ block: 'nearest' });
@@ -138,25 +156,6 @@ export function Dashboard({
     setStatus(`Added @${normalizedHandle}`);
   }
 
-  async function downloadBackup() {
-    const backup = await exportBackup();
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `contexto-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setStatus('Backup exported');
-  }
-
-  async function uploadBackup(file?: File) {
-    if (!file) return;
-    const parsed = JSON.parse(await file.text());
-    await importBackup(parsed);
-    setStatus('Backup imported');
-  }
-
   async function clearTargetHistory() {
     try {
       await clearTargetHandleHistory();
@@ -165,6 +164,8 @@ export function Dashboard({
       setStatus('Could not clear target handle history');
     }
   }
+
+  if (view === 'manage') return <ManageData onBack={() => setView('accounts')} />;
 
   return (
     <main className="contexto-app">
@@ -176,6 +177,8 @@ export function Dashboard({
             <p>Relationship context for practitioner community work.</p>
           </div>
         </div>
+
+        <button type="button" className="manage-data-link" onClick={() => setView('manage')}>Manage data</button>
 
         <section className="panel compact-panel">
           <label className="field-label" htmlFor="account-query">Account search</label>
@@ -190,7 +193,7 @@ export function Dashboard({
           </div>
 
           <p className="filter-help">Accounts must match every selected filter (AND).</p>
-          <AccountFilterField label="Folders" options={lookups?.folders ?? []}
+          <AccountFilterField label="Circles" options={lookups?.folders ?? []}
             selectedIds={filters.folderIds ?? []}
             onChange={(folderIds) => setFilters((current) => ({ ...current, folderIds }))} />
           <AccountFilterField label="Tags" options={lookups?.tags ?? []}
@@ -202,7 +205,25 @@ export function Dashboard({
           {(filters.companyIds?.length ?? 0) > 1 && (
             <p className="filter-help">Accounts have one company, so multiple companies cannot match all selections.</p>
           )}
-          <button type="button" disabled={!filters.query && !filters.folderIds?.length && !filters.tagIds?.length && !filters.companyIds?.length}
+          <label>Follows you<select value={filters.followsYou ?? ''} onChange={(event) => setFilters(current => ({ ...current,
+            followsYou: (event.target.value || undefined) as AccountFilters['followsYou'] }))}>
+            <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option>
+          </select></label>
+          {filters.followsYou && !normalizeXHandle(settings.myXHandle) && <p className="filter-help">Set My X handle below to filter your relationship observations.</p>}
+          {([['Followers', 'minFollowers', 'maxFollowers'], ['Following', 'minFollowing', 'maxFollowing']] as const).map(([label, min, max]) => (
+            <div key={label} className="form-grid two-columns">
+              {([[min, 'minimum'], [max, 'maximum']] as const).map(([field, bound]) => (
+                <label key={field}>{label} {bound}<input type="number" min="0" step="1" value={filters[field] ?? ''}
+                  onChange={(event) => {
+                    const value = event.target.valueAsNumber;
+                    setFilters(current => ({ ...current, [field]: Number.isSafeInteger(value) && value >= 0 ? value : undefined }));
+                  }} /></label>
+              ))}
+            </div>
+          ))}
+          <button type="button" disabled={!filters.query && !filters.folderIds?.length && !filters.tagIds?.length && !filters.companyIds?.length
+            && !filters.followsYou && filters.minFollowers === undefined && filters.maxFollowers === undefined
+            && filters.minFollowing === undefined && filters.maxFollowing === undefined}
             onClick={() => setFilters({})}>Clear filters</button>
         </section>
 
@@ -235,13 +256,7 @@ export function Dashboard({
           <button className="clear-history-action" onClick={clearTargetHistory}>
             <Trash2 size={16} aria-hidden="true" /> Clear target handle history
           </button>
-          <div className="backup-actions">
-            <button onClick={downloadBackup}><Download size={16} aria-hidden="true" /> Export</button>
-            <label className="file-button">
-              <Upload size={16} aria-hidden="true" /> Import
-              <input type="file" accept="application/json" onChange={(event) => uploadBackup(event.target.files?.[0])} />
-            </label>
-          </div>
+          <BackupControls />
           {status && <p className="status-line">{status}</p>}
         </section>
       </aside>
@@ -300,6 +315,22 @@ function EmptyDetail() {
   );
 }
 
+function metadataDraftFor(account: AccountSummary) {
+  return {
+    displayName: account.displayName,
+    role: account.role ?? '',
+    companyName: account.company?.name ?? '',
+    location: account.location ?? '',
+    website: account.website ?? '',
+    relationshipSource: account.relationshipSource ?? '',
+    bioSnapshot: account.bioSnapshot ?? '',
+  };
+}
+
+function metadataMatchesDraft(account: AccountSummary, draft: ReturnType<typeof metadataDraftFor>) {
+  return JSON.stringify(metadataDraftFor(account)) === JSON.stringify(draft);
+}
+
 function AccountDetail({
   account,
   settings,
@@ -313,15 +344,10 @@ function AccountDetail({
   locationSuggestions: string[];
   roleSuggestions: string[];
 }) {
-  const [draft, setDraft] = useState({
-    displayName: account.displayName,
-    role: account.role ?? '',
-    companyName: account.company?.name ?? '',
-    location: account.location ?? '',
-    website: account.website ?? '',
-    relationshipSource: account.relationshipSource ?? '',
-    bioSnapshot: account.bioSnapshot ?? '',
-  });
+  const [draft, setDraft] = useState(() => metadataDraftFor(account));
+  const [draftRevision, setDraftRevision] = useState(account.groupingRevision);
+  const [contactRevision, setContactRevision] = useState(account.accountRevision);
+  const baselineMetadata = useRef(metadataDraftFor(account));
   const [note, setNote] = useState('');
   const [tagName, setTagName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -339,24 +365,23 @@ function AccountDetail({
   const catchUpUrl = buildXCatchUpSearchUrl(account.handle, account.lastCatchUpAt);
 
   useEffect(() => {
-    setDraft({
-      displayName: account.displayName,
-      role: account.role ?? '',
-      companyName: account.company?.name ?? '',
-      location: account.location ?? '',
-      website: account.website ?? '',
-      relationshipSource: account.relationshipSource ?? '',
-      bioSnapshot: account.bioSnapshot ?? '',
-    });
+    setDraft(metadataDraftFor(account));
+    setDraftRevision(account.groupingRevision);
+    setContactRevision(account.accountRevision);
+    baselineMetadata.current = metadataDraftFor(account);
   }, [account.id]);
 
   async function save() {
     setSaving(true);
     setSaveError('');
     try {
-      await updateAccount(account.id, draft);
-      await addTagAndClear();
-      await addFolderAndClear();
+      const saved = await updateAccount(account.id, { ...draft, accountRevision: contactRevision, groupingRevision: draftRevision,
+        ...(tagName.trim() ? { addTagNames: [tagName.trim()] } : {}),
+        ...(folderName.trim() ? { addFolderNames: [folderName.trim()] } : {}) });
+      setDraftRevision(saved.groupingRevision);
+      setContactRevision(saved.accountRevision);
+      baselineMetadata.current = metadataDraftFor(saved);
+      setTagName(''); setFolderName('');
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Could not save metadata');
     } finally {
@@ -364,15 +389,32 @@ function AccountDetail({
     }
   }
 
+  async function reloadSavedMetadata() {
+    setSaving(true); setSaveError('');
+    try {
+      const current = await getAccountSummary(account.id);
+      if (!current) throw new Error('Contact no longer exists.');
+      setDraft(metadataDraftFor(current));
+      setDraftRevision(current.groupingRevision);
+      setContactRevision(current.accountRevision);
+      baselineMetadata.current = metadataDraftFor(current);
+      setTagName(''); setFolderName('');
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Could not reload saved values');
+    } finally { setSaving(false); }
+  }
+
   async function addTagAndClear() {
     if (!tagName.trim()) return;
-    await assignTag(account.id, tagName.trim());
+    const saved = await assignTag(account.id, tagName.trim());
+    if (saved && metadataMatchesDraft(saved, baselineMetadata.current)) setContactRevision(saved.accountRevision);
     setTagName('');
   }
 
   async function addFolderAndClear() {
     if (!folderName.trim()) return;
-    await assignFolder(account.id, folderName.trim());
+    const saved = await assignFolder(account.id, folderName.trim());
+    if (saved && metadataMatchesDraft(saved, baselineMetadata.current)) setContactRevision(saved.accountRevision);
     setFolderName('');
   }
 
@@ -439,6 +481,26 @@ function AccountDetail({
         </div>
       </header>
 
+      <section className="panel detail-section" aria-label="Contact record details">
+        <h3>Contact record details</h3>
+        {account.platform === 'x' && account.xUserId && <p><strong>X user ID:</strong> {account.xUserId}</p>}
+        <p><strong>Followers:</strong> {account.followersCount?.toLocaleString() ?? 'Unknown'}</p>
+        <p><strong>Following:</strong> {account.followingCount?.toLocaleString() ?? 'Unknown'}</p>
+        <p><strong>{account.followsYouViewerHandle ? `Follows @${account.followsYouViewerHandle}` : 'Follows you'}:</strong>{' '}
+          {account.followsYou === undefined ? 'Unknown' : account.followsYou ? 'Yes' : 'No'}</p>
+        {([
+          ['Added to Contexto', account.createdAt],
+          ['Last updated in Contexto', account.updatedAt],
+        ] as const).map(([label, timestamp]) => (
+          <p key={label}>
+            <strong>{label}:</strong>{' '}
+            {Number.isNaN(Date.parse(timestamp)) ? 'Unknown' : <time dateTime={timestamp}>
+              {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(timestamp))}
+            </time>}
+          </p>
+        ))}
+      </section>
+
       <section className="panel detail-section">
         <h3>Profile metadata</h3>
         <div className="form-grid two-columns">
@@ -454,7 +516,7 @@ function AccountDetail({
         </div>
         <label>Bio snapshot<textarea rows={3} value={draft.bioSnapshot} onChange={(event) => setDraft({ ...draft, bioSnapshot: event.target.value })} /></label>
         <button className="primary-action" disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save metadata'}</button>
-        {saveError && <p role="alert">{saveError}</p>}
+        {saveError && <><p role="alert">{saveError}</p><button type="button" disabled={saving} onClick={reloadSavedMetadata}>Reload saved values</button></>}
       </section>
 
       <section className="panel detail-section split-section">
@@ -470,12 +532,12 @@ function AccountDetail({
           ))}</div>
         </div>
         <div>
-          <h3><FolderPlus size={16} aria-hidden="true" /> Folders</h3>
-          <div className="inline-form"><input disabled={saving} value={folderName} onChange={(event) => setFolderName(event.target.value)} placeholder="Add folder" /><button disabled={saving} onClick={addFolderAndClear}>Add</button></div>
+          <h3><UsersRound size={16} aria-hidden="true" /> Circles</h3>
+          <div className="inline-form"><input disabled={saving} value={folderName} onChange={(event) => setFolderName(event.target.value)} placeholder="Add circle" /><button disabled={saving} onClick={addFolderAndClear}>Add</button></div>
           <div className="chip-row">{account.folders.map((folder) => (
             <span className="chip folder-chip" key={folder.id}>
               {folder.name}
-              <button type="button" aria-label={`Remove ${folder.name} from Folders`}
+              <button type="button" aria-label={`Remove ${folder.name} from Circles`}
                 onClick={() => removeAssignedFolder(folder.id)}>×</button>
             </span>
           ))}</div>
@@ -547,7 +609,7 @@ function AccountDetail({
           </button>
         </> : <>
           <p className="danger-warning">
-            This permanently deletes @{account.handle}, including profile metadata, notes, bookmarks, search history, and tag/folder assignments. Shared company, tag, and folder definitions remain available to other accounts.
+            This permanently deletes @{account.handle}, including profile metadata, notes, bookmarks, search history, and tag/circle assignments. Shared company, tag, and circle definitions remain available to other accounts.
           </p>
           <div className="delete-actions">
             <button type="button" disabled={deleting} onClick={() => setDeleteConfirmation(false)}>Cancel</button>

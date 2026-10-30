@@ -35,6 +35,7 @@ vi.mock('@/src/data/repositories', () => ({
   ensureAccountFromProfile: vi.fn(),
   exportBackup: vi.fn(),
   getLookups: vi.fn(),
+  getAccountSummary: vi.fn(),
   importBackup: vi.fn(),
   listAccountSummaries: vi.fn(),
   listBookmarks: vi.fn().mockResolvedValue([]),
@@ -81,6 +82,7 @@ describe('dashboard target handle history settings', () => {
       ...patch,
     }));
     mocks.clearTargetHistory.mockResolvedValue(undefined);
+    mocks.updateAccount.mockImplementation(async () => mocks.accounts[0]);
     mocks.markAccountCaughtUp.mockResolvedValue(undefined);
   });
 
@@ -141,7 +143,7 @@ describe('dashboard target handle history settings', () => {
     renderDashboard();
 
     await user.click(await screen.findByRole('button', { name: 'Remove founder from Tags' }));
-    await user.click(screen.getByRole('button', { name: 'Remove Friends from Folders' }));
+    await user.click(screen.getByRole('button', { name: 'Remove Friends from Circles' }));
 
     expect(mocks.removeTag).toHaveBeenCalledWith('account-1', 'tag-1');
     expect(mocks.removeFolder).toHaveBeenCalledWith('account-1', 'folder-1');
@@ -155,14 +157,15 @@ describe('dashboard target handle history settings', () => {
     const user = userEvent.setup();
     renderDashboard();
     await user.type(screen.getByPlaceholderText('Add tag'), '  speaker  ');
-    await user.type(screen.getByPlaceholderText('Add folder'), '  Conference follow-up  ');
+    await user.type(screen.getByPlaceholderText('Add circle'), '  Conference follow-up  ');
     expect(mocks.assignTag).not.toHaveBeenCalled();
     expect(mocks.assignFolder).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Save metadata' }));
-    await waitFor(() => expect(mocks.assignFolder).toHaveBeenCalledWith('account-1', 'Conference follow-up'));
-    expect(mocks.assignTag).toHaveBeenCalledWith('account-1', 'speaker');
+    await waitFor(() => expect(mocks.updateAccount).toHaveBeenCalledWith('account-1', expect.objectContaining({ addTagNames: ['speaker'], addFolderNames: ['Conference follow-up'] })));
+    expect(mocks.assignTag).not.toHaveBeenCalled();
+    expect(mocks.assignFolder).not.toHaveBeenCalled();
     expect(screen.getByPlaceholderText('Add tag')).toHaveValue('');
-    expect(screen.getByPlaceholderText('Add folder')).toHaveValue('');
+    expect(screen.getByPlaceholderText('Add circle')).toHaveValue('');
   });
 
   it('retains pending dashboard input when saving fails and allows retry', async () => {
@@ -170,17 +173,17 @@ describe('dashboard target handle history settings', () => {
       id: 'account-1', platform: 'x', handle: 'founder', displayName: 'Founder',
       profileUrl: 'https://x.com/founder', tags: [], folders: [],
     }];
-    mocks.assignTag.mockRejectedValueOnce(new Error('Database unavailable'));
+    mocks.updateAccount.mockRejectedValueOnce(new Error('Database unavailable'));
     const user = userEvent.setup();
     renderDashboard();
     await user.type(screen.getByPlaceholderText('Add tag'), 'speaker');
-    await user.type(screen.getByPlaceholderText('Add folder'), 'Friends');
+    await user.type(screen.getByPlaceholderText('Add circle'), 'Friends');
     await user.click(screen.getByRole('button', { name: 'Save metadata' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Database unavailable');
     expect(screen.getByPlaceholderText('Add tag')).toHaveValue('speaker');
-    expect(screen.getByPlaceholderText('Add folder')).toHaveValue('Friends');
+    expect(screen.getByPlaceholderText('Add circle')).toHaveValue('Friends');
     await user.click(screen.getByRole('button', { name: 'Save metadata' }));
-    await waitFor(() => expect(screen.getByPlaceholderText('Add folder')).toHaveValue(''));
+    await waitFor(() => expect(screen.getByPlaceholderText('Add circle')).toHaveValue(''));
   });
 
   it('ignores whitespace-only dashboard tag and folder inputs on Save', async () => {
@@ -191,7 +194,7 @@ describe('dashboard target handle history settings', () => {
     const user = userEvent.setup();
     renderDashboard();
     await user.type(screen.getByPlaceholderText('Add tag'), '  ');
-    await user.type(screen.getByPlaceholderText('Add folder'), '  ');
+    await user.type(screen.getByPlaceholderText('Add circle'), '  ');
     await user.click(screen.getByRole('button', { name: 'Save metadata' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Save metadata' })).toBeEnabled());
     expect(mocks.assignTag).not.toHaveBeenCalled();

@@ -27,3 +27,7 @@ Treat those files as the source of truth. Dated files under `docs/superpowers/` 
 - Keep documentation synchronized when changing behavior, architecture, workflows, selectors, or operational assumptions.
 - Prefer links to canonical sources over duplicated instructions.
 - Link new durable documentation from `docs/README.md`.
+
+## Data preservation
+
+Read [Data integrity](docs/development/data-integrity.md) before changing persistence, model fields, imports, or draft saves. Preserve existing and unknown fields, use lossless versioned migrations, keep multi-record writes transactional, and pass contact revisions from production draft editors. Add upgrade/round-trip or late-failure regressions appropriate to the change. Never use database deletion/reset as a production migration or silently overwrite conflicts during import.

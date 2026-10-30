@@ -9,8 +9,21 @@ export interface TimestampedRecord {
   deletedAt?: string;
 }
 
-export interface Account extends TimestampedRecord {
+export interface XAccountObservations {
+  followersCount?: number;
+  followingCount?: number;
+  followersCountObservedAt?: string;
+  followingCountObservedAt?: string;
+  followsYou?: boolean;
+  followsYouViewerHandle?: string;
+  followsYouViewerId?: string;
+  followsYouObservedAt?: string;
+}
+
+export interface Account extends TimestampedRecord, XAccountObservations {
   platform: Platform;
+  /** X numeric user ID as a string to preserve precision; absent until reliably supplied. */
+  xUserId?: string;
   handle: string;
   normalizedHandle: string;
   displayName: string;
@@ -134,7 +147,8 @@ export type ChangeEntityType =
   | 'folder'
   | 'note'
   | 'bookmark'
-  | 'searchPreset';
+  | 'searchPreset'
+  | 'groupingCatalog';
 
 export interface ChangeLogEntry {
   id: RecordId;
@@ -144,8 +158,10 @@ export interface ChangeLogEntry {
   changedAt: string;
 }
 
-export interface ProfileSnapshot {
+export interface ProfileSnapshot extends XAccountObservations {
   platform: Platform;
+  /** X numeric user ID as a string to preserve precision; absent until reliably supplied. */
+  xUserId?: string;
   handle: string;
   displayName?: string;
   profileUrl: string;
@@ -165,6 +181,8 @@ export interface XPostSnapshot {
 }
 
 export interface AccountSummary extends Account {
+  accountRevision?: string;
+  groupingRevision?: string;
   company?: Company;
   tags: Tag[];
   folders: Folder[];
@@ -172,6 +190,12 @@ export interface AccountSummary extends Account {
 }
 
 export interface AccountFilters {
+  followsYou?: 'yes' | 'no' | 'unknown';
+  followsYouViewerHandle?: string;
+  minFollowers?: number;
+  maxFollowers?: number;
+  minFollowing?: number;
+  maxFollowing?: number;
   tagIds?: RecordId[];
   folderIds?: RecordId[];
   companyIds?: RecordId[];
@@ -183,6 +207,10 @@ export interface AccountFilters {
 }
 
 export interface AccountUpdateInput {
+  addTagNames?: string[];
+  addFolderNames?: string[];
+  accountRevision?: string;
+  groupingRevision?: string;
   displayName?: string;
   role?: string;
   companyName?: string;
@@ -194,6 +222,8 @@ export interface AccountUpdateInput {
 }
 
 export interface AccountContextSaveInput {
+  accountRevision?: string;
+  groupingRevision?: string;
   profile: ProfileSnapshot;
   metadata: AccountUpdateInput;
   tagNames: string[];
@@ -214,6 +244,7 @@ export interface PopupSearchState {
 }
 
 export interface LookupData {
+  groupingRevision?: string;
   companies: Company[];
   tags: Tag[];
   folders: Folder[];
