@@ -58,6 +58,8 @@ For day-to-day iteration, prefer `npm run dev` with a persistent browser profile
 
 ## Documentation
 
+For a standalone export of your private X List members into a fresh Contexto installation, see the [X Lists CLI guide](docs/development/x-lists-export.md). Run `npm run x:lists -- --help` for commands.
+
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Data model](docs/architecture/data-model.md)

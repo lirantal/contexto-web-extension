@@ -17,6 +17,9 @@ stats-*.json
 web-ext.config.ts
 .env*
 
+# Local X API credentials, private List exports, and mapping files
+.local/
+
 # Contexto exports contain private CRM and relationship data
 contexto-backup-*.json
 contexto-before-import-*.json

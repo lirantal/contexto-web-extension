@@ -1,5 +1,7 @@
 # Testing
 
+Standalone X export fixtures: `npx vitest run tests/x-lists-export.test.js`. These intercept X's official SDK transport and verify export/resume, OAuth handling, many-to-many conversion, and the actual Contexto backup restore path without live/paid requests. See the [CLI guide](development/x-lists-export.md).
+
 ## Automated checks
 
 Run the following before handing off a release build:
