@@ -23,3 +23,9 @@ Quick X search is one shared, persisted workflow on two surfaces: the toolbar po
 - Keep content scripts thin. They observe the host page and call the background service worker rather than writing CRM data directly.
 - Keep local data exportable. IndexedDB is durable for an installed extension profile, but JSON backup is the recovery path if the extension/profile is removed.
 - Prefer browser-native capabilities and WXT conventions over custom extension plumbing.
+
+## X account observations
+
+Accounts optionally store `followersCount`, `followingCount`, and `followsYou`, with per-observation timestamps (`followersCountObservedAt`, `followingCountObservedAt`, `followsYouObservedAt`). Relationship evidence also records `followsYouViewerHandle` and, when available from the API, `followsYouViewerId`: it refers to a particular authenticated X account. Missing observations mean unknown; zero and false are real values. These are optional unindexed fields, so existing databases require no schema migration.
+
+Profile saves validate and merge observations transactionally. Missing observations and older snapshots preserve saved values; newer evidence replaces the corresponding observation. Full backup validation and round trips preserve these fields and unknown source fields. They are snapshots, not live subscriptions.

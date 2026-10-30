@@ -31,6 +31,35 @@ afterEach(async () => {
 });
 
 describe('dashboard AND search', () => {
+  it('filters viewer-specific relationships and audience ranges, including zero', async () => {
+    const yes = await seed('yesuser', [], []);
+    const no = await seed('nouser', [], []);
+    await seed('unknownuser', [], []);
+    await db.accounts.update(yes.id, { followsYou: true, followsYouViewerHandle: 'viewer', followersCount: 100, followingCount: 10 });
+    await db.accounts.update(no.id, { followsYou: false, followsYouViewerHandle: 'viewer', followersCount: 0, followingCount: 0 });
+    const user = userEvent.setup();
+    render(<Dashboard settingsPersistence={{ updateSettings: vi.fn() }} />);
+    const results = screen.getByRole('region', { name: 'Accounts' });
+    await waitFor(() => expect(within(results).getAllByRole('button')).toHaveLength(3));
+    await user.type(screen.getByLabelText('My X handle'), 'viewer');
+    await user.selectOptions(screen.getByLabelText('Follows you', { selector: 'select' }), 'yes');
+    await waitFor(() => expect(within(results).getAllByRole('button')).toHaveLength(1));
+    expect(within(results).getByRole('button', { name: /@yesuser/ })).toBeVisible();
+    await user.selectOptions(screen.getByLabelText('Follows you', { selector: 'select' }), 'no');
+    await waitFor(() => expect(within(results).getByRole('button', { name: /@nouser/ })).toBeVisible());
+    await user.click(within(results).getByRole('button', { name: /@nouser/ }));
+    const details = screen.getByRole('region', { name: 'Contact record details' });
+    await waitFor(() => expect(within(details).getByText('No', { exact: true })).toBeVisible());
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }));
+    await user.type(screen.getByLabelText('Followers maximum'), '0');
+    await waitFor(() => expect(within(results).getAllByRole('button')).toHaveLength(1));
+    expect(within(results).getByRole('button', { name: /@nouser/ })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }));
+    await user.selectOptions(screen.getByLabelText('Follows you', { selector: 'select' }), 'unknown');
+    await waitFor(() => expect(within(results).getAllByRole('button')).toHaveLength(1));
+    expect(within(results).getByRole('button', { name: /@unknownuser/ })).toBeVisible();
+  });
+
   it('discards deleted filter IDs after a catalog edit in another dashboard', async () => {
     await seed('filtered', ['Typo'], []);
     await seed('unfiltered', [], []);

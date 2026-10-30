@@ -35,6 +35,41 @@ afterEach(async () => {
 });
 
 describe('Contexto repositories', () => {
+  it('preserves observations on sparse saves and round trips, accepts zero/false, and rejects malformed data atomically', async () => {
+    const profile = { platform: 'x' as const, handle: 'observed', profileUrl: 'https://x.com/observed' };
+    const date = '2026-10-20T00:00:00.000Z';
+    const account = await ensureAccountFromProfile({ ...profile, followersCount: 0, followingCount: 42,
+      followersCountObservedAt: date, followingCountObservedAt: date, followsYou: false,
+      followsYouViewerHandle: 'viewer', followsYouViewerId: '123', followsYouObservedAt: date }, database);
+    await saveAccountContext({ profile, metadata: { role: 'Engineer' }, tagNames: [], folderNames: [] }, database);
+    await ensureAccountFromProfile({ ...profile, followersCount: 100, followersCountObservedAt: '2026-10-20T01:00:00+02:00' }, database);
+    expect(await getAccountByHandle('x', 'observed', database)).toMatchObject({ followersCount: 0, followingCount: 42, followsYou: false });
+    await ensureAccountFromProfile({ ...profile, followsYou: true, followsYouViewerHandle: 'viewer', followsYouObservedAt: '2026-10-21T00:00:00Z' }, database);
+    expect(await getAccountByHandle('x', 'observed', database)).toMatchObject({ followsYou: true, followsYouViewerId: '123' });
+    const backup = await exportBackup(database);
+    await expect(ensureAccountFromProfile({ ...profile, displayName: 'Wrong', followersCount: -1 }, database)).rejects.toThrow('counts');
+    expect(await exportBackup(database)).toMatchObject({ data: backup.data });
+    const fresh = new ContextoDatabase('ObservationRoundtripTest');
+    try {
+      await importBackup(backup, fresh);
+      expect(await getAccountByHandle('x', 'observed', fresh)).toMatchObject({ id: account.id, createdAt: account.createdAt,
+        followersCount: 0, followingCount: 42, followsYou: true, followsYouViewerHandle: 'viewer', followsYouViewerId: '123' });
+      backup.data.accounts[0].followersCount = -1;
+      await expect(importBackup(backup, fresh)).rejects.toThrow('counts');
+    } finally { await fresh.delete(); }
+  });
+
+  it('combines relationship and inclusive audience ranges, excluding unknowns and other viewers', async () => {
+    for (const [handle, followsYou, followersCount] of [['yesuser', true, 100], ['nouser', false, 0]] as const) {
+      await ensureAccountFromProfile({ platform: 'x', handle, profileUrl: `https://x.com/${handle}`,
+        followsYou, followsYouViewerHandle: 'viewer', followersCount, followingCount: 10 }, database);
+    }
+    await ensureAccountFromProfile({ platform: 'x', handle: 'unknownuser', profileUrl: 'https://x.com/unknownuser' }, database);
+    expect((await listAccountSummaries({ followsYou: 'yes', followsYouViewerHandle: 'viewer', minFollowers: 100, maxFollowing: 10 }, database)).map(row => row.handle)).toEqual(['yesuser']);
+    expect((await listAccountSummaries({ followsYou: 'no', followsYouViewerHandle: 'viewer', maxFollowers: 0 }, database)).map(row => row.handle)).toEqual(['nouser']);
+    expect(await listAccountSummaries({ followsYou: 'yes', followsYouViewerHandle: 'other' }, database)).toEqual([]);
+    expect((await listAccountSummaries({ followsYou: 'unknown', followsYouViewerHandle: 'viewer' }, database)).map(row => row.handle)).toEqual(['unknownuser']);
+  });
   it('preserves imported X identity and contact dates through saves and backups', async () => {
     const profile = { platform: 'x' as const, handle: 'dev', profileUrl: 'https://x.com/dev' };
     const original = await ensureAccountFromProfile(profile, database);

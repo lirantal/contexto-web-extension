@@ -17,6 +17,8 @@ async function launch() {
 }
 const stamp = '2026-01-01T00:00:00.000Z';
 const account = { id: 'account_fixture', platform: 'x', handle: 'integrity_test', normalizedHandle: 'integrity_test',
+  followersCount: 0, followingCount: 42, followersCountObservedAt: stamp, followingCountObservedAt: stamp,
+  followsYou: false, followsYouViewerHandle: 'viewer', followsYouViewerId: '123', followsYouObservedAt: stamp,
   displayName: 'Integrity fixture', profileUrl: 'https://x.com/integrity_test', role: 'Engineer',
   createdAt: stamp, updatedAt: stamp, syncState: 'local-only', futureContext: { retained: ['unknown field'] } };
 const note = { id: 'note_fixture', accountId: account.id, body: 'Preserve this context', createdAt: stamp, updatedAt: stamp };

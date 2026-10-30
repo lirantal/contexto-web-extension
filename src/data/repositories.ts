@@ -1,6 +1,7 @@
 import { accountRevision, canonicalRecord } from './record-revision';
 import { backupTables, validateBackup } from './backup-validation';
 import { ContextoDatabase, db } from './db';
+import { observationPatch } from '../shared/x-account-observations';
 import { assertGroupingRevision, getGroupingRevision } from './grouping-revision';
 import { buildXSearchQuery, normalizeXHandle, parseXPostUrl, parseXProfileUrl } from '../shared/platforms/x';
 import type {
@@ -178,6 +179,7 @@ export async function ensureAccountFromProfile(profile: ProfileSnapshot, databas
         throw new Error('X user ID conflicts with the saved account');
       }
       const patch: Partial<Account> = {
+        ...observationPatch(profile, existing),
         xUserId: profile.xUserId ?? existing.xUserId,
         displayName: profile.displayName?.trim() || existing.displayName || profile.handle,
         profileUrl: profile.profileUrl,
@@ -195,6 +197,7 @@ export async function ensureAccountFromProfile(profile: ProfileSnapshot, databas
     }
 
     const account: Account = {
+      ...observationPatch(profile),
       id: createId('account'),
       platform: profile.platform,
       xUserId: profile.xUserId,
@@ -807,6 +810,16 @@ export async function listAccountSummaries(filters: AccountFilters = {}, databas
       if (filters.folderId && !summary.folders.some((folder) => folder.id === filters.folderId)) return false;
       if (filters.companyId && summary.companyId !== filters.companyId) return false;
       if (filters.location && summary.location !== filters.location) return false;
+      if (filters.followsYou) {
+        const known = summary.followsYou !== undefined && !!filters.followsYouViewerHandle
+          && summary.followsYouViewerHandle === normalizeXHandle(filters.followsYouViewerHandle);
+        if (filters.followsYou === 'unknown' ? known : !known || summary.followsYou !== (filters.followsYou === 'yes')) return false;
+      }
+      for (const [count, min, max] of [[summary.followersCount, filters.minFollowers, filters.maxFollowers],
+        [summary.followingCount, filters.minFollowing, filters.maxFollowing]]) {
+        if ((min !== undefined || max !== undefined) && (count === undefined
+          || (min !== undefined && count < min) || (max !== undefined && count > max))) return false;
+      }
       return true;
     })
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));

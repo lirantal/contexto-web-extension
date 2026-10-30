@@ -9,6 +9,23 @@ const hoverCardActionBeforeIdentity = readFileSync(
 );
 
 describe('X surface profile extraction', () => {
+  it('captures exact identity-scoped audience counts and a viewer-scoped positive follow badge', () => {
+    document.body.innerHTML = readFileSync(resolve('tests/fixtures/x/profile-audience-observations.html'), 'utf8');
+    const root = document.querySelector<HTMLElement>('main')!;
+    const profile = extractFullProfile(root, 'https://x.com/exampledev');
+    expect(profile).toMatchObject({ followersCount: 1234, followingCount: 0, followsYou: true, followsYouViewerHandle: 'viewer' });
+    expect(profile?.followersCountObservedAt).toBe(profile?.capturedAt);
+    root.querySelector('[data-testid="userFollowIndicator"]')!.remove();
+    expect(extractFullProfile(root, 'https://x.com/exampledev')?.followsYou).toBeUndefined();
+    root.querySelector('span[title]')!.removeAttribute('title');
+    expect(extractFullProfile(root, 'https://x.com/exampledev')?.followersCount).toBeUndefined();
+  });
+
+  it('does not assign a follow relationship without an unambiguous logged-in viewer', () => {
+    document.body.innerHTML = readFileSync(resolve('tests/fixtures/x/profile-audience-observations.html'), 'utf8');
+    document.querySelector('nav')!.remove();
+    expect(extractFullProfile(document.querySelector('main')!, 'https://x.com/exampledev')?.followsYou).toBeUndefined();
+  });
   it('captures the complete visible website behind the profile t.co link', () => {
     document.body.innerHTML = readFileSync(resolve('tests/fixtures/x/profile-shortened-website.html'), 'utf8');
     const root = document.querySelector<HTMLElement>('main')!;

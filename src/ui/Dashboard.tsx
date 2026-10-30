@@ -59,12 +59,13 @@ export function Dashboard({
   const [status, setStatus] = useState('');
   const activeRowRef = useRef<HTMLButtonElement>(null);
 
-  const accounts = useLiveQuery(() => listAccountSummaries(filters), [
+  const accounts = useLiveQuery(() => listAccountSummaries({ ...filters, followsYouViewerHandle: normalizeXHandle(settings.myXHandle) }), [
     filters.query,
     filters.tagIds,
     filters.folderIds,
     filters.companyIds,
     filters.location,
+    filters.followsYou, settings.myXHandle, filters.minFollowers, filters.maxFollowers, filters.minFollowing, filters.maxFollowing,
   ]);
   const lookups = useLiveQuery(() => getLookups(), []);
   useEffect(() => {
@@ -204,7 +205,25 @@ export function Dashboard({
           {(filters.companyIds?.length ?? 0) > 1 && (
             <p className="filter-help">Accounts have one company, so multiple companies cannot match all selections.</p>
           )}
-          <button type="button" disabled={!filters.query && !filters.folderIds?.length && !filters.tagIds?.length && !filters.companyIds?.length}
+          <label>Follows you<select value={filters.followsYou ?? ''} onChange={(event) => setFilters(current => ({ ...current,
+            followsYou: (event.target.value || undefined) as AccountFilters['followsYou'] }))}>
+            <option value="">Any</option><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option>
+          </select></label>
+          {filters.followsYou && !normalizeXHandle(settings.myXHandle) && <p className="filter-help">Set My X handle below to filter your relationship observations.</p>}
+          {([['Followers', 'minFollowers', 'maxFollowers'], ['Following', 'minFollowing', 'maxFollowing']] as const).map(([label, min, max]) => (
+            <div key={label} className="form-grid two-columns">
+              {([[min, 'minimum'], [max, 'maximum']] as const).map(([field, bound]) => (
+                <label key={field}>{label} {bound}<input type="number" min="0" step="1" value={filters[field] ?? ''}
+                  onChange={(event) => {
+                    const value = event.target.valueAsNumber;
+                    setFilters(current => ({ ...current, [field]: Number.isSafeInteger(value) && value >= 0 ? value : undefined }));
+                  }} /></label>
+              ))}
+            </div>
+          ))}
+          <button type="button" disabled={!filters.query && !filters.folderIds?.length && !filters.tagIds?.length && !filters.companyIds?.length
+            && !filters.followsYou && filters.minFollowers === undefined && filters.maxFollowers === undefined
+            && filters.minFollowing === undefined && filters.maxFollowing === undefined}
             onClick={() => setFilters({})}>Clear filters</button>
         </section>
 
@@ -465,6 +484,10 @@ function AccountDetail({
       <section className="panel detail-section" aria-label="Contact record details">
         <h3>Contact record details</h3>
         {account.platform === 'x' && account.xUserId && <p><strong>X user ID:</strong> {account.xUserId}</p>}
+        <p><strong>Followers:</strong> {account.followersCount?.toLocaleString() ?? 'Unknown'}</p>
+        <p><strong>Following:</strong> {account.followingCount?.toLocaleString() ?? 'Unknown'}</p>
+        <p><strong>{account.followsYouViewerHandle ? `Follows @${account.followsYouViewerHandle}` : 'Follows you'}:</strong>{' '}
+          {account.followsYou === undefined ? 'Unknown' : account.followsYou ? 'Yes' : 'No'}</p>
         {([
           ['Added to Contexto', account.createdAt],
           ['Last updated in Contexto', account.updatedAt],

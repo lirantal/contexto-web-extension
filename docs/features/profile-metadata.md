@@ -48,3 +48,9 @@ The optional numeric X user ID is stored as a string. Current DOM capture has no
 ## Concurrent contact edits
 
 X profile, dashboard metadata, and feed grouping editors retain the contact revision they loaded. A save after another contact/assignment change fails before writing, preserves the draft, and offers **Reload saved values**. The reload explicitly discards the draft and loads current values; successful Save and Cancel keep their established close behavior. An editor opened before another surface creates that contact also fails safely rather than overwriting the new record.
+
+## X audience and relationship observations
+
+The dashboard's **Contact record details** shows followers, following, and whether the person follows the recorded viewer. Missing values display **Unknown**. Dashboard search combines an inclusive minimum/maximum for each count with **Follows you: Any / Yes / No / Unknown** and the existing filters. Set **My X handle** to the account whose relationships you want to filter; observations for another viewer count as unknown. Unknown counts do not satisfy numeric ranges, including a maximum of zero.
+
+X editors save reliable visible audience/relationship observations on explicit Save without adding editable fields. Exact numeric counts can be captured; ambiguous abbreviated numbers are omitted. A positively identified **Follows you** badge records Yes for the visible signed-in viewer. An absent badge does not establish No. Sparse captures preserve imported observations. No API request is made by embedded forms.

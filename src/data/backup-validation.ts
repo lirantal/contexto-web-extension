@@ -1,4 +1,5 @@
 import type { BackupEnvelope } from '../shared/types';
+import { validateXAccountObservations } from '../shared/x-account-observations';
 import { normalizeXHandle, parseXProfileUrl } from '../shared/platforms/x';
 import { preserveLegacyAccountFields } from './legacy-account';
 
@@ -77,6 +78,7 @@ export function validateBackup(value: unknown): BackupEnvelope {
     }
   }
   for (const row of data.accounts) {
+    validateXAccountObservations(row);
     const label = `Account ${row.id}`;
     oneOf(row, 'platform', ['x', 'linkedin', 'reddit'], label);
     oneOf(row, 'syncState', ['local-only', 'pending-sync', 'synced', 'conflict'], label);

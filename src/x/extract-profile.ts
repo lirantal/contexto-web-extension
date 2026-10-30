@@ -61,10 +61,48 @@ function readWebsite(surface: HTMLElement): string | undefined {
   return (httpUrl(compactText(anchor.getAttribute('title'))) ?? httpUrl(compactText(anchor.textContent)) ?? target).href;
 }
 
+function readAudienceCount(surface: HTMLElement, handle: string, suffixes: string[]): number | undefined {
+  const counts = new Set<number>();
+  for (const anchor of surface.querySelectorAll<HTMLAnchorElement>('a[href]')) {
+    if (anchor.closest('article,[data-testid="tweet"],[data-testid="UserDescription"]')) continue;
+    let url;
+    try { url = new URL(anchor.getAttribute('href')!, 'https://x.com'); } catch { continue; }
+    if (!['x.com', 'twitter.com', 'www.x.com', 'www.twitter.com'].includes(url.hostname)
+      || !suffixes.some(suffix => url.pathname.replace(/\/$/, '').toLowerCase() === `/${handle.toLowerCase()}/${suffix}`)) continue;
+    for (const span of anchor.querySelectorAll('span')) {
+      for (const text of [span.getAttribute('title'), compactText(span.textContent)]) {
+        if (!text || !/^(?:\d+|\d{1,3}(?:,\d{3})+)$/.test(text)) continue;
+        const value = Number(text.replace(/,/g, ''));
+        if (Number.isSafeInteger(value)) counts.add(value);
+      }
+    }
+  }
+  return counts.size === 1 ? [...counts][0] : undefined;
+}
+
+function viewerHandle(): string | undefined {
+  const handles = new Set<string>();
+  for (const anchor of document.querySelectorAll<HTMLAnchorElement>('nav a[data-testid="AppTabBar_Profile_Link"][href]')) {
+    let url;
+    try { url = new URL(anchor.getAttribute('href')!, 'https://x.com'); } catch { continue; }
+    const parsed = parseXProfileUrl(url.href);
+    if (parsed && url.pathname.replace(/\/$/, '').toLowerCase() === `/${parsed.handle}`) handles.add(parsed.handle);
+  }
+  return handles.size === 1 ? [...handles][0] : undefined;
+}
+
 function snapshot(surface: HTMLElement, profileUrl: string, identityHandle?: string): ProfileSnapshot | null {
   const parsed = parseXProfileUrl(profileUrl);
   if (!parsed) return null;
   const handle = identityHandle ?? readHandle(surface) ?? parsed.handle;
+  const capturedAt = new Date().toISOString();
+  const followersCount = readAudienceCount(surface, handle, ['followers', 'verified_followers']);
+  const followingCount = readAudienceCount(surface, handle, ['following']);
+  const viewer = viewerHandle();
+  const identities = [...surface.querySelectorAll<HTMLElement>('[data-testid="UserName"]')]
+    .filter(node => !node.closest('article') && readHandle(node)?.toLowerCase() === handle.toLowerCase());
+  const followsYou = !!viewer && identities.length === 1 && [...identities[0].querySelectorAll('[data-testid="userFollowIndicator"]')].some(node =>
+    !node.closest('button,[role="button"]') && compactText(node.textContent) === 'Follows you');
   return {
     ...parsed,
     handle,
@@ -73,7 +111,10 @@ function snapshot(surface: HTMLElement, profileUrl: string, identityHandle?: str
     bioSnapshot: compactText(surface.querySelector('[data-testid="UserDescription"]')?.textContent),
     website: readWebsite(surface),
     location: compactText(surface.querySelector('[data-testid="UserLocation"]')?.textContent),
-    capturedAt: new Date().toISOString(),
+    ...(followersCount !== undefined ? { followersCount, followersCountObservedAt: capturedAt } : {}),
+    ...(followingCount !== undefined ? { followingCount, followingCountObservedAt: capturedAt } : {}),
+    ...(followsYou ? { followsYou: true, followsYouViewerHandle: viewer, followsYouObservedAt: capturedAt } : {}),
+    capturedAt,
   };
 }
 

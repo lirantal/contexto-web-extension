@@ -9,7 +9,18 @@ export interface TimestampedRecord {
   deletedAt?: string;
 }
 
-export interface Account extends TimestampedRecord {
+export interface XAccountObservations {
+  followersCount?: number;
+  followingCount?: number;
+  followersCountObservedAt?: string;
+  followingCountObservedAt?: string;
+  followsYou?: boolean;
+  followsYouViewerHandle?: string;
+  followsYouViewerId?: string;
+  followsYouObservedAt?: string;
+}
+
+export interface Account extends TimestampedRecord, XAccountObservations {
   platform: Platform;
   /** X numeric user ID as a string to preserve precision; absent until reliably supplied. */
   xUserId?: string;
@@ -147,7 +158,7 @@ export interface ChangeLogEntry {
   changedAt: string;
 }
 
-export interface ProfileSnapshot {
+export interface ProfileSnapshot extends XAccountObservations {
   platform: Platform;
   /** X numeric user ID as a string to preserve precision; absent until reliably supplied. */
   xUserId?: string;
@@ -179,6 +190,12 @@ export interface AccountSummary extends Account {
 }
 
 export interface AccountFilters {
+  followsYou?: 'yes' | 'no' | 'unknown';
+  followsYouViewerHandle?: string;
+  minFollowers?: number;
+  maxFollowers?: number;
+  minFollowing?: number;
+  maxFollowing?: number;
   tagIds?: RecordId[];
   folderIds?: RecordId[];
   companyIds?: RecordId[];
