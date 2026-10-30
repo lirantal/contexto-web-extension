@@ -12,6 +12,8 @@ These documents describe Contexto's current architecture, behavior, development 
 
 ## Development and testing
 
+- [CI and releases](development/releases.md) — automated quality gates, downloadable bundles, versioning, and release recovery.
+
 - [Private X Lists export](development/x-lists-export.md) — workflow/cost table, configuration files, container OAuth setup, List exclusions, resumable downloads, Circle/tag mapping, and offline Contexto import generation.
 
 - [Browser development workflow](development/browser-workflow.md) — WXT development, unpacked installs, and the manual browser QA matrix.

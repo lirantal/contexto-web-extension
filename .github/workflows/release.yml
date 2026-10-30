@@ -1,0 +1,79 @@
+name: Release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Semantic version increment
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+permissions:
+  contents: read
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+jobs:
+  checks:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+  release:
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # A queued run must never release stale code or overwrite newer main commits.
+      - name: Check main has not advanced
+        id: current
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+            echo 'release=true' >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.current.outputs.release == 'true'
+        run: npm ci
+      - name: Bump package and lockfile versions
+        if: steps.current.outputs.release == 'true'
+        id: version
+        env:
+          BUMP: ${{ inputs.bump || 'patch' }}
+        run: |
+          case "$BUMP" in patch|minor|major) ;; *) exit 1 ;; esac
+          npm version "$BUMP" --no-git-tag-version
+          echo "tag=v$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+      - name: Package and validate release
+        if: steps.current.outputs.release == 'true'
+        run: |
+          npm run zip
+          npm run verify:popup
+          node scripts/verify-release.mjs
+          cd .output
+          sha256sum contexto-*-chrome.zip > SHA256SUMS
+      - name: Commit and tag release
+        if: steps.current.outputs.release == 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json
+          git commit -m "chore: release $TAG"
+          git tag "$TAG"
+          git push --atomic origin HEAD:main "refs/tags/$TAG"
+      - name: Publish GitHub release
+        if: steps.current.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh release create "$TAG" .output/contexto-*-chrome.zip .output/SHA256SUMS --verify-tag --title "Contexto $TAG" --generate-notes --notes "Download the chrome ZIP for Chrome or Vivaldi, extract it to a stable folder, and load it unpacked in Developer mode. See the README for installation and safe update instructions."

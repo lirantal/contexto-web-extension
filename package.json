@@ -19,8 +19,9 @@
     "test:e2e": "playwright test",
     "postinstall": "wxt prepare",
     "test:integrity": "vitest run tests/data-integrity.test.ts tests/repositories.test.ts tests/backup-controls.test.tsx tests/grouping-editor-conflicts.test.tsx tests/data-management.test.ts tests/grouping-management.test.ts",
-    "check": "npm run compile && npm test && npm run build && npm run verify:popup",
-    "verify:integrity": "node scripts/verify-data-integrity.mjs"
+    "check": "npm run lint && npm run compile && npm test && npm run build && npm run verify:popup",
+    "verify:integrity": "node scripts/verify-data-integrity.mjs",
+    "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {
     "dexie": "^4.4.4",
@@ -30,6 +31,7 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -39,10 +41,16 @@
     "@wxt-dev/module-react": "^1.1.5",
     "@xdevplatform/xdk": "0.6.6",
     "cross-env": "^7.0.3",
+    "eslint": "^10.13.0",
     "fake-indexeddb": "^6.2.5",
+    "globals": "^16.5.0",
     "jsdom": "^29.1.1",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.1",
     "vitest": "^4.1.10",
     "wxt": "^0.20.27"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   }
 }

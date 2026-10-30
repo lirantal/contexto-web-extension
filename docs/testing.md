@@ -7,13 +7,12 @@ Standalone X export fixtures: `npx vitest run tests/x-lists-export.test.js`. The
 Run the following before handing off a release build:
 
 ```sh
-npm run compile
-npm test
-npm run build
-npm run verify:popup
+npm run check
+npm run verify:integrity
+npm run verify:sidebar
 ```
 
-Use focused Vitest commands while iterating, then run the complete suite before completion. `npm run check` runs all four release checks above.
+Use focused Vitest commands while iterating, then run the complete suite before completion. `npm run check` runs ESLint, TypeScript, Vitest, the production build, and popup verification. The two browser checks require Playwright Chromium and host dependencies (`npx playwright install --with-deps chromium`). [CI and releases](development/releases.md) describes the automated gates.
 
 For persistence, model, import, or draft-save changes, run `npm run test:integrity`. It covers upgrades from database versions 1–3, legacy/unknown field preservation, complete-table JSON round trips, concurrent exports, atomic failure rollback, contact ownership, malformed backup records and relationships, identity collisions, conflict-safe merge, full restore, stale previews, and stale contact drafts.
 

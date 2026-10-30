@@ -1,29 +1,48 @@
 # Contexto
 
+[![CI](https://github.com/lirantal/contexto-web-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/lirantal/contexto-web-extension/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/lirantal/contexto-web-extension)](https://github.com/lirantal/contexto-web-extension/releases/latest)
+![Chrome and Vivaldi](https://img.shields.io/badge/browsers-Chrome%20%7C%20Vivaldi-4285F4)
+![Manifest V3](https://img.shields.io/badge/extension-Manifest%20V3-0f766e)
+![Local first](https://img.shields.io/badge/storage-local%20first-0f766e)
+
 Contexto is a local-first browser extension for lightweight CRM and social relationship management on X/Twitter. It is built for Developer Relations and Developer Advocacy workflows where the useful context lives around people: how you met, what they work on, what company they are attached to, notes, tags, circles, and fast ways to search previous public X interactions.
 
-The extension is built with [WXT](https://wxt.dev/), React, TypeScript, and IndexedDB through Dexie. Chrome and Vivaldi are the MVP browser targets.
+The extension is built with [WXT](https://wxt.dev/), React, TypeScript, and IndexedDB through Dexie. Chrome and Vivaldi are the supported browser targets, sharing one Chromium Manifest V3 bundle.
 
-## Current MVP
+## Capabilities
 
-- Compact X/Twitter hover launchers plus persistent right-rail/modal and full-profile editors for explicitly saving relationship metadata without leaving X.
-- Saved-contact feed markers with compact relationship context, inline quick notes, and a path into the full editor.
-- Rich contact bookmarks captured from supported X posts with editable reminders, Handled/Reopen tracking, and dashboard review/removal.
-- Explicit per-contact catch-up checkpoints with live X searches for posts since the last review.
-- Local IndexedDB database for accounts, companies, tags, circles, notes, search history, and backups.
-- Dashboard/options page for offline account search, metadata editing, filtering, shared-value management, bulk role/location cleanup, import, and export.
-- One persisted Quick X search builder in both the toolbar popup and the always-expanded Contexto section in X's right sidebar, with keyword and date filters.
-- X search helpers for messages/posts from you to them, them to you, profile posts, direct mentions, and keyword/date constraints.
-- JSON backup/restore so local data can be moved or recovered.
-- Platform adapter boundary so LinkedIn and Reddit can be added later without rewriting the CRM core.
+| Capability | What you can do |
+| --- | --- |
+| Relationship context on X | Save role, company, location, website, tags, circles, and how you met from profiles and persistent editors. |
+| Feed context | Recognize saved contacts, see relationship summaries, and add quick notes without leaving the feed. |
+| Post bookmarks | Capture supported posts, add reminders, and track Handled/Reopen status. |
+| Catch-up checkpoints | Search a contact's posts since your last explicit review. |
+| Quick X search | Build keyword/date and two-way interaction searches from the toolbar popup or X sidebar. |
+| Offline dashboard | Search and filter contacts, edit metadata, and review notes and bookmarks. |
+| Data management | Rename and merge tags, circles, and companies; clean up roles and locations in bulk. |
+| Backup and restore | Preview JSON imports, merge safely, export recovery backups, and reject stale drafts. |
+| Private X Lists import | Use the optional [X Lists CLI](docs/development/x-lists-export.md) to create a local import. |
+| Local storage | Keep relationship data in your browser's IndexedDB; no Contexto account or hosted CRM required. |
+
+## Download and install
+
+Download the **contexto-VERSION-chrome.zip** asset from [GitHub Releases](https://github.com/lirantal/contexto-web-extension/releases/latest). The same bundle works in Chrome and Vivaldi; Firefox and Safari are not currently supported. GitHub's source-code archives are not installable extension bundles.
+
+1. Extract the ZIP into a permanent folder.
+2. Open `chrome://extensions` or `vivaldi://extensions` and enable **Developer mode**.
+3. Choose **Load unpacked** and select the extracted folder containing `manifest.json`.
+4. Pin Contexto and open X.
+
+To update, export a JSON backup first, replace the files in the **same folder**, then click **Reload** on the existing extension card. Keep the same browser profile and extension installation to preserve local data. Uninstalling the extension can remove its IndexedDB. These are unpacked downloads, not browser-store installations with automatic updates. Each release includes SHA-256 checksums.
 
 ## Setup
 
 ```sh
-npm install
+npm ci
 ```
 
-The WXT scaffold generates extension types during `postinstall`.
+Use Node.js 24 LTS. The WXT scaffold generates extension types during `postinstall`.
 
 ## Development
 
@@ -70,14 +89,8 @@ For a standalone export of your private X List members into a fresh Contexto ins
 - [Development browser workflow](docs/development/browser-workflow.md)
 - Feature docs under [docs/features](docs/features)
 
-## Test Status
+## Quality and releases
 
-Current automated checks:
+`npm run check` runs ESLint, TypeScript checks, the full Vitest suite, a production build, and popup bundle verification. CI also runs real Chromium extension checks for data integrity and sidebar layout against local fixtures. Live X behavior still requires the [manual browser matrix](docs/development/browser-workflow.md).
 
-```sh
-npm run compile
-npm run test
-npm run build
-```
-
-Playwright E2E is wired as `npm run test:e2e`, but the first browser-driving specs should be added after the extension is manually validated in Vivaldi/Chrome with real X pages.
+Every push to main (including merged PRs) runs a gated patch release. Maintainers can also run **Release** manually on main with a patch, minor, or major bump. Releases include a versioned Chromium ZIP, checksums, and generated changelog notes. See [CI and releases](docs/development/releases.md) for versioning, permissions, and recovery.
