@@ -34,3 +34,5 @@ Optional filters:
 Both surfaces offer **Last 30 days**, **Last 90 days**, and **Last 12 months** shortcuts below the dates. A shortcut sets Until to today in the browser’s local calendar and Since to 30 days, 90 days, or one calendar year earlier (February 29 clamps to February 28). X treats Until as an exclusive upper bound. Both dates update together in one persisted patch, preserving people and keyword filters; they remain manually editable. Shortcuts do not launch a search or add target history.
 
 Generated searches open in a new X tab. After a successful launch, the normalized target is recorded only in extension-local autosuggest history.
+
+Keyboard events from the sidebar workspace stop at its Contexto host after its controls handle them. This prevents X shortcuts from interpreting typing in account search, handles, keyword, and date fields, while preserving native editing, Tab navigation, and Contexto autocomplete controls. Native X controls retain their keyboard behavior.
