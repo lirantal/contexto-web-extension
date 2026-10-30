@@ -40,6 +40,20 @@ Then load `.output/chrome-mv3` from `chrome://extensions` or `vivaldi://extensio
 
 The tradeoff is that you may need to press Reload on the extension card after each build. Keep the same loaded path/extension ID and persistent browser profile. Export before schema updates, profile changes, or reinstallations; never uninstall the extension to refresh a build containing valuable local data. See [Data integrity](data-integrity.md).
 
+## Popup preload warnings
+
+Production builds disable Vite's optional module-preload hints. Chromium can report
+`cross-world extension resource mismatch` and unused-preload warnings for these
+hints on extension pages; ordinary module imports still load the shared chunks.
+`npm run verify:popup` rejects popup builds that reintroduce module-preload links.
+
+After updating the build, reload the existing extension from its extension card,
+close and reopen the popup/dashboard, and clear previously recorded errors before
+checking for new ones. Keep the same extension path, ID, and browser profile.
+The toolbar popup opens Quick X search; its Dashboard button opens saved accounts.
+An installation with no imported or explicitly saved contacts has an empty account
+list; generating an export file does not import it into the extension.
+
 ## Manual QA Matrix
 
 Run the relevant rows in both Chrome and Vivaldi when a change touches browser integration.
