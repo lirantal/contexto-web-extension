@@ -195,7 +195,9 @@ describe('QuickXSearch', () => {
   it('launches before recording the normalized target history', async () => {
     const { launchSearch } = renderQuickSearch();
 
-    fireEvent.click(await screen.findByRole('button', { name: /Posts by other person/ }));
+    const action = await screen.findByRole('button', { name: /Posts by other person/ });
+    await waitFor(() => expect(action).toBeEnabled());
+    fireEvent.click(action);
 
     await waitFor(() => expect(launchSearch).toHaveBeenCalledWith(expect.objectContaining({
       direction: 'from-profile', targetHandle: 'them', keyword: 'security',
